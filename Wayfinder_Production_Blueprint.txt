@@ -1,0 +1,1745 @@
+# WAYFINDER: THE QUIET FRONTIER
+## Complete Game Design & Technical Production Blueprint
+
+**Working title:** Wayfinder: The Quiet Frontier (trademark clearance required)  
+**Document version:** 1.0 — 14 October 2026  
+**Platforms:** Native Android and iOS; desktop development builds  
+**Product:** Large, single-player, offline-first exploration-driving game  
+**Business model:** No advertising, no in-app purchases, no premium currency, no paid boosts, no energy timers. May be sold as a one-time paid download.  
+**Implementation baseline:** Unity 6.3 LTS, C#, Universal Render Pipeline (URP)  
+**Status:** Production specification, not an implemented game or a performance certification.
+
+---
+
+## How to use this document
+
+This replaces the original five-phase brainstorming prompt with one integrated production specification. It includes design, content, construction rules, architecture, production work, QA, release gates, and instructions for a coding AI. All five original subjects are covered, together with the additional systems needed to ship.
+
+Give a coding AI this file and `AI_IMPLEMENTATION_HANDOFF.md`. Have it implement one milestone at a time in a persistent repository. Require an actual build and test evidence before accepting each milestone. Do not ask it to generate the entire commercial game in one unverified response.
+
+**Important limitation:** A specification cannot ensure that any AI produces a finished commercial game automatically. Engine access, compilation, licensed assets, real-device testing, platform signing, store accounts, and human review remain necessary. This document makes the intended result testable and reduces ambiguity; it does not replace those activities.
+
+### Requirement language
+
+- **MUST:** Required for release unless a documented change is approved.
+- **SHOULD:** Default approach; another solution requires a written trade-off.
+- **TARGET:** A measurable production aspiration, not a verified result.
+- All physics, economy, visual, and performance numbers are initial tuning values unless explicitly described as a hard invariant.
+- When requirements conflict, protect save integrity, player accessibility, route solvability, and frame stability before visual complexity or content quantity.
+- The document's proposed design values are not external facts. Engine capabilities referenced from documentation are cited in Section 25.
+
+## Contents
+
+1. Product definition and scope
+2. Player experience and complete game flow
+3. Driving controls, camera, and accessibility
+4. Vehicle simulation and physics
+5. Terrain hazards, damage, and recovery
+6. World geography and biome design
+7. World generation, authoring, and validation
+8. Exploration, mapping, and discoveries
+9. Narrative, objectives, and encounter design
+10. Vehicles, equipment, inventory, and items
+11. Progression, twenty-tier upgrades, and economy
+12. Garages, camps, crafting, and extraction
+13. UI/UX and screen flows
+14. Art, animation, audio, and asset production
+15. Engine selection and project setup
+16. Runtime architecture and system contracts
+17. Content data and save schemas
+18. Streaming, rendering, and performance
+19. Mobile lifecycle, platforms, and privacy
+20. QA, automated tests, and balancing
+21. Production team, milestones, and build gates
+22. AI implementation protocol
+23. Release checklist and post-launch maintenance
+24. Scope cuts, risk register, and unresolved decisions
+25. Sources and technical reference policy
+Appendices: content catalog, interface examples, acceptance matrix, and balance tables.
+
+---
+
+# 1. Product definition and scope
+
+## 1.1 Player promise
+
+“You can see a place on the horizon, work out how to reach it, and bring back something worth remembering.”
+
+Drive a capable but imperfect expedition vehicle into a reclaimed frontier. Observe terrain, choose a line, cross hazards, locate forgotten infrastructure, collect useful materials, and return with discoveries. The central tension is **how far to push versus when to return**, not beating another driver.
+
+## 1.2 Design pillars
+
+1. **Curiosity leads.** Distinct silhouettes, distant radio hints, tracks, and changing vegetation lead players; map icons never reveal everything in advance.
+2. **Terrain is the puzzle.** Tires, clearance, momentum, gearing, route choice, and cargo weight matter more than reflex-perfect timing.
+3. **Failure is recoverable.** A mistake can cost loose cargo and time, but never permanently destroys a vehicle, paid entitlement, story progress, or essential item.
+4. **Progress increases possibilities.** Upgrades unlock meaningful route choices without turning the vehicle into an ungrounded hovercraft.
+5. **A complete offline experience.** All story, content, recovery, and progression work without a network connection, ads, or purchases.
+6. **Calm, not empty.** Moments of quiet alternate with recognizable discoveries and environmental challenges.
+
+## 1.3 Release scope and exclusions
+
+| Category | Release requirement |
+|---|---|
+| Play mode | Single player, offline, landscape orientation |
+| World | One seamless 6,144 m × 6,144 m mainland: approximately 37.75 km² total footprint |
+| Biomes | Five designed biomes with authored transition corridors |
+| Vehicles | Four driveable archetypes with shared driving systems and different handling |
+| Major landmarks | 100, exactly 20 per biome |
+| Salvage caches | 200 one-time placed caches, exactly 40 per biome |
+| Story | 20 main missions, four per biome |
+| Optional objectives | 30 authored survey contracts, six per biome |
+| Repeatable activities | Five survey/supply job templates, constrained by biome and capability |
+| Camps | 10 fixed forward-camp sockets, two per biome |
+| Garages | Home garage plus four regional garages |
+| Progression | Twenty starter-vehicle upgrade milestones; vehicle-specific adaptations |
+| Completion | Restore five relay regions and transmit the complete expedition atlas |
+| Duration | Target 20–30 hours for main story; 40–60 hours for extensive discovery, validated through playtests |
+| Sessions | 5–20 minutes supported; immediate suspend/resume |
+| Languages | English release source; localization-ready text and layouts |
+| Monetization | No ads, IAP SDKs, premium parts currency, paid recovery, or daily login incentives |
+
+**Explicitly outside version 1:** multiplayer, races, leaderboards, character combat, pedestrians, on-foot exploration, vehicle theft, destructible buildings, persistent terrain deformation, player-built freeform bases, infinite runtime terrain, underwater driving, aircraft, live-service events, trading, and user-generated mods. Noninteractive wildlife is cosmetic and cannot be hit or harvested.
+
+Large scope is delivered incrementally. The vertical slice is not the final product; it is the gate before producing the remaining world.
+
+## 1.4 Modes
+
+- **Expedition:** Default. Fuel, condition, weight, and recovery rules active.
+- **Relaxed Exploration:** Fuel and mechanical damage can be disabled independently; story and discovery remain available. No reward punishment or inaccessible achievements.
+- **New Expedition:** A second independent save slot, not a timed season. Three save slots total.
+- No competitive economy means accessibility settings do not need anti-cheat restrictions.
+
+---
+
+# 2. Player experience and complete game flow
+
+## 2.1 Application-level flow
+
+`Launch → bootstrap/validate data → title → new game or continue → garage OR restored expedition → explore → discover/collect → return/camp/recover → bank/review → upgrade/plan → explore`
+
+Launch must not require an account, date check, store connection, or a mandatory network permission. On first launch, display language, text size, controls, and privacy information. Do not interrupt first play with a rating request.
+
+A first-time player starts beside the home garage in a safe clearing. The vehicle already runs. Explanations are contextual and dismissible; advanced controls unlock as needed, not through long tutorial popups.
+
+## 2.2 First thirty minutes
+
+| Time target | Player action | Teaching and outcome |
+|---|---|---|
+| 0–2 min | Select controls, drive through a wide gate | Steering, throttle, brake; no penalty hazards |
+| 2–5 min | Follow visible tire tracks to a fallen service shed | Slow driving, interaction, first salvage |
+| 5–8 min | Climb a shallow trail and inspect a vista | Terrain reading, camera recenter, first landmark |
+| 8–10 min | Return to garage | Extraction, banking, free fuel/repair |
+| 10–13 min | Install first tire upgrade | Explain traction with before/after comparison |
+| 13–18 min | Visit creek gauge by one of two routes | Depth marker, alternative route, optional cargo |
+| 18–24 min | Activate first survey mast | Mapping, relay clue, manual waypoint |
+| 24–30 min | Plan next independent expedition | Winch access and camp objective introduced |
+
+The first loop must be viable with no upgrades and no fuel pickup. A player who gets stuck can recover for free in the tutorial.
+
+## 2.3 Expedition loop
+
+**Plan:** In garage, inspect task requirements and route estimates; equip tires, utility modules, and supplies. Show installed capabilities and estimated return fuel, never a false guarantee.
+
+**Depart:** Snapshot last safe garage and loadout. Create an expedition ID. Start an append-only transaction sequence for pickups, contract events, and banking.
+
+**Explore:** New terrain reveals map cells. Clues lead to landmarks. A mix of direct routes and safer detours lets the player spend either capability or time.
+
+**Collect:** Items enter cargo if slots and payload allow. When full, the player can replace cargo after a preview; no silent deletion.
+
+**Decide:** Fuel, weather, sunlight, cargo, and newly found shortcuts influence whether to continue.
+
+**Return:** Stop within garage arrival volume, speed below 1 m/s for two seconds, then confirm “End expedition.” Loose cargo is converted or stored, mission rewards settle, and upgrades become available.
+
+**Forward camp:** Deposit loose cargo to persistent camp storage, refuel from carried/camp fuel, repair from supplies, and create a return anchor. Camping does not replace a garage's unlimited service or invent free fuel.
+
+## 2.4 Session interruption and failure
+
+- Manual quit, operating-system interruption, or application kill does **not** count as extraction or failure.
+- Autosave restores the vehicle near its last valid position, expedition cargo, consumed fuel, and world state. Never charge a rescue penalty for an app crash.
+- Fuel zero: vehicle coasts, electrics remain available, and recovery is always offered.
+- Immobilized: use winch, consumables, reset, or recovery; no forced advertisement or purchase.
+- Game over is not a separate state. Rescue returns the player to safety with limited loss.
+- Story completion leads to an atlas review and credits, then free exploration with all remaining objectives available.
+
+## 2.5 Key state machines
+
+Application states: `Boot, Title, Loading, Garage, Driving, MapPaused, Camp, Recovery, ExpeditionSummary, Credits, Suspended`.
+
+Vehicle states: `Parked, Driving, Airborne, Winching, Stalled, Disabled, Recovering`.
+
+Mission states: `Locked, Available, Accepted, Active, ReadyToTurnIn, Completed`. Missions never regress on vehicle recovery. A checkpoint can restart the immediate traversal objective without retracting discoveries.
+
+Transitions MUST be explicit commands, not arbitrary scripts enabling and disabling global objects. UI overlays acquire a pause/input token; closing one overlay cannot unpause another.
+
+---
+
+# 3. Driving controls, camera, and accessibility
+
+## 3.1 Default touch layout
+
+Use landscape, safe-area-aware controls. Steering occupies the lower left; throttle and brake/reverse occupy the lower right. The camera is controlled by dragging the center/right unoccupied area. Interaction is near the right-middle edge but never overlaps throttle.
+
+- **Default:** Left/right steering buttons with eased ramp; separate throttle and brake.
+- **Optional virtual joystick:** Horizontal axis controls steering. Vertical axis is unused by default to prevent accidental throttle. One-stick assisted mode may combine them as an accessibility option.
+- **Optional tilt:** Calibrate zero at the current comfortable device angle; ±22° gives full steering, 2° dead zone, low-pass filtering with 0.10 s time constant. Touch pedals remain.
+- **Controller:** Left stick steering, right trigger throttle, left trigger brake, right stick camera. Full rebinding where engine/platform supports the device.
+- **Desktop development:** WASD/arrows, mouse camera, Space handbrake, E interact, M map, R recovery menu; never omit mobile controls from deliverables.
+
+## 3.2 Input behavior
+
+Normalize commands to `steer [-1,1], throttle [0,1], brake [0,1], handbrake bool`. Read UI/device input per rendered frame and retain the latest command for fixed-step physics.
+
+- Steering dead zone: 0.08 stick; buttons ramp to full in 0.30 s and return in 0.18 s.
+- Throttle reaches target in 0.20 s; brake in 0.12 s. Accessibility settings may lengthen ramps.
+- Touch IDs are captured independently. A camera drag must not steal an active pedal touch.
+- Losing focus, opening pause, or disconnecting a controller zeros throttle and applies a safe parking hold after the vehicle stops.
+- Brake while moving forward slows the car. Below 0.3 m/s for 0.4 s, continued brake requests reverse; show gear R. Throttle requests forward only after the same stationary guard.
+- Never abruptly reverse engine torque at speed.
+- Crawl toggle limits commanded speed to 8 km/h and favors low gear; it is not automatic route navigation.
+
+## 3.3 Steering and assists
+
+Road-wheel steering limit varies with speed: 34° at 0 km/h, 26° at 20, 16° at 40, 10° at 70. Smoothly interpolate. Apply approximate Ackermann steering using wheelbase and track width, with an arcade blending factor of 0.6.
+
+Optional assists default on: mild traction control, countersteer assistance, hill hold, and camera horizon stabilization. They cannot create grip beyond surface limits. At zero input, the car does not magnetically center itself on a route.
+
+Hill hold maintains brake for two seconds after pedal release on a slope below 30°; it releases as positive engine torque develops. Anti-roll assistance reduces body oscillation but never makes a dangerously steep side slope safe.
+
+## 3.4 Camera specification
+
+Third-person chase camera: starting distance 5.8 m, height 2.4 m, look-ahead 2–6 m based on velocity. FOV 60° normally, at most 68° at top speed. Position smoothing approximately 0.15 s, look smoothing 0.10 s.
+
+- Spherecast radius 0.25 m prevents clipping through rocks or buildings.
+- Obstructions shorten distance immediately; recovery to full distance is slower (0.4 s).
+- Orbit ±160° yaw and −15° to +55° pitch; recenter after two seconds of driving without camera input.
+- Reverse looks partly backward only when enabled; manual orbit always overrides.
+- Photo mode pauses simulation; hides HUD; uses bounded camera within 20 m, not an exploration exploit that reveals map or activates triggers.
+- Disable motion blur by default. Shake, FOV motion, horizon stabilization, and recentering are independently adjustable.
+
+## 3.5 Accessibility requirements
+
+Minimum touch target 48 logical dp-equivalent with scale tested physically on devices; minimum readable body text approximately 16 sp-equivalent. Unity pixel sizes alone are not accepted as evidence of accessibility.
+
+Provide 100–150% UI scale, high-contrast mode, color-independent hazard symbols, subtitles with size/background controls, separate audio sliders, no rapid repeated tapping, hold/toggle options, left-handed layout, haptics toggle, reduced camera motion, and unlimited pause. Tilt is never required. All story audio has text. Critical interaction prompts include action names, not only colors or icons.
+
+---
+
+# 4. Vehicle simulation and physics
+
+## 4.1 Chosen model
+
+Use an arcade-simulation rigidbody vehicle with four Unity WheelColliders, tuned suspension, wheel-by-wheel surface sampling, automatic gears, limited assists, and simplified environmental forces. WheelCollider provides vehicle-oriented collision, suspension, and slip-based friction; surface response must be configured explicitly rather than assumed from a ground PhysicMaterial. [2](https://docs.unity3d.com/Manual/class-WheelCollider.html)
+
+A custom tire solver is not the starting implementation. It is an escalation only if a measured WheelCollider limitation prevents a release requirement. Test ledges, narrow contacts, side slopes, and low-speed climbing in milestone M1 before committing content.
+
+Use meters, kilograms, seconds, radians internally where appropriate, newtons, and newton-metres. Display km/h and liters by default. Physics step is fixed at 1/60 s. Rendering may be 30 or 60 FPS independently. Rigidbody interpolation is enabled for the active car.
+
+## 4.2 Starter vehicle: Scout S1
+
+| Property | Baseline | Gameplay consequence |
+|---|---:|---|
+| Dry mass | 1,350 kg | Stable but cannot ignore soft ground |
+| Fuel capacity | 24 L | Encourages short first expeditions |
+| Fuel density | 0.74 kg/L | Added to live rigidbody mass |
+| Cargo payload | 120 kg, 12 slots | Weight and space both matter |
+| Wheelbase / track | 2.65 m / 1.58 m | Turning and side-slope stability |
+| Wheel radius | 0.36 m | Clearance and effective wheel torque |
+| Ground clearance | 0.24 m at baseline static load | Rock and rut threshold |
+| Center of mass | 0.62 m above level ground at nominal load | Roll risk; implement relative to model datum |
+| Static front/rear axle load | 55% / 45% | Front turn-in versus rear traction |
+| Peak engine torque | 240 N·m at 2,500 rpm | Climbing capability |
+| Idle / limiter | 800 / 5,200 rpm | Low-speed control and acceleration ceiling |
+| Drive | AWD, 50:50 nominal front/rear | Starter is capable, not deliberately broken |
+| Gear ratios | 3.60, 2.10, 1.35, 1.00; reverse −3.30 | Four forward automatic gears |
+| Final drive | 4.10 | Low-speed wheel torque |
+| Drivetrain efficiency | 0.85 | Applied once, not per differential |
+| Governed speed | 70 km/h | Keeps mobile streaming and braking readable |
+| Brake torque | 1,600 N·m front / 1,300 rear, per wheel | Initial tuning, ABS limits lockup |
+| Suspension travel | 0.28 m total | Articulation before upgrades |
+| Spring rate | 32,000 N/m front / 29,000 rear | Tune static sag and landing control |
+| Damper | 3,400 N·s/m front / 3,100 rear | Starting physical damping coefficient |
+| Anti-roll coupling | 4,000 N/m equivalent axle coupling | Reduce body sway, preserve articulation |
+| Condition | Four subsystems at 100 each | Engine, suspension, tires, body |
+
+Set center-of-mass offsets using the actual imported chassis pivot, not blindly assigning `(0, -0.6, 0)`. Measure axle loads in a calibration scene and solve longitudinal COM position. Let fuel and cargo alter mass and COM within authored bounds.
+
+## 4.3 Powertrain and braking
+
+Torque curve samples `(rpm, N·m)`: `(800,110), (1500,190), (2500,240), (3500,225), (4500,185), (5200,140)`. Interpolate linearly initially; preserve authored endpoints.
+
+`totalWheelTorque = engineTorque(rpm) × throttle × gearRatio × finalDrive × efficiency × engineConditionFactor`
+
+Distribute total torque across grounded drive wheels according to AWD/differential settings. Do not apply total torque independently to all four wheels. A slipping wheel cannot receive unlimited extra force. A locked-differential upgrade redistributes available torque more evenly but increases turning scrub; an open differential loses effectiveness when one side has poor contact.
+
+Engine rpm derives from driven wheel speed and engaged gearing, blended with an idle/clutch model below 8 km/h. Upshift above 3,800 rpm under light load or 4,400 under heavy load. Downshift below 1,600 rpm or when a climb demands torque. Require a 0.6 s shift cooldown and 0.2 s torque transition. Low range multiplies gearing by 1.8 and caps speed at 25 km/h.
+
+Brake torque is independent of engine torque. Simplified ABS reduces brake torque above a slip threshold while wheels remain grounded. Handbrake acts on rear wheels and is optional, not necessary for progression.
+
+Use small aerodynamic drag: `Fdrag = 0.5 × airDensity × CdA × speed²`, with `CdA = 1.1 m²`. Rolling resistance uses `Frr = Crr × normalLoad`; apply opposite planar movement with a near-zero dead zone to avoid jitter. An on-slope stopped vehicle relies on brakes, not an artificial drag force.
+
+## 4.4 Surface response
+
+These are game tuning coefficients, not measured tire-material constants. μ values describe intended effective grip. WheelCollider stiffness/curve settings must be calibrated to match them in tests; do not assume setting a property to μ creates an exact physical coefficient.
+
+| Surface | Dry grip μ target | Wet multiplier | Rolling resistance Crr | Key behavior |
+|---|---:|---:|---:|---|
+| Intact asphalt | 1.00 | 0.75 | 0.015 | Predictable, longest coasting |
+| Broken asphalt | 0.90 | 0.75 | 0.025 | Local bumps, good main road |
+| Packed dirt | 0.82 | 0.72 | 0.035 | Baseline trail |
+| Gravel | 0.70 | 0.85 | 0.045 | Progressive lateral slip |
+| Grass | 0.65 | 0.65 | 0.050 | Wet side-slope warning |
+| Rock | 0.90 | 0.65 | 0.030 | Good dry climbing; abrupt ledges |
+| Shallow mud | 0.48 | 0.80 | 0.110 | Slow, increased fuel demand |
+| Deep mud | 0.30 | 0.80 | 0.200 | Requires line choice, tires, winch |
+| Sand | 0.50 | 1.00 | 0.100 | Momentum helps; turning digs in |
+| Packed snow | 0.38 | 0.85 | 0.070 | Gentle inputs preferred |
+| Ice | 0.12 | 1.00 | 0.010 | Very long braking distance |
+
+Resolve each wheel's contact from an explicit surface component on meshes or from terrain alphamap/material IDs. Cache nearby terrain samples; do not read full alphamaps every frame. Cross-fade surface parameters across 0.15 s unless a safety-critical water contact changes state.
+
+Slip ratio concept: `(wheelAngularSpeed × radius − longitudinalSpeed) / max(abs(longitudinalSpeed), 1 m/s)`. Use this for assist logic and audio; Unity WheelHit slip values have their own semantics and require calibration. Combined braking and cornering must not provide full grip in both axes simultaneously; tune friction curves and assist limits against a skidpad test.
+
+## 4.5 Suspension, mass, and cargo
+
+Target static compression approximately 35–50% of travel under representative load. Validate both fully fueled empty vehicle and maximum payload. Suspension settings must produce actual clearance matching the displayed capability.
+
+- Add cargo at named storage anchors: low rear box preferred, roof rack carries a COM penalty.
+- Payload maximum blocks additional pickups but does not delete existing cargo after a stat change; disallow removing a capacity upgrade while over capacity.
+- Fuel mass updates at 1 Hz rather than rebuilding inertia every physics step.
+- Cargo distribution updates when inventory changes, not continuously.
+- Anti-roll force depends on left/right compression difference, is capped, and cannot add force at an ungrounded wheel that launches the chassis.
+- Use simplified chassis compound colliders. Avoid concave moving mesh colliders.
+
+## 4.6 Stability and physics safety
+
+Use continuous collision detection where profiling justifies it for the active chassis. Adjust solver iterations only after contact tests; start at 8 position / 2 velocity iterations and measure. Clamp extreme injected recovery forces; do not clamp ordinary vehicle speed or rotation to hide tuning defects.
+
+No midair powered steering. Very mild optional airborne stabilization can damp angular velocity only, at a capped torque, and cannot right a full rollover. When stuck upside down, offer reset instead.
+
+A PhysicsTestGround scene MUST contain: asphalt braking lane, 10°/20°/30°/35° ramps, 10°/20°/28° side slopes, 0.10/0.20/0.30 m ledges, articulation blocks, mud trench, water channel, jump landing, and unloaded/loaded tests.
+
+---
+
+# 5. Terrain hazards, damage, and recovery
+
+## 5.1 Fuel
+
+Fuel drain is a design model, not a claim of real-world liters per kilometer:
+
+`litersPerSecond = 0.003 + 0.025 × throttle + 0.015 × load + 0.004 × slipSeverity`
+
+`load` and `slipSeverity` are clamped 0–1. Derive load from normalized demanded engine torque with slope/rolling resistance estimation; never read wheel noise as instantaneous full load. Engine off consumes zero. Idle at zero throttle still consumes the base amount unless auto-stop is enabled after 15 seconds parked.
+
+Example mixed drive: throttle 0.45, load 0.50, slip 0.20 → 0.02255 L/s, approximately 17.7 minutes from 24 L. Actual routes vary. First quests must use only a fraction of that range. Garage refueling is free and unlimited. Carried jerry cans and camps extend expeditions without creating a grind tax.
+
+Warnings at 30%, 15%, and estimated insufficient return range. Route estimates must state “estimate” and account for the known road network, unknown terrain, load, and observed consumption. Do not promise exact reachability.
+
+## 5.2 Mud and sand
+
+Mud is a surface plus an authored depth field. Visual tracks are decals only; terrain is not persistently deformed.
+
+- Shallow: 0–0.12 m; moderate drag and visible spray.
+- Deep: 0.12–0.30 m; strong drag, traction loss, increased slip.
+- Bog: over 0.30 m; marked hazard, usually avoidable until specialized equipment.
+- Virtual sink fraction rises with slip and time below 2 km/h; it increases resistance and wheel visual burial, not terrain collider depth. Cap it to avoid physics explosions.
+- Reversing, easing throttle, placing recovery boards, or winching reduces sink state. Holding full throttle worsens it.
+- Recovery boards grant a localized traction multiplier for 20 seconds or until the vehicle moves 12 m. They are consumed only once the effect starts.
+
+Sand uses lower sink severity and more momentum retention. Rapid steering increases drag. Wet sand is not automatically worse; surface tags distinguish firm coastal sand from dunes.
+
+## 5.3 Water crossings
+
+Water bodies have surface height, depth samples, flow direction, and current strength. Compare water level with intake height and wheel hubs, not just chassis origin.
+
+- Baseline safe wading depth: 0.55 m; upgraded intake: 0.85 m.
+- Within 0.10 m of intake limit: warning, splash audio, and route prompt.
+- Water above intake for more than two continuous seconds: engine stalls, engine condition drops 10 once per incident. Deep submersion does not repeatedly drain condition every tick.
+- Water drag increases with submerged area; partial buoyancy is capped so the vehicle cannot become a useful boat.
+- Lateral current force uses a tuned coefficient times submerged side area and squared relative water velocity. Clamp force for stability and communicate dangerous currents visually.
+- Water deeper than 1.2 m on main routes is impassable and requires a bridge, ferry-free detour, or another route.
+- Stalled vehicles can be winched out, repaired once safe, or recovered. Cargo/story items are not permanently destroyed by water.
+
+Depth poles and visible banks communicate safe fords. Do not hide instant failure in visually shallow water.
+
+## 5.4 Inclines and rollovers
+
+Use slope angle, grip, clearance, axle articulation, and gear ratio together. Approximate traction-limited climbing demand is `m × g × sin(slopeAngle)` against available tire force; uphill capability cannot be represented by engine torque alone.
+
+Author routes into capability bands: gentle under 15°, demanding 15–25°, technical 25–32°, expert optional 32–38°. Sustained >38° is excluded from mandatory routes. Side-slope design limits are lower and vary with roughness and load; required routes stay below 22° with full cargo.
+
+Rollover warning starts at 24° body roll sustained 0.5 s on low-speed terrain, using incline context to avoid false warnings during harmless suspension motion. A rollover is not instant vehicle destruction.
+
+## 5.5 Damage model
+
+Four independent condition values 0–100:
+
+- **Engine:** Below 50, maximum torque linearly reduces to 70% at condition 0; condition 0 disables powered driving.
+- **Suspension:** Below 50, damping effectiveness decreases to 70%; slight alignment bias capped for accessibility.
+- **Tires:** Below 50, grip decreases to 80%; puncture effect caps speed at 25 km/h until patched. Never damage all tires for one tiny rock.
+- **Body:** Cosmetic wear and cargo-protection indicator; no arbitrary multiplier to every stat.
+
+Collision damage uses effective impact speed and contact direction. Ignore contacts below 3 m/s. Initial formula per incident: `D = clamp(1.4 × (impactSpeed − 3)², 0, 35)`. Use relative normal velocity before resolution or a calibrated impulse model; do not count both. Debounce related contacts over 0.4 s and distribute damage according to hit zone. Large falls have one aggregated landing event.
+
+Gameplay penalties must be visible before they become severe. Garage repairs are free. Field repair kit restores 35 condition to one chosen subsystem outside water and while stopped.
+
+## 5.6 Recovery rules
+
+| Method | Availability | Cost / consequence |
+|---|---|---|
+| Gentle reset | Stuck or rolled; last safe pose within 25 m | Free; preserves cargo and fuel; 30 s simulation-time cooldown |
+| Winch | Module installed and valid anchor within reach | Fuel while engine running; no currency charge |
+| Field supplies | Item present and use conditions met | Consume one item on successful use |
+| Camp recall | At camp interaction after deposit | Travel only between activated safe hubs; no field teleport |
+| Full rescue | Always reachable from pause/recovery UI | Return to nearest reachable activated garage; lose 25% of loose salvage units, rounded down |
+| Tutorial rescue / Relaxed | Always | No loss |
+
+Full rescue preserves installed parts, banked currency, consumables, unique relics, story items, accepted objectives, and discovered landmarks. Fractional loss applies only to `salvage_bundle` units, never all inventory categories. Missions escrowed for completion remain payable. Fuel becomes full and vehicle is repaired at the destination garage.
+
+Safe reset poses update every two seconds only when grounded, speed below 12 m/s, roll <15°, outside water/deep mud, sufficient clearance, and not inside an unresolved mission trigger. On reset, stream the destination, check overlap, preserve linear speed only if safe (normally zero), then reenable physics. If no valid nearby pose exists, offer rescue. Reset never advances a mission gate, crosses a locked bridge, or moves the player beyond an obstacle.
+
+---
+
+# 6. World geography and biome design
+
+## 6.1 Fixed mainland layout
+
+Use a world coordinate square `x,z ∈ [0,6144)`, sea datum y=0, terrain from roughly −20 to 520 m. A floating origin is not required initially at this size; validate far-corner physics and add it only if precision tests fail.
+
+Divide into 24 × 24 streaming chunks of 256 m. World shape, roads, relay sites, mission-critical bridges, and landmark positions are authored and versioned. Procedural tools generate repeatable terrain detail and prop dressing during production. The release world is a validated bake, not a fresh random geography on every launch.
+
+```text
+NORTH
++--------------------------------------------------+
+| Frostline Highlands       | Redscar Canyon       |
+| high passes / observatory | mesas / winding roads|
+|---------------------------+----------------------|
+| Mosswood Forest           | Meridian Ruins       |
+| HOME / creeks / old roads | city / rail / rooftops|
+|---------------------------+----------------------|
+|         Tideglass Wetlands and coastal delta     |
+|     causeways / reeds / pumping infrastructure   |
++--------------------------------------------------+
+SOUTH
+```
+
+Biome masks are irregular, not rectangular borders. Approximate area shares: forest 24%, canyon 22%, city 16%, wetlands 20%, highlands 18%. These include inaccessible scenic land; target 65–75% of the entire footprint to be reachable by some vehicle route. Distinguish total world area from drivable terrain in marketing.
+
+Home garage nominal anchor `(1024, terrainHeight, 2304)`. Key region anchor points: forest relay `(1408,2816)`, canyon relay `(4864,4608)`, city relay `(4608,2304)`, wetland relay `(3328,768)`, highland relay `(1792,5120)` in x,z meters. Positions are starting layout anchors and may move during route validation; content IDs must not change when positions do.
+
+## 6.2 Biome specifications
+
+### A. Mosswood Forest — learn to read the ground
+
+Mossy conifers, warm shafts of light, abandoned logging tracks, ferns, creek crossings, and distant stone ridges. Palette: pine green, warm bark, muted amber. Dense-looking vegetation uses sparse physical blockers and carefully framed sightlines.
+
+Hazards: shallow mud, roots, wet grass side slopes, narrow switchbacks, one optional deep bog. Landmark motifs: fire tower, giant hollow tree, logging trestle, ranger station, hydro wheel. Baseline routes work with the Scout; upgraded tires and winch open shortcuts. Reward new players every 60–120 seconds on tutorial corridors, less often in deep forest.
+
+### B. Redscar Canyon — choose a line and preserve momentum
+
+Layered red sandstone, dry riverbeds, wind-cut arches, dust haze, narrow service roads. Palette: terracotta, dusty cream, deep indigo shadows.
+
+Hazards: loose gravel, sand pockets, sharp ledges, exposed side slopes, occasional rockfall barriers. Rockfalls are scripted road obstructions with a safe warning/alternate route, not random lethal projectiles. Low range and suspension help. Landmarks emphasize geological scale, old mining infrastructure, and panoramic overlooks.
+
+### C. Meridian Ruins — navigate a broken network
+
+A small reclaimed industrial city, flooded underpasses, rail yards, rooftop gardens visible from streets, and cracked roads. Palette: cool concrete, rust, vine green, faded transit blue.
+
+Hazards: rubble, tight turns, blocked roads, slippery painted concrete, damaged bridges. No enterable building interiors; discovery occurs from roads, courtyards, and authored driveable parking ramps. Alternate alley routes reward compact vehicles. Cargo contracts and salvage density are higher, but maneuvering takes time.
+
+### D. Tideglass Wetlands — understand water and ground firmness
+
+Reeds, reflective channels, mangrove-like vegetation, stilt infrastructure, causeways, salt flats. Palette: pale teal, reed gold, wet charcoal.
+
+Hazards: water depth, current, mud, soft shoulders, fog. Water level changes only within prevalidated low/high states. Every mandatory objective has a route valid at both states, or an explicit sheltered waiting/route-selection mechanic with no real-time wait. Intake upgrade unlocks optional fords; it is never a substitute for reading depth.
+
+### E. Frostline Highlands — combine all learned skills
+
+Alpine meadows, weathered radio towers, snow patches, switchback roads, an old observatory, exposed ridgelines. Palette: slate, icy blue, pale grass, sunrise peach.
+
+Hazards: packed snow, ice patches, longer climbs, visibility changes, loaded descent braking. No hypothermia meter. Snow equipment improves control; required routes avoid long uncontrolled ice descents. This biome culminates in the final atlas transmission, not a race.
+
+## 6.3 Connectivity and zone access
+
+Every region has at least two connections to neighboring regions once its story work is complete. Initially, damaged infrastructure makes some crossings unavailable. Visible barriers have an in-world reason and a map note; do not place invisible walls across roads.
+
+Main progression order: forest → canyon → city → wetlands → highlands. Small optional border areas can be sampled early. An entry unlock requires the previous regional relay mission plus a specific infrastructure task, not an arbitrary player level.
+
+Capability gating is soft where possible: the player may take a longer mild route instead of buying one particular tire. Mission-critical bridges open through delivered story materials, not premium currency or timers. Main mission route graphs must never demand an optional collectible.
+
+## 6.4 Density and travel targets
+
+Targets per biome: 20 major landmarks, 40 one-time caches, six optional contracts, two camps, one regional relay, one garage counting home, and four main missions. Story sites may overlap named landmarks; do not count them twice.
+
+At common off-road speed 15–25 km/h, target approximately 1–3 minutes between meaningful opportunities on established routes. Open scenic stretches are acceptable, but no mandatory empty transit exceeds five minutes without a choice, vista, clue, or useful shortcut.
+
+---
+
+# 7. World generation, authoring, and validation
+
+## 7.1 Hybrid generation decision
+
+Use **authored macrostructure + deterministic editor generation + baked runtime chunks**. This balances recognizable world design, mission solvability, mobile loading, and varied natural detail. Infinite procedural worlds are expressly excluded from version 1.
+
+A release uses one canonical seed, initially `481516`, plus generator version `1`. The seed defines dressing reproducibility, not save-slot difficulty. A different seed is an internal authoring/test tool until individually validated. Runtime variation is limited to weather, safe ambient events, and replenishable jobs.
+
+## 7.2 Generation pipeline
+
+1. **WorldDefinition:** Read world bounds, biome polygons, elevation constraints, road graph, rivers, POI reservations, safe hubs, and protected sightlines.
+2. **Macro heightfield:** Evaluate low-frequency ridged and fractal noise in world coordinates; blend biome-specific shaping functions.
+3. **Hydrology carve:** Carve authored river splines and drainage basins; enforce monotonically descending river samples except intentional locks/reservoirs.
+4. **Optional erosion pass:** Run editor-only erosion with fixed iteration count and seed; bake output. Do not run heavy erosion on phones.
+5. **Road/route carve:** Flatten road corridors, bank turns slightly, enforce longitudinal grade and cross-slope limits. Reconcile river crossings with bridge/ford reservations.
+6. **POI foundation pass:** Flatten or shape reserved footprints with transition falloffs; place authored landmark modules.
+7. **Surface pass:** Produce biome, slope, moisture, road, rock, and hazard maps. Gameplay surface labels and visual materials share the same source.
+8. **Vegetation and rock scatter:** Spatially seeded sampling using slope, height, moisture, exclusion masks, and minimum distance constraints.
+9. **Gameplay placement:** Place caches and clues at validated candidate sockets, not arbitrary random points.
+10. **Graph validation:** Check every required route and objective against vehicle capability profiles and prerequisite order.
+11. **Mesh/terrain bake:** Emit chunk assets, colliders, LODs, simplified far meshes, prop manifests, minimap data, and content hashes.
+12. **Report:** Record warnings/errors, seed, generator version, asset counts, and route checks. A world with mandatory-route errors cannot ship.
+
+## 7.3 Determinism rules
+
+Use a documented stable integer hash and PRNG implementation stored in source. Do not use language runtime `GetHashCode()` or an ambient global random state for persistent generation.
+
+`chunkSeed = StableHash(worldSeed, generatorVersion, chunkX, chunkZ, layerId)`
+
+For each placed object, derive randomness from its stable candidate index. Adding one tree must not renumber all caches. IDs follow persistent content keys, such as `cache.forest.017`; never derive a unique collectible ID from mutable position coordinates alone.
+
+Determinism means the same generator inputs create matching baked content on the supported generation environment. It does not promise bitwise-identical PhysX simulation across Android and iOS. Golden tests compare topology, IDs, counts, and quantized geometry hashes.
+
+## 7.4 Terrain resolution and seams
+
+Start with Unity Terrain tiles: 256 m wide, 129 × 129 height samples, giving 2 m spacing. Each neighboring tile reads shared border samples from a common world-coordinate height function/baked heightfield. Higher-frequency ledges, walls, and narrow trails use authored meshes and colliders rather than increasing all terrain resolution.
+
+Use a shared seam buffer and run a boundary test asserting height differences below 1 mm after quantization. Match terrain normals/material blending across edges. Terrain neighbor relationships must be set when tiles activate.
+
+Reserve mesh transition strips around caves/overhang-like scenery; actual drive-through tunnels use meshes with terrain appropriately cut/masked through supported terrain holes. Do not claim a heightfield can represent arbitrary caves.
+
+## 7.5 Road graph and route feasibility
+
+Represent road nodes as hubs, junctions, crossings, and POI entrances. Edges store spline geometry, width, grade, side slope, depth envelope, surface, required clearance, allowed vehicle size, prerequisites, and estimated fuel cost.
+
+Minimum drivable width: 3.5 m on required roads; optional expert trails 2.4 m with authored passing/safety spaces. Tutorial width ≥5 m. Required bridge clearance supports the largest story-eligible vehicle.
+
+For every mission stage, run a capability-aware graph search from at least one safe hub to the objective and back. Account for fuel plus a 20% estimated reserve, cargo requirements, water states, and installed capabilities available by then. Analytical validation is necessary but insufficient: human driving tests must verify the actual terrain and controls.
+
+## 7.6 Scatter and discovery placement constraints
+
+- Trees: Poisson-style minimum spacing 3–8 m by species and density zone; no trunk collider within road corridor plus 1 m shoulder.
+- Rocks: avoid spawn pads and steep edges of required routes; larger rocks have simplified convex/static colliders.
+- Grass: instanced visuals, no individual physics colliders.
+- Caches: every cache has a reachable parking/interact position, no underwater accidental spawn, and no overlapping other interaction volume.
+- Landmarks: ensure silhouette/sound/clue can lead to them; at least two discovery cues except intentionally secret optional relic sites.
+- Camps: flat 12 m × 12 m minimum footprint, no active current, stable arrival pad, two local approach lines if possible.
+- Route spoilers: do not automatically show unopened cache positions simply because terrain geometry is visible on the map.
+
+## 7.7 Weather and time generation
+
+Day cycle target 48 real minutes; it stops while paused and advances only during active play. Garages/camps allow immediate selection of dawn/day/dusk for accessibility and photography with no fee. No real-world clock dependency.
+
+Weather is a finite-state system: clear, overcast, light rain, heavy rain, fog, snow where biome permits. Blend visual/audio/surface wetness over 60–180 s. Transition probabilities are seeded per expedition. Forecast the next significant change at the garage and through radio hints.
+
+Weather MUST NOT strand a mandatory route. Water uses only prevalidated height states, with gradual visible transition. Heavy rain can make a shortcut harder, never silently delete the last route home.
+
+---
+
+# 8. Exploration, mapping, and discoveries
+
+## 8.1 Map representation
+
+Use a 96 × 96 grid of 64 m cells across the mainland: 9,216 cells. Store a bitset for visited/revealed cells and separate flags for surveyed detail. Maintain a precomputed countable-cell mask excluding ocean and clearly inaccessible decorative cliffs. Report mapping completion against that mask, not the entire square.
+
+- Driving reveals eligible cells within 96 m, using cheap terrain line-of-sight samples to avoid revealing behind major ridges.
+- Surveying at a vista reveals eligible cells within 384 m, also respecting large terrain occlusion.
+- Radar upgrades reveal nearby **signals**, not automatically claim discoveries or solve terrain traversal.
+- Revealed map cells persist immediately through autosave; extraction is not required to remember where the player has been.
+- Mapping rewards are escrowed until garage/camp banking, but known map cells never disappear on rescue.
+
+## 8.2 Landmark interaction
+
+A landmark becomes a suspected location when a clue or silhouette is observed. Discovery requires entering its authored observation volume, line of sight to its anchor, and speed below 15 km/h for two seconds. Large vistas use viewpoint sockets; merely passing underground beneath a site does not count.
+
+On discovery: show a short title, optional one-line lore, atlas entry, and first-discovery reward. Do not stop the car or force a full-screen modal. A journal page can be opened later.
+
+Each record stores stable ID, discovery status, optional inspection/completion flags, and screenshot reference if the player took one. No automatic photo capture should cause a frame hitch.
+
+## 8.3 Collectibles and sensor loop
+
+Five relic sets, one per biome, with five named relics each. Relics occupy a protected mission/relic ledger rather than ordinary cargo; they have no weight and cannot be sold or lost. Sets unlock cosmetic expedition memorabilia and journal content, not essential traction or fuel.
+
+A passive sensor pulses when a signal is within 80 m; directional precision improves at 45 m. Radar I increases signal range to 140 m; Radar II to 220 m. The map shows a search area, not exact vertical navigation. Players can disable pulse audio/haptics and use a visual equivalent.
+
+## 8.4 Exploration rewards
+
+Every new landmark pays 120 Salvage once. Every 50 newly revealed countable cells grants 50 Salvage once; maintain a persistent count and paid-threshold index to prevent duplicate claims. A relay mission may award its listed story reward in addition to a landmark reward, but the ledger records separate reward keys.
+
+100% exploration is optional. The finale requires 60% countable map coverage, all five relays, and the main mission sequence. Target progression tests must show that story routes plus reasonable detours can achieve 60%; otherwise adjust route exposure or the threshold.
+
+---
+
+# 9. Narrative, objectives, and encounter design
+
+## 9.1 Narrative premise and tone
+
+The frontier's communities retreated after decades of infrastructure failure. The player is an independent field mapper restoring a chain of weather and navigation relays. The world is abandoned in places, not a combat apocalypse. Radio messages from a remote archivist give context and acknowledge discoveries without constantly narrating driving.
+
+There is no simulated population. Radio characters are text-first with optional recorded lines. Keep spoken narrative under approximately 45 minutes total to control localization and download scope.
+
+## 9.2 Main mission catalog
+
+All IDs are stable. Rewards are Salvage; quest items are protected. Within each region, the four missions unlock in order. The first mission of the next region follows the previous region's fourth mission. Numbers are initial tuning values.
+
+| ID | Mission | Required actions / completion | Reward |
+|---|---|---|---:|
+| Q01 | First Tracks | Collect tutorial salvage, discover Ranger Rise, return home | 150 |
+| Q02 | The Creek Gauge | Inspect gauge by safe approach; identify ford and dry detour | 200 |
+| Q03 | A Place to Stay | Carry provided camp kit to Forest Camp A; activate it | 300 |
+| Q04 | A Signal Through the Trees | Restore forest relay using provided fuse; unlock canyon road | 500 |
+| Q05 | Red Dust | Reach canyon garage and inspect a washed-out service route | 300 |
+| Q06 | The Safer Line | Survey three canyon route markers; open marked detour | 400 |
+| Q07 | Bridge Ledger | Retrieve protected brace manifest; deliver to bridge site | 500 |
+| Q08 | The Echo Relay | Activate canyon relay; bridge crew radio unlocks city corridor | 700 |
+| Q09 | Streets Without Names | Survey three city junctions and find regional garage | 400 |
+| Q10 | The Archive Van | Recover protected archive case from rail yard | 500 |
+| Q11 | Power for the Crossing | Deliver provided cable spool through one of two routes | 650 |
+| Q12 | Meridian Broadcast | Activate city relay; unlock wetland causeway gate | 850 |
+| Q13 | Reading the Water | Inspect three depth poles; complete a safe crossing | 500 |
+| Q14 | Pump House Notes | Retrieve pump diagram and mark alternate causeway | 650 |
+| Q15 | Ground That Holds | Survey firm-ground route; deliver provided stabilizer plates | 800 |
+| Q16 | Tideglass Signal | Restore wetland relay; unlock highland maintenance pass | 1,000 |
+| Q17 | The High Road | Reach highland garage using validated all-weather route | 650 |
+| Q18 | Before the Whiteout | Inspect weather stations; recover protected sensor core | 800 |
+| Q19 | The Last Mast | Deliver sensor core and activate highland relay | 1,000 |
+| Q20 | An Atlas for Everyone | All relays + 60% mapped; reach observatory and transmit | 1,500 |
+
+Mission delivery objects that represent bulky loads reserve cargo mass/slots specified in data. They cannot be discarded; acceptance must check capacity. If a vehicle change creates a conflict, transfer the object to garage quest storage and explain how to resume. Small keys/fuses use the protected ledger without physical cargo.
+
+## 9.3 Thirty optional contracts
+
+Six per region with stable IDs `C_F01..06`, `C_C01..06`, `C_U01..06`, `C_W01..06`, `C_H01..06`. Each biome uses one of each pattern below, with authored locations and route requirements:
+
+1. **Triangulate:** Visit three distinct survey points; reward 250/350/450/550/650 by regional order.
+2. **Gentle Delivery:** Deliver a 30 kg crate; lose optional bonus on heavy collision, not mission completion; base 300–700 plus 100 bonus.
+3. **Hidden Vista:** Find a viewpoint from a textual/sketched clue; 300–700.
+4. **Infrastructure Check:** Inspect four assets; 300–700.
+5. **Field Sample:** Collect three samples from reachable surface sockets; 350–750.
+6. **Old Route:** Prove a trail connection by passing ordered checkpoints; no timer; 400–800.
+
+The range is resolved as `baseForest + 100 × regionIndex`, where regionIndex is 0–4. Define the exact base per pattern in data. These are one-time authored contracts.
+
+Five repeatable templates: resurvey two known points, deliver one 20 kg supply case, retrieve a marked utility crate, inspect two weather instruments, and photograph a known vista from a new specified socket. Generate at most three available jobs at a garage; refresh after an expedition ends, not by wall clock. Reward 150–350 based on validated route length. No daily streaks, cooldown walls, or random rare-part requirements.
+
+## 9.4 Ambient encounters
+
+A roadside abandoned toolbox, a temporary fallen branch on an optional track, a distant noninteractive animal, a radio weather hint, and an exposed cache after water recedes. Encounters use approved sockets and cannot spawn on the car, inside a required bridge, or on a known-safe reset pose.
+
+Budget one notable ambient event every 5–10 active minutes, with biome-specific cooldown and no obligation to engage. “Dynamic” must not mean hostile random punishment. No human rescue NPC simulation in release scope; radio-only supply requests cover that narrative role.
+
+---
+
+# 10. Vehicles, equipment, inventory, and items
+
+## 10.1 Vehicle roster
+
+| Vehicle | Unlock | Role and baseline differences |
+|---|---|---|
+| Scout S1 | Start | 1,350 kg; 120 kg payload; 24 L tank; balanced AWD |
+| Mule M2 | Q08 + 3,000 Salvage | 1,800 kg; 260 kg payload; 34 L tank; 290 N·m; 55 km/h; wide, slow, stable |
+| Lynx L3 | Q12 + 3,500 Salvage | 1,100 kg; 90 kg payload; 22 L tank; 225 N·m; 75 km/h; short wheelbase; strong articulation |
+| Atlas A4 | Q16 + 5,000 Salvage | 1,650 kg; 180 kg payload; 38 L tank; 320 N·m; 65 km/h; good water/snow utility |
+
+These are fictional vehicles; no unlicensed manufacturer names or badges. All main story routes are completable with an upgraded Scout. Buying other vehicles is optional specialization, never a mandatory reset of progression.
+
+Global researched tiers stay unlocked. Each acquired vehicle has adapters for unlocked shared equipment at no additional research cost. Vehicle-specific calibration preserves role differences; a large truck does not inherit the Scout's exact mass or turning radius. The twenty-tier table describes Scout outcomes, not one universal stat sheet for every chassis.
+
+## 10.2 Equipment slots
+
+One tire set, one suspension package, one engine tune, one tank package, one intake package, one differential package, one cargo rack, one sensor, one winch, and two utility slots. Permanent progression modules occupy their named slot and do not compete with consumable cargo.
+
+Utility choices: work lights, field charger (flavor/contract utility, no battery survival meter), compact tool rack (+repair effectiveness), and camera mount (photo convenience). No utility is premium-only. Mutually exclusive tire sets create meaningful terrain preparation:
+
+- All-terrain: baseline versatile grip.
+- Mud: +35% relative mud grip, +10% grass, −10% asphalt lateral response.
+- Rock: +20% dry rock grip, −10% deep-mud grip.
+- Snow: +35% snow, +20% ice, −8% dry asphalt; ice remains hazardous.
+
+Apply surface multipliers with explicit caps determined by testing, initially effective μ≤1.25. Upgrades must not stack multipliers indefinitely.
+
+## 10.3 Item catalog
+
+`Salvage` is the only spendable currency. `salvage_bundle` is its physical expedition form; one unit banks into one Salvage. Materials are items, not a second premium currency.
+
+| Item ID | Name / use | Stack | Unit mass | Acquisition / recipe |
+|---|---|---:|---:|---|
+| salvage_bundle | Bankable Salvage | 50 | 0.10 kg | Caches, wreck inspections, jobs |
+| scrap_metal | Crafting metal | 10 | 1.0 kg | Caches; buy 10 Salvage each |
+| polymer | Seals/boards material | 10 | 0.5 kg | Caches; buy 12 each |
+| electronics | Sensors and kits | 5 | 0.4 kg | City/relay caches; buy 25 each |
+| alloy | Advanced fabrication | 5 | 0.8 kg | Later caches; buy 35 each |
+| fuel_can | Add up to 6 L fuel | 2 | 5.0 kg | Buy 60; no paid refills |
+| repair_kit | Restore 35 selected condition | 3 | 3.0 kg | 2 metal + 1 polymer + 20 Salvage |
+| tire_patch | Remove one puncture | 4 | 0.5 kg | 1 polymer + 10 Salvage |
+| recovery_boards | Temporary mud traction | 2 | 4.0 kg | 2 polymer + 1 metal + 15 Salvage |
+| camp_kit | Establish fixed camp socket | 1 | 12.0 kg | 4 metal + 2 polymer + 1 electronics + 80 Salvage |
+| survey_sample | Optional contract object | 3 | 1.0 kg | Mission-defined sample sockets |
+| supply_case | Delivery object | 1 | 20 or 30 kg by definition | Provided at contract acceptance |
+| relay_fuse | Protected small quest item | Ledger | 0 | Provided/recovered by story |
+| sensor_core | Protected quest item | Ledger | 0 | Q18 objective |
+| relic_* | Protected collectible | Ledger | 0 | Authored relic sites |
+
+Starter garage inventory: 2 fuel cans, 2 repair kits, 2 tire patches, 1 set of boards, and Q03's free camp kit on acceptance. Items go to garage storage until the player loads them; do not overfill starter cargo.
+
+Use of a fuel can adds `min(6, capacity-currentFuel)` liters. Require missing fuel ≥1 L and confirm if some of the can will be wasted. A partially used can is consumed as one item in version 1; show this before use. No negative fuel or duplicated empty containers.
+
+## 10.4 Inventory rules
+
+Cargo is a list of stacks with item definition ID, quantity, and optional mission-instance ID. Each stack occupies one slot. Both total slots and mass must pass validation before a pickup. Quest delivery objects use explicit reserved slots. Protected ledger objects do not use ordinary slots.
+
+Garage material storage is unlimited for practicality. Camp storage holds 500 kg; show capacity. Items stored in any camp are part of a shared logistics inventory **only after** a safe-hub transfer action, not magically accessible for field repairs. For implementation simplicity, version 1 allows free instant transfer among activated hubs while the player is at a hub; no field access. Explain this as community logistics.
+
+Materials can be sold at 40% of purchase price, rounded down. Crafted consumables sell for less than their total input purchase value. Add an automated arbitrage test; crafting/reselling must never create currency. No random durability rolls or loot-box rarities.
+
+---
+
+# 11. Progression, twenty-tier upgrades, and economy
+
+## 11.1 Progression philosophy
+
+Capability grows through discoveries and investment, not account level. Story unlocks infrastructure; Salvage unlocks permanent vehicle research. Early upgrades improve confidence; later upgrades enable longer, more technical expeditions. Alternate routes ensure a missed optional resource never blocks the main story.
+
+Tier unlocks are sequential for implementation clarity. Installed modules can be toggled or swapped at a garage without losing research. Research cost is Salvage only; materials craft supplies and camps, so random material drops cannot block the critical upgrade path.
+
+## 11.2 Twenty-tier Scout research tree
+
+Costs are **incremental**, not cumulative. `Qxx` means that mission must be completed. Any route that needs an upgrade must occur after its earliest available mission and affordable research opportunity.
+
+| Tier | Upgrade | Cost | Story gate | Scout result / implementation |
+|---:|---|---:|---|---|
+| 1 | Trail Tires I | 200 | Q01 | Dirt/gravel grip +10% relative to baseline |
+| 2 | Underbody Guard | 300 | Q02 | Underbody collision damage ×0.75 |
+| 3 | Field Winch I | 450 | Q02 | 12 m anchor reach; capped 8 kN pull |
+| 4 | Cargo Organizer | 550 | Q03 | 12→14 slots; payload unchanged |
+| 5 | Suspension I | 700 | Q04 | Travel 0.28→0.34 m; clearance 0.24→0.27 m |
+| 6 | Tank I | 850 | Q04 | Capacity 24→30 L |
+| 7 | Low-Range Transfer | 1,000 | Q05 | Optional 1.8× low range; 25 km/h cap |
+| 8 | Mud Tire Set | 1,150 | Q06 | Unlock swappable mud tires |
+| 9 | Radar I | 1,300 | Q07 | Signal radius 80→140 m |
+| 10 | Engine Tune I | 1,450 | Q08 | Torque curve ×1.10; fuel under power ×1.04 |
+| 11 | Reinforced Rack | 1,600 | Q09 | 14→16 slots; payload 120→180 kg |
+| 12 | Raised Intake | 1,750 | Q10 | Safe wading 0.55→0.85 m |
+| 13 | Differential Lock | 1,900 | Q11 | Toggle low-speed lock; turning scrub; unlock rock tires |
+| 14 | Suspension II | 2,100 | Q12 | Travel 0.34→0.40 m; clearance 0.27→0.30 m |
+| 15 | Field Winch II | 2,300 | Q13 | Reach 12→20 m; force cap 8→12 kN |
+| 16 | Tank II | 2,500 | Q14 | Capacity 30→40 L |
+| 17 | Expedition Rack | 2,700 | Q15 | 16→20 slots; payload 180→240 kg; loaded COM penalty |
+| 18 | Cold-Weather Kit | 2,900 | Q16 | Unlock snow tires; improved cold-start presentation only |
+| 19 | Radar II | 3,100 | Q17 | Signal radius 140→220 m |
+| 20 | Expedition Calibration | 3,400 | Q19 | Powered fuel drain ×0.90; upgraded-suspension damping profile |
+
+Total research cost: **32,200 Salvage**. Vehicle purchases and cosmetics are additional optional sinks. Do not grant a second grip multiplier from Trail Tires I when a specialized tire set already incorporates its intended progression bonus; use explicit final stat composition.
+
+Stat application order: chassis base → selected researched module → tire/surface lookup → cargo/fuel mass → condition modifiers → weather modifiers → assists. Store additive and multiplicative modifiers separately and test the final output. Values displayed in the garage must be computed by the same stat resolver used during driving.
+
+## 11.3 Sources and expected pacing
+
+| Source | Initial payout | Repeatability |
+|---|---:|---|
+| Landmark discovery | 120 | Once per landmark |
+| Small cache | 60–100 loose Salvage | Once |
+| Standard cache | 120–180 loose Salvage | Once |
+| Remote cache | 200–300 loose Salvage | Once |
+| Story mission | Listed in Section 9 | Once |
+| Optional contract | Listed formula | Once |
+| Repeatable job | 150–350 | Unlimited expedition refresh |
+| Mapping | 50 per 50 new countable cells | Once per threshold |
+| Excess materials | Fixed resale | As acquired |
+
+Cache composition per biome: 20 small, 15 standard, 5 remote = 40. Payout within a range is selected deterministically in the baked content, not rerolled by reloading. Some include materials in addition to Salvage, clearly shown at interaction.
+
+Target first hour: tiers 1–3 affordable through tutorial and nearby discoveries; target 3–5 hours: tiers 5–7; 8–12 hours: tiers 10–12; late main story: tiers 16–18; full tree after further exploration. These are hypotheses requiring playtest measurement, not promises.
+
+The overall world contains substantially more one-time currency than mandatory research requires, so completion does not require repetitive farming. Conversely, collecting everything early should not bypass story gates. Long optional detours may accelerate upgrades and that is acceptable in a single-player game.
+
+## 11.4 Economy safeguards
+
+- No fuel, repair, or respawn fees at garages.
+- Every main mission provides its essential story items.
+- Full rescue cannot make currency negative or delete researched equipment.
+- A player with zero currency and no consumables can still drive a free-refueled starter vehicle and complete repeatable reachable work.
+- No time-limited offers, randomized purchases, escalating wait times, streak rewards, loot boxes, or premium utility parts.
+- Cosmetics are bought with earned Salvage: solid paints 250, two-tone paints 500, decals 150–400, expedition memorabilia earned through relic sets.
+- A Settings/About statement explicitly says: “No advertising or in-app purchases.”
+
+## 11.5 Economy simulation
+
+Build a headless balance script that simulates conservative, typical, and thorough exploration patterns. Inputs include discoveries/hour, cache mix, rescue rate, consumable use, and chosen upgrades. Output time-to-tier, bank balance, deadlock cases, and optional vehicle affordability.
+
+Do not use that simulation alone to certify “fun” or playtime. Observe real players and adjust routes/rewards together. Never solve a grind complaint by adding an ad-based shortcut.
+
+---
+
+# 12. Garages, camps, crafting, and extraction
+
+## 12.1 Garage operations
+
+Every activated garage offers free full fuel, full mechanical repair, save, research, vehicle change, loadout, storage, crafting, paint, route planning, and safe-hub travel. Service occurs on entry confirmation and is visible in the expedition summary.
+
+Fast travel is permitted only while at an activated garage or camp, to another activated hub. Bank/deposit first. No fast travel out of a dangerous field situation; full rescue fills that role. Hub travel has no currency fee and no loading-screen punishment.
+
+## 12.2 Camps
+
+Two predetermined sockets per biome keep streaming and navigation testable. Establishment requires one camp kit; Q03 supplies the first. Players see the footprint, storage capacity, and map connectivity before confirming.
+
+Camp functions: save, deposit, consume carried/camp fuel, use stored repair supplies, choose time of day, access map, and safe-hub travel. No permanent research or vehicle changes. If all supplies are empty, the player can still save and travel to an activated garage. Building/depositing is transactional: crash during the action must not consume a kit without activating the camp.
+
+## 12.3 Crafting
+
+Craft only at a garage or established camp with access to its storage. Recipes are deterministic and instantaneous. The UI previews item output, exact ingredients, capacity, and remaining counts. No crafting timer or minigame.
+
+Transactions validate input availability, reserve ingredients, create output, then commit atomically with a transaction ID. If capacity would fail, do not consume materials. Quest-provided camp kits can satisfy establishment just like crafted kits.
+
+## 12.4 Extraction transaction
+
+1. Freeze vehicle input and open summary state.
+2. Snapshot cargo and unclaimed escrow rewards.
+3. Create `bankTransactionId` and list all conversions and transfers.
+4. Apply transaction to a new save revision in memory.
+5. Write and verify the new save atomically.
+6. Only then acknowledge banking, clear field cargo/rewards, and show final totals.
+7. If interrupted, replay/resolve by ID without granting currency twice.
+
+Depositing at a camp converts loose Salvage into banked currency as well; ordinary materials remain in camp storage until moved through hub logistics. A currency wallet is global, but physical field supplies are not.
+
+---
+
+# 13. UI/UX and screen flows
+
+## 13.1 Screen hierarchy
+
+`Title → Save Slots → Garage/Continue Expedition`
+
+Garage tabs: `Overview | Vehicle | Research | Cargo/Craft | Map/Contracts | Journal | Cosmetics`.
+
+Driving overlays: `Map | Journal | Pause | Recovery | Nearby Interaction`.
+
+Settings: `Controls | Accessibility | Audio | Graphics | Language | Save Management | About/Privacy`.
+
+All modal actions support cancel/back using Android system back, controller back, and visible touch controls. iOS gesture-safe padding and device cutouts must be tested.
+
+## 13.2 Driving wireframe
+
+```text
++--------------------------------------------------------------+
+| [Pause] [Weather / time]       Objective line        [MiniMap] |
+|                                            [Fuel range hint] |
+|                                                              |
+|            WORLD / unobstructed horizon                       |
+|                  [Context interaction]                       |
+|                                                              |
+| [Steer L] [Steer R]            [Winch/Crawl]    [Throttle]     |
+| [Camera recenter]         [Fuel][Condition]    [Brake / R]     |
++--------------------------------------------------------------+
+```
+
+HUD shows fuel fraction + liters, condition warning only when relevant, speed and gear, current objective, interaction availability, and small minimap. Payload warning appears near full capacity, not as a permanent huge panel. Hide nonessential information after inactivity; do not hide controls.
+
+Warning priority: imminent rollover/deep water → fuel insufficient → subsystem damage → cargo full → objective update → cosmetic notification. Queue minor notifications; avoid overlapping audio and text.
+
+## 13.3 Garage wireframe
+
+```text
++--------------------------------------------------------------+
+| Garage name      [Vehicle selector]       Salvage [Settings]  |
+|--------------------------------------------------------------|
+| [Overview]     |  3D vehicle turntable  | Range / Grip /       |
+| [Research]     |                       | Clearance / Payload  |
+| [Cargo/Craft]  |                       | Exact stat details   |
+| [Map/Jobs]     |                       | Comparison preview   |
+| [Journal]     |                       |                      |
+| [Cosmetics]    |                       |                      |
+|--------------------------------------------------------------|
+| [Refueled ✓ Repaired ✓] [Plan route]        [Start expedition] |
++--------------------------------------------------------------+
+```
+
+Research screen shows the twenty milestones, cost, story prerequisite, and exact change. Do not use misleading “power score” as the only information. Purchasing requires one confirmation; no accidental purchases from dragging the tree.
+
+## 13.4 Map wireframe
+
+```text
++--------------------------------------------------------------+
+| [Back]  Region / % mapped   [Filter] [Legend] [Center on car]  |
+|--------------------------------------------------------------|
+| Contract panel |                                             |
+| Selected clue  |  terrain map / fog / route / safe hubs       |
+| Requirements   |  known versus estimated path styles         |
+| Reward         |                                             |
+|--------------------------------------------------------------|
+| [Place waypoint] [Clear route] [Return estimate] [Journal]     |
++--------------------------------------------------------------+
+```
+
+Pinch zoom, drag pan, tap select, long-press custom marker with confirm. Up to ten custom markers. Routes along known graph are solid; unexplored estimates are dashed. Map pauses the single-player simulation by default. Optional non-paused map mode is outside release scope.
+
+## 13.5 Error and empty states
+
+Inventory full: show required slots/kg and replace/send-back options available in context. Save failure: show retry and continue-without-saving warning; never claim success. Corrupt save: offer validated backup, never silently overwrite. No nearby winch anchor: show reach circle and valid-anchor explanation. Unsupported controller: fall back to touch immediately. Missing content: development builds show ID; release shows recovery path and records a local diagnostic.
+
+---
+
+# 14. Art, animation, audio, and asset production
+
+## 14.1 Visual direction
+
+Stylized naturalism: readable silhouettes, restrained low-to-mid-poly geometry, hand-tuned materials, warm/cool atmospheric depth, and believable scale. Avoid photorealistic microdetail that disappears on a phone. The emotional tone is quiet restoration, not military survival.
+
+Terrain should clearly communicate grip and depth. Dangerous mud is darker, softer-edged, and visibly rutted; safe stone routes have coherent exposed surfaces. Ice has restrained readable sheen rather than invisible friction changes. Landmark silhouettes remain recognizable at thumbnail size.
+
+## 14.2 Asset budgets and roster
+
+Targets, subject to measured frame budgets:
+
+| Asset class | LOD0 triangles | LOD1 / distant | Texture target |
+|---|---:|---|---|
+| Player vehicle | 30k–45k | 15k / 5k | Shared 2K atlas, masks; avoid many materials |
+| Landmark module | 5k–25k | 40% / 10% | 1K–2K atlas/trim sheets |
+| Tree | 1k–4k | 40% / billboard | Shared 1K–2K foliage atlases |
+| Rock | 300–2k | 40% / 10% | Shared tiling/atlas materials |
+| Small prop | 100–1.5k | Aggressive culling | 512–1K shared atlas |
+| UI icon | Vector source, exported sizes | N/A | Sprite atlas with padding |
+
+Production library minimums: four vehicles; 25 landmark-specific hero kits (five per biome) reused and recombined across 100 sites; ten road/bridge pieces; 15 building shell modules; 20 rock variations; 12 tree species/variants; 20 vegetation cards/clumps; 30 salvage/utility props; ten camp/garage modules; approximately 100 UI icons; 12 surface materials; five sky/weather looks. “100 landmarks” does not imply 100 unrelated bespoke megastructures.
+
+## 14.3 Asset creation pipeline
+
+Concept thumbnails → blockout → scale/route test → approved model → UVs/materials → LODs → simplified collision → engine prefab → lighting/readability check → device performance check → final review.
+
+Conventions: one Unity unit = one meter; chassis forward +Z and up +Y after import; consistent pivots at intended placement datum; applied transforms; unique stable asset IDs; no embedded unlicensed logos. Separate visual wheels from WheelColliders. Wheel pivots align with local axle rotation; suspension animation reads actual collider poses.
+
+Every asset manifest entry stores creator, source/license, permitted uses, attribution, modification notes, file hash, and AI-generated status if relevant. AI-generated concepts are not proof of commercial rights or final asset quality. Any generated 3D asset must pass topology, UV, silhouette, collision, and license review.
+
+Missing assets use labeled low-cost placeholders in development. A production checklist must track them; a shipping build with critical placeholder content fails the release gate.
+
+## 14.4 Animation and effects
+
+Animate wheel rotation/steering, suspension travel, subtle antenna motion, winch cable, garage doors where necessary, and camp deployment as a short assembly transition. No driver character animation requirement in version 1; tinted windows simplify scope.
+
+Particles: dust by surface/speed, mud spray by wheel slip, splash by immersion/speed, light exhaust, snow puffs, and sparse falling leaves. Pool all systems. Avoid transparent particle walls. Tire marks use a pooled, distance-capped decal/ribbon system and are not saved.
+
+Damage appearance uses material masks and interchangeable small damage details, not expensive deformable mesh simulation. Repair restores mechanical state and optionally cleans the vehicle at garage.
+
+## 14.5 Audio design
+
+Engine audio uses three RPM bands (idle/low/high) crossed with load/coast layers. Cross-fade from normalized rpm and torque demand; avoid one stretched recording over the full range. Add tire contact by surface, suspension impacts, gearbox shifts, water movement, winch motor, and subtle chassis rattles.
+
+Each biome needs a layered ambience bed plus sparse positional one-shots. Wind responds to exposure, rain to shelter, and audio low-pass/filtering differentiates enclosed city underpasses. Music is sparse, starting at discoveries or safe hubs; never loop a triumphant track continuously during quiet traversal.
+
+Mixer buses: Master, Engine, World, Music, Voice, UI. Initial voice budget: 24 simultaneous effects, with priority for warnings/engine and distance-based virtualization for ambience. Long music/ambience streams from disk; small repeated effects are preloaded. Test codec latency and memory on both platforms.
+
+All critical signals have visual equivalents. Caption meaningful radio speech and optionally non-speech cues. Haptic patterns are short, optional, and distinct for bump, discovery, and warning; no continuous vibration during rough driving.
+
+---
+
+# 15. Engine selection and project setup
+
+## 15.1 Recommendation
+
+**Use Unity 6.3 LTS with C# and URP.** Unity documents 6.3 as an LTS release supported through December 2027; verify its patch and support status when actual production starts. [1](https://unity.com/releases/unity-6) This is a deliberate reproducibility/support baseline, not a claim that LTS is always superior to newer supported releases.
+
+| Option | Project-specific judgment |
+|---|---|
+| Unity | Selected: practical mobile workflow, C# data/tools, suitable existing vehicle and asset-streaming systems, broad hiring/asset ecosystem |
+| Unreal | Viable, but this stylized mobile project's rendering/build complexity and small-vehicle iteration needs do not justify choosing it by default |
+| Godot | Viable open-source option, especially for smaller scope; this larger content/vehicle/mobile pipeline would require validating more custom tooling before commitment |
+
+The comparison is a production judgment, not a benchmark claiming one engine always performs better. A team with deep expertise in another engine may choose differently, but must then rewrite the implementation path rather than mixing engine APIs.
+
+## 15.2 Version lock and dependencies
+
+At M0, select an actually available stable `6000.3.x` patch and record the full editor version in `ProjectSettings/ProjectVersion.txt`, CI, README, and build report. Do not invent a patch number in generated setup instructions. Pin compatible package versions and commit `Packages/manifest.json` and `packages-lock.json`.
+
+Use URP, Input System, Addressables, Cinemachine if its chosen version passes mobile camera tests, Unity Test Framework, and official localization support or an equivalently tested string-table implementation. Keep runtime packages minimal. No ad SDK, IAP SDK, analytics SDK, multiplayer framework, or paid dependency is required.
+
+Addressables supports asynchronous loading of assets and dependencies; use it for local chunk/content bundles in this project. [1](https://docs.unity3d.com/Manual/com.unity.addressables.html) Remote hosting is not required for normal play.
+
+## 15.3 Project structure
+
+```text
+Assets/Wayfinder/
+  Art/{Vehicles,Environment,UI,Materials,VFX}
+  Audio/{Vehicles,Biomes,Music,UI,Voice}
+  Content/{Vehicles,Items,Upgrades,Missions,Biomes,World}
+  Prefabs/{Vehicles,World,UI,Systems}
+  Scenes/{Bootstrap,Title,Garage,WorldShell,PhysicsTestGround,VerticalSlice}
+  Scripts/
+    Core/           # IDs, commands, result types, time, event contracts
+    Simulation/     # vehicle and hazard runtime
+    World/          # streaming, surfaces, generation interfaces
+    Progression/    # missions, map, economy, inventories
+    Persistence/    # DTOs, serializer, migrations, transactions
+    Presentation/   # UI, camera, VFX/audio adapters
+    Platform/       # lifecycle, files, quality, input adapters
+    Editor/         # generators, validators, content import
+  Tests/{EditMode,PlayMode,Performance,Fixtures}
+Docs/{Architecture,Content,QA,Decisions,Milestones}
+Tools/{Balance,Build,Validation}
+```
+
+Use assembly definitions to isolate pure-domain tests from Unity presentation. Avoid one giant GameManager and avoid an elaborate dependency framework before it solves a demonstrated problem. A composition root wires explicit dependencies at boot.
+
+---
+
+# 16. Runtime architecture and system contracts
+
+## 16.1 System ownership
+
+| System | Owns | Must not own |
+|---|---|---|
+| AppStateMachine | Top-level transitions and pause tokens | Currency calculations |
+| InputRouter | Unified player commands and device switching | Vehicle physics |
+| VehicleController | Rigidbody/WheelCollider actuation | UI or permanent save writes |
+| VehicleStatsResolver | Effective attributes from definitions/loadout | Rendering |
+| SurfaceService | Contact surface/weather samples | Mission rewards |
+| HazardSystem | Mud/water/impact effects | Arbitrary inventory deletion |
+| WorldStreamer | Chunk lifecycle, dependencies, safe activation | Mission sequence |
+| DiscoveryService | Map/discovery progress and reward keys | Currency mutation outside transactions |
+| MissionService | Conditions/objective progress | Direct scene object assumptions |
+| InventoryService | Stack/mass/capacity validation | Spawning visuals |
+| EconomyService | Wallet and validated transfers | Physical pickup detection |
+| TransactionService | Atomic gameplay mutations and idempotency | Animations |
+| SaveService | Revisions, persistence, migration, backup | Rendering/game balance |
+| Garage/CampService | Hub operations and allowed actions | Direct OS file calls |
+| PresentationLayer | UI/audio/VFX view models | Authoritative state |
+| PlatformAdapter | Pause/focus, paths, device quality | Gameplay monetization |
+
+## 16.2 Update frequencies
+
+Physics vehicle/hazard contacts 60 Hz fixed; input each rendered frame; camera LateUpdate; fuel and wear integrate with simulation delta, values may update UI at 5 Hz; map reveal 2 Hz; weather simulation 1 Hz with visual interpolation; AI-free ambient scheduler 0.2 Hz; save debounce 10–20 seconds during traversal plus critical events.
+
+Integration must be frame-rate independent. On pause, simulation time does not advance. Do not calculate elapsed fuel drain from wall-clock time after resuming.
+
+## 16.3 Commands and events
+
+Commands validate and request changes: `AcceptMission, CollectPickup, UseItem, ResearchUpgrade, EquipModule, EstablishCamp, BankCargo, RequestRecovery`.
+
+Events report committed outcomes: `PickupCollected, LandmarkDiscovered, MapCellsRevealed, MissionCompleted, UpgradeResearched, ExpeditionBanked, VehicleDisabled, SaveFailed`.
+
+Each permanent reward event carries a stable source key and transaction ID. Systems subscribe/unsubscribe with lifecycle ownership; no static event leaks when scenes reload. Critical transactions are synchronous domain operations followed by persistence acknowledgment, not fire-and-forget rewards over a loosely ordered event bus.
+
+## 16.4 Interaction contract
+
+Every interactable provides ID, action label key, allowed range, line-of-sight requirement, conditions, and interaction result. The player picks one candidate by distance and facing score. Hold-to-interact default is 0.35 s for pickups and 0.75 s for substantial actions, with a tap accessibility alternative.
+
+An interaction is revalidated at commit. A cache cannot grant items twice if two input events arrive in one frame. A full inventory returns a typed capacity error without marking the cache collected.
+
+## 16.5 Threading and loading rules
+
+Most Unity object operations remain on the main thread. Background jobs may process pure data, path queries, compression, and serialization of an immutable snapshot. Never serialize a live mutable world object graph on a worker thread.
+
+Async tasks use cancellation tied to app/scene lifetime. A cancelled chunk load must release its Addressables handle. Track handle ownership explicitly and test repeated travel for leaks.
+
+## 16.6 Build-time validation
+
+Validators reject duplicate IDs, missing localization keys, missing asset references, circular prerequisites, negative costs, invalid recipes, unreachable mandatory objectives, content-count mismatches, and story gates referring to nonexistent missions. Warnings include asset-budget overages and unclear route hints. CI fails on errors, not on an arbitrary warning count.
+
+---
+
+# 17. Content data and save schemas
+
+## 17.1 Authoring strategy
+
+Use ScriptableObjects as editor-facing definitions, backed by exportable JSON/CSV for audit and AI generation. Runtime mutable state must not modify shared definition assets. Import validates IDs and emits a deterministic catalog hash.
+
+Core definition types: `VehicleDefinition, SurfaceDefinition, ItemDefinition, RecipeDefinition, UpgradeDefinition, BiomeDefinition, WorldDefinition, ChunkManifest, LandmarkDefinition, CacheDefinition, MissionDefinition, ContractTemplate, CampDefinition, AudioProfile, QualityProfile`.
+
+Mission conditions use a bounded typed vocabulary: `DiscoverLandmark, VisitVolume, CollectQuestItem, DeliverQuestItem, RevealMapPercent, ActivateRelay, EstablishCamp, InspectObject, TraverseCheckpoints, ReturnToHub`. No arbitrary embedded code in content JSON.
+
+## 17.2 Example content records
+
+```json
+{
+  "id": "upgrade.scout.06.tank1",
+  "tier": 6,
+  "costSalvage": 850,
+  "prerequisites": ["upgrade.scout.05.suspension1"],
+  "requiredMission": "Q04",
+  "effects": [{"stat": "fuelCapacityLiters", "operation": "Set", "value": 30}],
+  "nameKey": "upgrade.tank1.name",
+  "descriptionKey": "upgrade.tank1.description"
+}
+```
+
+```json
+{
+  "id": "mission.Q03",
+  "displayCode": "Q03",
+  "prerequisites": ["mission.Q02"],
+  "onAcceptGrant": [{"itemId": "camp_kit", "quantity": 1, "destination": "garageStorage"}],
+  "objectives": [{"type": "EstablishCamp", "targetId": "camp.forest.a", "count": 1}],
+  "turnInHub": "garage.home",
+  "reward": {"salvage": 300, "rewardKey": "reward.story.Q03"}
+}
+```
+
+Display codes `Q03` and canonical IDs `mission.Q03` must be normalized at import. Do not compare mixed ID formats casually throughout runtime code.
+
+## 17.3 Save envelope
+
+Use human-readable JSON during development. A compressed JSON payload with an envelope is acceptable for release; compression is optional and must not complicate recovery. Encrypting a single-player save is not necessary. A checksum detects accidental corruption, not malicious edits.
+
+```json
+{
+  "schemaVersion": 1,
+  "contentVersion": "1.0.0",
+  "generatorVersion": 1,
+  "worldSeed": 481516,
+  "slotId": "slot-1",
+  "revision": 42,
+  "savedAtUtc": "2026-10-14T12:00:00Z",
+  "payloadChecksum": "computed-sha256-of-canonical-payload",
+  "payload": {
+    "wallet": {"salvage": 1840},
+    "activeVehicleId": "vehicle.scout.s1",
+    "vehicles": [{
+      "id": "vehicle.scout.s1",
+      "fuelLiters": 18.5,
+      "condition": {"engine": 100, "suspension": 92, "tires": 100, "body": 87},
+      "equippedModuleIds": ["module.trailTires1"]
+    }],
+    "researchedUpgradeIds": ["upgrade.scout.01.trailTires1"],
+    "unlockedGarageIds": ["garage.home"],
+    "activatedCampIds": ["camp.forest.a"],
+    "completedMissionIds": ["mission.Q01", "mission.Q02"],
+    "activeMissions": [{"id": "mission.Q03", "state": "ReadyToTurnIn", "objectiveCounters": [1]}],
+    "world": {
+      "revealedCellsBase64": "encoded-bitset",
+      "surveyedCellsBase64": "encoded-bitset",
+      "discoveredLandmarkIds": ["landmark.forest.01"],
+      "collectedCacheIds": ["cache.forest.001"],
+      "relicIds": [],
+      "infrastructureFlags": {},
+      "mappingRewardsPaidThroughCount": 50
+    },
+    "expedition": {
+      "id": "expedition-local-sequence-8",
+      "status": "Active",
+      "lastGarageId": "garage.home",
+      "pose": {"x": 1102.0, "y": 46.0, "z": 2381.0, "yawDegrees": 34.0},
+      "lastSafePose": {"x": 1090.0, "y": 45.0, "z": 2370.0, "yawDegrees": 30.0},
+      "cargo": [{"itemId": "salvage_bundle", "quantity": 35}],
+      "pendingRewardKeys": ["reward.landmark.forest.01"],
+      "elapsedSimulationSeconds": 482.0
+    },
+    "garageStorage": [],
+    "campStorage": [],
+    "claimedRewardKeys": ["reward.story.Q01", "reward.story.Q02"],
+    "appliedTransactionIds": ["tx-local-sequence-39"],
+    "simulation": {"dayTimeSeconds": 1240, "weatherState": "Clear", "weatherSeed": 9871}
+  }
+}
+```
+
+This is an illustrative mid-expedition shape, not a complete loadable fixture. Generated test fixtures must include all required fields and be internally valid; validators must reject impossible equipment/prerequisite combinations or migrate them explicitly. Do not ship the literal illustrative checksum or encoded-bitset strings.
+
+Settings live in a separate versioned file so changing language or audio does not rewrite campaign progression. Save state includes tutorial flags, accepted contracts, mission cargo references, hub storage, consumable effects that should survive restart, and reward escrow payloads in the actual implementation. Do not persist transient skid marks, debris, audio playheads, UI animation state, or raw Unity object references.
+
+## 17.4 Atomic persistence and recovery
+
+Paths use the platform persistent-data directory, not asset folders. Each slot maintains `current`, `backup1`, `backup2`, plus temporary write file and a small transaction journal if required.
+
+1. Capture immutable state with revision N+1 on main thread.
+2. Serialize canonical payload and compute checksum.
+3. Write a same-directory temporary file; flush and close.
+4. Verify it can be read and parsed.
+5. Rotate validated backups and replace current using the safest supported atomic/same-filesystem operation. Platform adapter must handle unsupported replace semantics.
+6. On boot, choose the highest valid complete revision. Incomplete temporary files are not automatically trusted.
+7. A newer incompatible schema opens read-only recovery/export UI rather than being silently overwritten.
+
+Retain idempotency keys for finite permanent rewards; compact transaction history only after its effects are represented in durable state and the journal checkpoint is committed. Never discard keys merely because an arbitrary count is reached.
+
+## 17.5 Save migration and world updates
+
+Migrations are sequential pure transforms `v1→v2→v3`, tested with fixture saves. Preserve stable IDs across content changes. Removed items have explicit replacement/refund rules. Moving a landmark does not remove its discovered flag. Changed terrain triggers a safe-position validation and nearby safe-hub fallback without rescue loss.
+
+Restore position with zero velocity and validated ground clearance. Do not load stale high-speed velocity into an incompletely streamed chunk. Save new-game creation before allowing movement. Manual slot deletion requires confirmation; there is no forced cloud overwrite because cloud synchronization is not part of version 1.
+
+---
+
+# 18. Streaming, rendering, and performance
+
+## 18.1 Device targets and evidence
+
+Native 60 FPS on a nominated mid-range device is a **target**, not something an engine setting guarantees. Establish the supported device matrix in M0 and revisit after M2. Suggested planning anchors: Android Snapdragon 778G/Dimensity 1080 class with 6 GB RAM for 60 FPS Balanced, iPhone 12 class for iOS; lower devices may use a stable 30 FPS mode if validated.
+
+OS floor planning assumptions: Android 10+ and iOS 16+. Verify engine support, chosen APIs, current store submission requirements, and actual audience before committing. OS minimum support is distinct from the store's required target SDK/Xcode version. This document does not claim those release-day submission requirements are fixed.
+
+## 18.2 Frame and memory budgets
+
+At 60 FPS total frame interval is 16.67 ms. CPU and GPU work overlap, so do not add their entire durations as if serial.
+
+Initial CPU main-thread target ≤11 ms: physics 2.5, gameplay 1.5, rendering submission 3.0, UI/audio 1.0, streaming activation amortized 1.0, remaining margin 2.0. GPU target ≤13 ms with margin for thermal variation. Profile render-thread and job-worker stalls separately.
+
+Memory working target ≤1.2 GB steady state on the nominated devices, temporary peak ≤1.5 GB where the device permits; actual OS termination behavior must be tested. Do not infer available app memory solely from installed RAM. Install-size target ≤1.5 GB with local content, subject to store packaging constraints.
+
+Steady traversal target zero managed allocations per frame from custom gameplay loops. Visible triangles target ≤700k on Balanced; visible batches/draw submissions target roughly ≤250 after batching/instancing. These are diagnostic budgets, not guarantees independent of shaders and device.
+
+## 18.3 Chunk streaming state machine
+
+`Unloaded → Requested → DataReady → Activating → Active → Deactivating → Unloaded`, with `Failed` and cancellation paths.
+
+- Active terrain ring: up to 3 × 3 chunks around the player.
+- Prefetch manifest/assets for the next ring; loading priority follows velocity and planned route.
+- Detailed colliders/props within approximately 180–250 m; terrain collision needed for active routes remains loaded.
+- Far landscape: low-poly proxy tiles/meshes to roughly 1.5 km, atmosphere beyond.
+- Keep current chunk and predicted stopping corridor pinned; never unload under the car or a recovery destination.
+- Add hysteresis: unload farther away than the load threshold to avoid boundary thrashing.
+- Use local Addressables groups per region/shared content; profile bundle duplication and dependencies.
+
+At 70 km/h, the car moves about 19.4 m/s. Start forward prefetch at least 200 m before a boundary or earlier according to measured worst-case device IO. This provides roughly ten seconds of lead time under that speed assumption. Do not rely on a magic radius without testing high-speed approaches and low storage.
+
+Instantiate pooled/common props in a per-frame activation budget. Perform heavy collider/terrain setup while sufficiently far away. If a chunk is unexpectedly late, slow/fade into an explicit short loading state before crossing an unsafe edge; never allow falling through missing terrain. Log the incident as a streaming defect.
+
+## 18.4 Rendering configuration
+
+URP Forward path initially; one main directional light, controlled shadow distance, minimal additional dynamic lighting, SRP Batcher, instancing for repeated props, LODGroups, conservative transparency, and shared materials. Use simple lit shaders; static terrain/props can use baked ambient treatment and probes rather than expensive dynamic GI.
+
+Unity's URP optimization guidance includes reducing additional lights, disabling or reducing soft shadows, disabling depth priming for mobile, and favoring simpler shaders on lower-end devices. Apply these as starting points and profile the actual project. [4](https://docs.unity3d.com/6000.3/Documentation/Manual/urp/configure-for-better-performance.html)
+
+No real-time screen-space reflections, volumetric raymarching, tessellated terrain, or full-screen motion blur in the baseline. Water uses a cheap animated normal/refraction approximation; planar reflections are optional high-quality experiments, not required. Avoid an opaque texture copy unless a measured visual need justifies it.
+
+Changing time of day uses a directional sun, ambient gradient/probe approximation, and authored color changes. Do not rely on a single baked directional lightmap remaining correct at all sun angles. Bake ambient occlusion where appropriate; handle static lighting deliberately.
+
+## 18.5 Quality tiers
+
+| Setting | Battery / Low | Balanced | High |
+|---|---|---|---|
+| Target FPS | 30 | 60 | 60 |
+| Render scale | 0.70–0.85 | 0.85–1.00 | 1.00 |
+| Shadow distance | 35 m | 60 m | 85 m |
+| Shadow cascades | 1 | 2 | 2 |
+| Foliage density | 50% | 75% | 100% |
+| Additional pixel lights | 0 | 0–1 local at night | 1–2 if measured safe |
+| MSAA | Off/2× | 2× | 4× only when budget permits |
+| Post | Color grade only | Grade + restrained bloom | Same, higher quality |
+| Texture limit | Lower mip budget | Standard | Higher budget |
+
+Dynamic quality first reduces render scale and nonessential foliage/shadow detail; it must not change physics, hazard placement, collectible visibility, or collision. Use sustained frame-time windows and thermal signals where supported to avoid oscillation. Offer a user-selected stable 30 FPS mode even on powerful devices.
+
+## 18.6 Profiling acceptance
+
+Run three 20-minute thermal routes: dense forest at rain, city at dusk, wetlands with water/particles. Capture device model, OS, build hash, quality, room conditions, median/P95/P99 frame times, memory, loading spikes, and battery/thermal observations.
+
+For a claimed Balanced 60 FPS device, target 95% of frames ≤16.67 ms after warm-up, no recurring traversal stalls >50 ms, and no sustained thermal collapse below 50 FPS. If this is not met, optimize or classify that device as 30 FPS; do not market an unverified universal 60 FPS promise.
+
+---
+
+# 19. Mobile lifecycle, platforms, and privacy
+
+## 19.1 Interruption handling
+
+On focus loss/backgrounding: stop input immediately, pause simulation, snapshot critical state, request a bounded save. Do not depend on receiving a final quit callback. Critical transactions were already saved when committed; lifecycle saving is an extra safety measure.
+
+On resume: restore audio focus, validate input state, show a tap-to-resume overlay, then continue. Never leave throttle latched. Handle phone calls, notification overlays, controller disconnects, screen lock, storage exhaustion, and process kill during saves.
+
+## 19.2 Platform builds
+
+Android: ARM64 release build, appropriate supported graphics API configuration determined by device testing, application bundle for store submission, test APK/internal distribution as needed. Use IL2CPP where selected by the project build configuration and validate stripping/AOT serialization behavior.
+
+iOS: generate Xcode project on a Mac with the supported toolchain, sign with developer credentials supplied securely by the owner, test through the appropriate Apple distribution path. An AI cannot invent valid signing certificates or publish using nonexistent accounts.
+
+Verify current Android target API, page-size/native-library compatibility requirements, Apple SDK/Xcode requirements, privacy declarations, and store rules at release time. Do not hardcode stale submission requirements from this blueprint.
+
+## 19.3 Offline packaging and permissions
+
+All required world content is local after installation. If store-delivered asset packs are used, the initial content-install step must clearly report progress and verify availability before promising offline readiness. Version 1 should prefer install-time local content over custom download services.
+
+No location, microphone, contacts, or tracking permission. Photo mode saves internally by default; optional export invokes the platform's appropriate user-mediated sharing/photo flow without requesting broad access unnecessarily. No advertising identifier or account requirement.
+
+## 19.4 Privacy and diagnostics
+
+Default version 1 has no remote telemetry. Keep a rolling local diagnostic log with build/version, technical errors, and anonymized gameplay counters. Offer a user-initiated export after review. No personal text, exact external location, advertising IDs, or device account data.
+
+Optional future crash reporting is a scope change requiring privacy review and platform disclosure. Analytics events described in QA are local instrumentation unless the user explicitly opts into a later reviewed service.
+
+---
+
+# 20. QA, automated tests, and balancing
+
+## 20.1 Testing pyramid
+
+**EditMode/unit:** Inventory, formulas, stat composition, recipe costs, mission prerequisites, reward idempotency, map indexing, save migrations, generation hashes, and route graph feasibility.
+
+**PlayMode/integration:** Vehicle grounding, garage/camp triggers, hazard effects, mission traversal, chunk load/unload, pause/input, interaction selection, and recovery.
+
+**Device/performance:** Touch ergonomics, thermal performance, GPU fill, audio latency, lifecycle interruption, storage failure, app size, and platform build behavior.
+
+**Human playtests:** Feel, exploration readability, frustration, pacing, whether hazards are understood before failure, and whether optional travel remains interesting. Automated completion is not evidence that a game is enjoyable.
+
+## 20.2 Mandatory automated cases
+
+1. Granting the same landmark event twice yields one reward.
+2. Collecting an already collected cache yields no items.
+3. Insufficient cargo prevents pickup without consuming cache state.
+4. Banking interrupted at every persistence step results in either the old or new complete state, never mixed currency/cargo.
+5. Loading backup after corrupting current preserves the latest valid revision possible.
+6. Zero currency, zero supplies, and disabled vehicle still permit rescue and a playable next expedition.
+7. Every tier cost and story prerequisite matches the canonical content table.
+8. Tire sets do not multiply previous tire bonuses twice.
+9. Removing a cargo-capacity module while over capacity is blocked.
+10. Save during camp establishment cannot lose kit without activating camp.
+11. Fuel/condition never leave valid bounds; fractional integration matches across 30/60/120 render FPS.
+12. Repeated chunk boundary crossing does not leak retained handles or duplicate props.
+13. All 100 landmark and 200 cache IDs are unique and reachable by intended capability profiles.
+14. Required routes remain valid in both wetland water states.
+15. Background/resume never applies stored throttle input.
+16. New game and mission rewards cannot be farmed by closing during the reward screen.
+17. Selling crafted items never produces net currency from purchased inputs.
+18. Mapping threshold reward is not duplicated after rescue or load.
+19. Save migration preserves old discovery flags and researched modules.
+20. Localized strings do not overflow core controls at 150% scale and 30% text expansion.
+
+## 20.3 Handling acceptance targets
+
+Initial Scout targets on dry packed test surface: 0–40 km/h in 6–10 seconds; stop 40→0 km/h in 8–15 m with default assists; climb a sustained 20° dry dirt slope from low speed at legal load; clear a 0.15 m ledge with correct approach; maintain controllable response on 15° side slope. These are tuning gates, not exact predictions from the listed torque alone.
+
+At maximum payload, braking distance should grow perceptibly without making mandatory routes unsafe. Mud tires must materially improve the mud test but not outperform rock tires on every surface. Test without assists to confirm assists are helping rather than concealing broken base physics.
+
+## 20.4 Playtest measures
+
+Collect locally: time to first movement/discovery/return/upgrade, rescue reason and position, fuel fraction at return, wrong-route time, cache interaction failures, upgrade purchase order, route choice, and story gate confusion. Pair counts with interviews; low rescue rate may mean routes are boring or players never explore.
+
+Target first-session usability: at least 8 of 10 fresh testers complete the first return without verbal help; at least 8 can explain why the first tire upgrade matters; at least 7 identify an interesting next destination independently. Small samples guide iteration but are not statistical proof of market success.
+
+## 20.5 Device matrix
+
+Minimum test families: older Android supported baseline, mid-range Qualcomm, mid-range MediaTek, high-end Android, smallest supported iPhone screen, nominated iPhone 60 FPS baseline, newer iPhone, and tablet/aspect-ratio checks if tablets are supported. Test low storage, Bluetooth audio, airplane mode, denied optional export access, notch/safe area, and battery saver.
+
+Release blockers include reproducible save corruption, progression deadlock, fall-through-world, missing touch action, required network access, loss of unique items, repeated severe thermal failure on a claimed device, and unlicensed shipping assets.
+
+---
+
+# 21. Production team, milestones, and build gates
+
+## 21.1 Planning scale
+
+For this scope, plan around a small professional team rather than a single prompt: roughly 6–10 contributors spanning gameplay/technical leadership, vehicle/gameplay programming, world/tools engineering, environment art, vehicle/technical art, design/content, UI/audio support, and QA. Some roles can be part-time or combined.
+
+A **planning estimate**, not a commitment: 12–18 months for a disciplined team with suitable existing tooling/assets, potentially longer if developing all art and pipelines from scratch. A solo developer should expect substantial scope reduction or a multi-year effort. AI assistance may accelerate particular tasks but does not establish a reliable multiplier for total schedule.
+
+## 21.2 Milestones
+
+| ID | Deliverable | Indicative window | Exit gate |
+|---|---|---|---|
+| M0 | Repository, pinned toolchain, boot/menu, device build, CI | 1–2 weeks | Android and iOS smoke builds or explicit owner/toolchain blocker |
+| M1 | Physics proving ground, controls, camera, hazards | 3–5 weeks | Handling tests passed on touch devices |
+| M2 | Forest vertical slice with complete loop | 6–8 weeks | 30-minute playable slice, save/recovery/economy and measured performance |
+| M3 | World authoring/streaming pipeline and full mainland blockout | 6–10 weeks | Validated routes, repeatable bake, seam/leak tests |
+| M4 | Progression, all vehicles, items, missions, hubs | 8–12 weeks | Full campaign playable in greybox with no progression blockers |
+| M5 | Five-biome content and art/audio production | 12–20 weeks, overlaps M4 | All content targets met; no critical placeholders |
+| M6 | Optimization, accessibility, balance, localization readiness | 6–10 weeks | Device/performance and playtest gates |
+| M7 | External testing, platform preparation, release candidate | 4–6 weeks | Release checklist signed, known issues triaged |
+
+Windows overlap and contain uncertainty; do not sum them as a contractual completion date. Feature freeze occurs after M4 except defect fixes and approved usability changes. Content lock occurs before final optimization/regression.
+
+## 21.3 Vertical slice content
+
+Exactly one 1,024 m × 1,024 m forest test area, Scout, six landmarks, twelve caches, Q01–Q04 adapted to that area, one garage, two camp sockets, first six tiers, mud/water/hill tests, one weather transition, save/load, rescue, and full touch UI. Use final-quality examples for one vehicle, one landmark, one foliage set, and core HUD; other assets may be labeled placeholders.
+
+The slice proves production methods. Do not build four unfinished biomes before driving, saving, and streaming are proven.
+
+## 21.4 Required build evidence
+
+Every accepted milestone includes source changes, content data, change log, test command/results, build artifact path, play instructions, screenshots/video where possible, device profiles where relevant, known issues, and a clear list of untested claims. A build log is not the same as a playable test; both are required when feasible.
+
+---
+
+# 22. AI implementation protocol
+
+## 22.1 Rules for the implementing AI
+
+1. Inspect the existing repository, available engine/toolchain, and this specification before editing.
+2. Create `Docs/IMPLEMENTATION_STATUS.md`, mapping every requirement to `Not started / In progress / Implemented / Verified / Blocked`.
+3. Select only the next milestone or a small dependency-ordered batch of tasks.
+4. Produce real source files, scenes/prefabs, definitions, tests, and build scripts. Pseudocode does not satisfy implementation.
+5. Never claim “the game is complete” from generated code alone. Report compilation, runtime, device, and content status separately.
+6. If Unity/editor access is missing, produce compilable-intended files and exact setup steps but label them **uncompiled and unverified**. Do not fabricate console output or APK/IPA artifacts.
+7. Use pinned APIs for the chosen editor/packages. Check documentation instead of guessing method names from other versions.
+8. Do not introduce ads, purchases, backend dependence, paid-only packages, or omitted mandatory systems.
+9. Maintain `Docs/DECISIONS.md`; record any deviations and request approval for scope-changing choices.
+10. Preserve unrelated user work. Use small reviewable commits when repository access allows.
+11. Do not create fake credentials or publish to stores. Signing and distribution require owner-provided access and authorization.
+12. Use placeholders honestly; track each one and do not count placeholder art as final production completion.
+
+## 22.2 Milestone task ordering
+
+M0: bootstrap → project/version lock → assembly boundaries → input actions → build scripts → tests → device smoke build.
+
+M1: chassis setup → basic wheel physics → camera → touch → surfaces → gears/brakes → suspension/load → water/mud → reset → handling test report.
+
+M2: inventory/wallet transactions → garage → pickups/discoveries → mapping → missions → upgrade research → camp → save/migrations → interruption tests → slice art/audio → on-device profile.
+
+M3: authored graph → height/biome pipeline → chunks → seams → far proxies → async streaming → POI bake → validators → full-world drive test.
+
+M4 onward: expand through existing definitions/tools; do not create bespoke duplicated scripts for every landmark or mission.
+
+## 22.3 Required response format after a coding batch
+
+- Milestone and requirement IDs addressed.
+- Files changed and purpose.
+- What now works in an actual build.
+- Commands/tests executed and real results.
+- What could not be tested and why.
+- Known bugs, placeholder assets, and deviations.
+- Exact run instructions.
+- Next smallest dependency-ordered batch.
+
+If a test fails, fix or explicitly block the milestone. Never mark it verified by replacing a test with a weaker assertion just to get a green result.
+
+## 22.4 Completion contract
+
+“Completed game” means: both target platforms build; all main missions and defined content exist; touch play works; the final mission is reachable; saving survives interruption; all no-ad/no-IAP constraints hold; device quality tiers are measured; final assets are licensed; accessibility and core regressions pass; and release instructions/artifacts are available.
+
+Store publication is a separate owner-authorized process. A development build can be feature-complete without being signed or accepted by a store, but must be labeled accordingly.
+
+---
+
+# 23. Release checklist and post-launch maintenance
+
+## 23.1 Product/content
+
+- All five biomes, 100 landmarks, 200 caches, 20 main missions, 30 optional contracts, ten camps, five garages, four vehicles, and twenty research tiers are present and validated.
+- Story can finish with the Scout; alternate vehicles are optional.
+- No generated TODO text, missing icons, inaccessible caches, or unresolved critical placeholders.
+- All relic sets and cosmetic unlocks can be completed offline.
+- Credits and licenses include third-party and asset attribution as required.
+
+## 23.2 Technical/platform
+
+- Clean clone builds reproducibly using documented toolchain and packages.
+- Release configuration, symbols, crash diagnostics policy, stripping, permissions, and store metadata reviewed.
+- Save migration tested from every public version; downgrade behavior documented.
+- Airplane-mode full launch/continue/new-game tested after installation.
+- Both platforms tested on actual devices, not only editor simulation.
+- No ad/IAP/tracking libraries or endpoints accidentally included transitively.
+- App signing keys are outside source control; builds do not log secrets.
+- Current store SDK, privacy, ratings, screenshot, support-contact, and legal requirements verified before submission.
+
+## 23.3 Post-launch
+
+Prioritize save/progression fixes, device crashes, and traversal defects. Maintain a reproducible seed/content hash for bug reports. Patch world locations without changing discovery IDs. Never remove a player's researched upgrades in a balance patch without a documented migration/refund.
+
+No obligation to create seasons or engagement events. Optional future expansions must be separately scoped and cannot be silently assumed part of version 1. Provide clear supported-version and save-backup guidance.
+
+---
+
+# 24. Scope cuts, risk register, and unresolved decisions
+
+## 24.1 Cut order if production exceeds budget
+
+First reduce cosmetic variants, radio voice recording, ambient encounter variety, and optional weather spectacle. Next reduce vehicle roster from four to two, with owner approval. Then reduce optional contract count or world footprint after revalidating travel density. Preserve the complete loop, offline mode, save integrity, five distinct regional identities if still feasible, and accessible recovery.
+
+Never “save time” by removing transactional banking, failing to test lifecycle saving, shipping unlicensed assets, or pretending mobile performance is acceptable without measurement.
+
+## 24.2 Risks and mitigations
+
+| Risk | Impact | Mitigation / proof |
+|---|---|---|
+| Wheel behavior poor on rugged terrain | Core game fails | M1 obstacle rig before world production |
+| World size becomes empty busywork | Exploration feels slow | Density targets, shortcuts, early playtests |
+| Streaming/terrain memory spikes | Crashes and hitches | Baked chunks, handle ownership, thermal route tests |
+| Physics upgrades break required routes | Progression deadlocks | Capability graph plus loaded-vehicle driving tests |
+| Save/reward duplication | Progress lost or economy invalid | Atomic revisions, idempotent transactions, fault injection |
+| Generated content unreachable | Collectibles cannot complete | Reservation sockets and automated/human reachability |
+| Four vehicles multiply art/tuning work | Schedule overrun | Shared rig/code, optional two-vehicle cut |
+| AI invents APIs or claims tests | False implementation confidence | Pinned docs, real build logs, verified status only |
+| Asset rights unclear | Release/legal risk | Provenance manifest and review |
+| Thermal performance degrades | Mobile reviews/refunds | 20-minute captures; honest 30 FPS fallback |
+| Store requirements change | Submission delay | Release-time official requirements audit |
+
+## 24.3 Owner decisions still needed before shipping
+
+Final public title and trademark clearance; target audience/rating; one-time purchase price or free distribution; exact minimum device list; exact editor/package patch lock; final licensed art/audio sources; supported launch languages; developer/store accounts; privacy/support website; staffing budget and schedule.
+
+These do not prevent M0–M2 prototype work. They do prevent an honest claim of ready-to-publish commercial completion.
+
+---
+
+# 25. Sources and technical reference policy
+
+The game design, values, budgets, content, and milestone estimates above are proposed specifications. The following official sources support engine-related statements; recheck them against the pinned version during implementation.
+
+- Unity 6 release information, including 6.3 LTS and its stated support window: [1](https://unity.com/releases/unity-6)
+- Unity release/support policy: [2](https://unity.com/releases/unity-6/support)
+- WheelCollider component and friction/suspension reference: [2](https://docs.unity3d.com/Manual/class-WheelCollider.html)
+- Addressables asynchronous asset/dependency loading: [1](https://docs.unity3d.com/Manual/com.unity.addressables.html)
+- Unity 6.3 URP performance configuration: [4](https://docs.unity3d.com/6000.3/Documentation/Manual/urp/configure-for-better-performance.html)
+
+Some generic documentation URLs track newer engine releases. Switch to the pinned editor's documentation when API differences matter. The damping units used in this specification follow the conventional physical damping coefficient N·s/m; engine inspector tuning still requires validation and should not be inferred from a documentation label alone.
+
+---
+
+# Appendix A. Complete landmark name and hook catalog
+
+Names are working content labels. Each region's twenty entries map in order to IDs `landmark.<biome>.01` through `.20`. Every entry requires a definition, position, observation socket, clue, lore text, and validated approach before content lock. Five entries per biome are hero sites; others use variations of modular kits. This catalog is an authoring brief, not prebuilt scene content.
+
+## A1. Mosswood Forest
+
+1. Ranger Rise — first safe vista and tutorial discovery.
+2. Hollow Crown — giant hollow tree beside a shallow alternate track.
+3. Old Logging Trestle — intact viewing approach, bridge silhouette clue.
+4. Creek Gauge — tutorial depth poles; story inspection.
+5. Mosswheel Mill — waterwheel landmark and easy cache.
+6. Firewatch Nine — switchback climb and survey reveal.
+7. Ferncut Tunnel — short mesh tunnel through a rocky spur.
+8. Two Pines Crossing — safe ford with dry detour.
+9. The Quiet Yard — abandoned forestry equipment and salvage.
+10. Amber Pool — reflective clearing, no deep-water requirement.
+11. Ridge Radio Hut — clue to forest relay.
+12. Rootbridge Hollow — visual root arch over trail.
+13. North Logger's Camp — camp-adjacent historical remains.
+14. The Split Boulder — narrow optional shortcut.
+15. Rain Shelter — visible refuge and weather tutorial cue.
+16. Stone Lantern Bend — old trail marker and relic clue.
+17. Greenwater Spillway — water control structure.
+18. The Leaning Stack — kiln/chimney silhouette above trees.
+19. Lost Survey Wagon — remote cache and story fragment.
+20. Mosswood Relay — regional mission culmination.
+
+## A2. Redscar Canyon
+
+1. Red Gate Overlook — entry panorama.
+2. Echo Arch — natural arch with route choice.
+3. Copper Steps — terraced old mine approach.
+4. Dry River Shrine — optional relic socket, no religious claims needed in lore.
+5. The Hanging Road — narrow visible service shelf with safe detour.
+6. Dustwell Station — refueling-era ruins, not free field fuel.
+7. Twin Chimneys — rock pillars visible at long range.
+8. Switchback Seven — grade-reading challenge.
+9. Sunken Quarry — descent planning and return route.
+10. The Broken Conveyor — salvage-rich industrial silhouette.
+11. Salt Ribbon — firm white track through soft sand.
+12. Surveyor's Needle — distant navigational reference.
+13. The Painted Wall — geological strata and photo socket.
+14. Old Cable Landing — winch practice on optional route.
+15. Windcut Basin — protected campsite neighborhood.
+16. Bridge Ledger Site — story delivery/inspection.
+17. The Narrow Shade — rock corridor with width warning.
+18. Redwater Tanks — utility landmark and electronics cache.
+19. Evening Mesa — long but nontechnical viewpoint route.
+20. Echo Relay — regional relay and city connection.
+
+## A3. Meridian Ruins
+
+1. South Transit Gate — city entry marker.
+2. Clockless Square — open turning/tutorial area for urban navigation.
+3. The Archive Van — main-story protected case.
+4. Greenline Station — overgrown train platform viewed from service lane.
+5. Rooftop Orchard — authored parking-ramp viewpoint, not free building traversal.
+6. Flooded Underpass — depth warning and marked detour.
+7. The Leaning Crane — skyline orientation cue.
+8. Depot Seventeen — cargo contract hub.
+9. Blue Tile Courtyard — compact-vehicle optional route.
+10. Last Cinema — facade lore and relic clue.
+11. Power Exchange — story cable delivery.
+12. Canal Service Bridge — infrastructure unlock.
+13. Rust Garden — reclaimed machine sculptures.
+14. Observatory Annex — hint toward final biome.
+15. The Silent Loop — circular rail turnaround.
+16. East Reservoir — road-level viewpoint.
+17. Market Arcade — driveable covered lane, no interior simulation.
+18. Meridian Workshop — regional garage neighborhood.
+19. Signal Rooftop — observation from adjacent ramp.
+20. Meridian Relay — city broadcast restoration.
+
+## A4. Tideglass Wetlands
+
+1. Reedwatch Causeway — safe biome introduction.
+2. Three Depth Poles — main-story water reading.
+3. Old Pump House — diagram recovery.
+4. Lantern Pier — shoreline observation socket.
+5. Glasswater Bend — reflection/photo site.
+6. Sunken Bus Stop — viewed safely from bank.
+7. The Salt Works — machinery and alloy cache.
+8. Heron Platform — noninteractive wildlife viewpoint.
+9. Mangrove Gate — firm trail through dense vegetation.
+10. Broken Sluice — current demonstration from safe ground.
+11. Weatherboat Memorial — relic clue, boat is static scenery.
+12. White Reed Island — reachable by validated shallow causeway.
+13. Tide Marker Twelve — dual water-state inspection.
+14. Longboard Crossing — narrow but safe authored bridge.
+15. The Dry Knoll — forward camp neighborhood.
+16. Cable Marsh — avoidable bog and raised route.
+17. Estuary Window — broad panorama.
+18. Pumpkeeper's House — exterior narrative site.
+19. Firmground Survey — main-story route markers.
+20. Tideglass Relay — raised regional mast.
+
+## A5. Frostline Highlands
+
+1. High Road Gate — mountain entry view.
+2. Shepherd's Turn — first gentle snow patch.
+3. Slate Basin — gravel-to-rock handling contrast.
+4. White Cairn — visible ridge marker.
+5. Weather Station East — story sensor inspection.
+6. Weather Station West — alternate approach comparison.
+7. The Old Funicular — static rail slope, drive alongside only.
+8. Cloudbreak Shelter — safe view and camp neighborhood.
+9. Frozen Mirror — ice edge observed from stable road.
+10. Needle Pass — technical optional shortcut.
+11. Summit Service Yard — cargo turnaround and salvage.
+12. The Copper Dome — observatory silhouette clue.
+13. Meltwater Steps — seasonal-looking but validated crossing.
+14. Stonewind Bridge — highland infrastructure landmark.
+15. Last Green Meadow — quiet contrast after snowy climb.
+16. Surveyor's Rest — relic set finale.
+17. Sensor Cache — protected story core site.
+18. The Last Mast — fifth relay.
+19. Atlas Approach — final climb with loaded-return-safe route.
+20. Frontier Observatory — final transmission and credits.
+
+---
+
+# Appendix B. Relic sets, camp IDs, and garage IDs
+
+Five relics per set; IDs use `relic.<biome>.01..05`. Locations are assigned to reachable sockets near a subset of the region's landmarks, without requiring dangerous unintended vehicle tricks.
+
+- Forest: brass compass, ranger badge, trail sketch, engraved thermos, wooden trail marker. Reward: forest expedition decal + garage display.
+- Canyon: survey lens, mine token, cable pulley plate, annotated rock sample, weathered field notebook. Reward: canyon stripe paint + display.
+- City: transit token, archive seal, workshop emblem, ceramic sign fragment, radio dial. Reward: transit-blue livery + display.
+- Wetlands: tide chart tube, pump key, lantern plate, depth-gauge segment, reedwoven field tag. Reward: tideglass livery + display.
+- Highlands: observatory patch, star chart, altimeter case, brass mast plaque, expedition pennant. Reward: summit livery + display.
+
+Garages: `garage.home`, `garage.canyon`, `garage.city`, `garage.wetlands`, `garage.highlands`.
+
+Camps: `camp.forest.a/b`, `camp.canyon.a/b`, `camp.city.a/b`, `camp.wetlands.a/b`, `camp.highlands.a/b`.
+
+Protected delivery definitions: `quest.brace_manifest` (ledger), `quest.archive_case` (one slot, 10 kg), `quest.cable_spool` (two slots, 35 kg), `quest.stabilizer_plates` (two slots, 40 kg), `quest.sensor_core` (ledger). Multi-slot objects reserve contiguous logical slots only in UI; no inventory-packing minigame is required. Mission items are never included in rescue losses.
+
+---
+
+# Appendix C. Winch implementation contract
+
+1. Enter winch mode only below 1 m/s. Brake hold engages.
+2. Query authored anchor components within module reach and validate unobstructed cable path using capsule/sphere casts.
+3. Score anchors by forward usefulness, distance, and visibility; let player cycle/tap a highlighted anchor.
+4. Attach cable to a defined chassis tow point. Initial target length equals current separation.
+5. Reel input decreases target length at up to 0.8 m/s. Apply a damped spring-like pull along cable direction, capped at module force. Do not teleport chassis to anchor or use a rigid constraint that explodes under obstruction.
+6. Apply pull in physics step, respecting collision and surface friction. Cable rendering is cosmetic and uses a low-segment line/mesh.
+7. Excess tension for two seconds pauses reeling with warning; it does not destroy the module.
+8. Cancel safely at any time. Backgrounding pauses, and loading a save restores the car detached with no velocity injection.
+9. Anchors are static world objects in version 1; dynamic towing and tree uprooting are out of scope.
+10. If no anchor exists and the player is stuck, free reset/rescue remains available.
+
+---
+
+# Appendix D. Code-level interface sketches
+
+The following interfaces describe boundaries, not completed implementations. Actual Unity/C# signatures may evolve under a recorded architecture decision.
+
+```csharp
+public interface IInventoryService
+{
+    CapacityResult CanAdd(InventoryId target, ItemStack stack);
+    CommandResult Transfer(InventoryId from, InventoryId to,
+        ItemStack stack, TransactionId transactionId);
+}
+
+public interface ITransactionService
+{
+    CommandResult Execute(GameCommand command, TransactionId transactionId);
+    bool WasApplied(TransactionId transactionId);
+}
+
+public interface ISaveService
+{
+    Task<SaveResult> SaveAsync(ImmutableGameSnapshot snapshot,
+        CancellationToken cancellationToken);
+    Task<LoadResult> LoadBestValidAsync(SaveSlotId slot,
+        CancellationToken cancellationToken);
+}
+
+public interface ISurfaceService
+{
+    SurfaceSample Sample(in GroundContact contact, in WeatherSnapshot weather);
+}
+
+public interface IWorldStreamingService
+{
+    Task<RegionLease> EnsureReadyAsync(WorldPosition position,
+        float safetyRadius, CancellationToken cancellationToken);
+}
+```
+
+`RegionLease` pins dependencies and releases them on disposal. A recovery operation must hold it until destination colliders are active and the vehicle is safely placed. Result types include typed failure reasons; exceptions are reserved for unexpected faults, not normal “inventory full” cases.
+
+Physics runtime outline:
+
+```text
+FixedUpdate:
+  if simulationPaused: return
+  commands = inputRouter.latestCommand
+  contacts = sampleWheelContacts()
+  surfaces = resolvePerWheelSurface(contacts, weather)
+  stats = cachedStatsResolver.current
+  drivetrain.step(commands, wheelSpeeds, stats, fixedDelta)
+  applySteeringBrakesAndMotorTorque()
+  applySuspensionCouplingAndEnvironmentalForces()
+  hazardSystem.step(contacts, water, impacts, fixedDelta)
+  fuelSystem.integrate(fixedDelta)
+  safePoseTracker.considerCurrentPose()
+```
+
+Do not save to disk, load terrain textures, allocate large lists, or search the entire scene in this loop.
+
+---
+
+# Appendix E. Acceptance traceability matrix
+
+| ID | Requirement | Proof required |
+|---|---|---|
+| PROD-01 | No ads/IAP/premium currency | Dependency scan + offline gameplay audit |
+| FLOW-01 | Complete explore/collect/return/upgrade loop | M2 playable recording and tester completion |
+| DRIVE-01 | Touch/tilt/stick inputs | Device test cases and remapping checks |
+| DRIVE-02 | Surface-specific handling | PhysicsTestGround telemetry and driving review |
+| HAZ-01 | Mud/water/slope behavior | Boundary tests and readable warnings |
+| REC-01 | No unrecoverable state | Zero-resource rescue test |
+| WORLD-01 | Five-biome 6,144 m mainland | Content manifest and in-game traversal |
+| GEN-01 | Deterministic validated bake | Repeat-generation hash/topology report |
+| STREAM-01 | Seamless safe streaming | Full-world route, boundary stress, handle-leak test |
+| MAP-01 | Persistent map and idempotent rewards | Unit/integration tests |
+| CONTENT-01 | Required content counts | Build-time catalog audit |
+| QUEST-01 | All twenty missions completable | Full playthrough from fresh save |
+| ITEM-01 | Inventory mass/slots and protected items | Unit tests + recovery scenarios |
+| UPG-01 | Twenty tiers, exact costs, shared resolver | Data audit + stat tests |
+| ECON-01 | No progression softlock or arbitrage | Economy simulation and low-resource playtest |
+| CAMP-01 | Atomic establishment/deposit | Save fault-injection tests |
+| SAVE-01 | Atomic revision/backup/migration | Corruption and interruption suite |
+| UI-01 | Safe-area, readable touch UI | Small-screen and 150% text checks |
+| ACCESS-01 | Non-tilt and reduced-motion paths | Accessibility checklist and human review |
+| PERF-01 | Declared quality tier on each device | Thermal route captures |
+| MOBILE-01 | Pause/resume/kill safety | Lifecycle device tests |
+| LEGAL-01 | Licensed final assets | Completed provenance manifest |
+| BUILD-01 | Reproducible Android/iOS release builds | Clean-build report and artifacts |
+| FINISH-01 | Finale, credits, postgame exploration | End-to-end completion test |
+
+---
+
+# Appendix F. Content writing and implementation templates
+
+## Landmark definition checklist
+
+Stable ID; biome; name/lore localization keys; world position; landmark prefab; observation sockets; discovery range/LOS rule; approach route ID; capability band; first-discovery reward key; associated cache/relic/mission IDs; audio cue; photo framing; accessibility clue; performance budget; validation status.
+
+## Mission authoring checklist
+
+Stable ID; prerequisite IDs; acceptance/turn-in hubs; text; ordered/parallel objective structure; quest-item provisioning; mass/slot reservation; required routes and capability; success conditions; recovery behavior; reward key; save checkpoint boundaries; abandonment/resume handling; completion test fixture.
+
+## Chunk manifest checklist
+
+Chunk coordinate; biome coverage; terrain reference; far-proxy reference; collider group; local surface map; prop groups; landmark/cache IDs; road graph edges; neighboring chunk references; bundle dependencies; estimated memory; checksum; generator version; build-time validation report.
+
+## Definition of done for any feature
+
+The feature is implemented, compiled, connected to its real UI/input path, saved if persistent, tested for normal/failure/interruption behavior, documented, profiled where relevant, and free of hidden dependency on editor-only code. Any remaining placeholder or untested platform is explicitly listed. A screenshot alone is not feature completion.
+
+**End of specification.**
