@@ -6,9 +6,10 @@ Status legend used here: **VERIFIED** (ran in this repo/environment) vs **UNVERI
 
 ## 0. Environment reality check (read first)
 
-The machine that produced this repository state has **no Unity editor, no .NET/Mono compiler, no Android SDK, no Xcode** (only Python 3.11 and Node). Therefore:
+The machine that produced this repository state has **no Unity editor, no Android SDK, no Xcode** (only Python 3.11 and Node). Therefore:
 
-- Everything under `Assets/` is **real source, but uncompiled/unverified** (KI-001/KI-003).
+- The **non-Unity C# assemblies** (`Wayfinder.Core`, the pure part of `Wayfinder.Simulation`, `Wayfinder.World`, `Wayfinder.Progression`, `Wayfinder.Persistence`, `Wayfinder.Tests.EditMode`) **are compiled and tested here** with a real Roslyn C# 9 compiler + NUnit 3 that `Tools/Build/headless_cs.py` bootstraps from pinned sources — see §3a and `Docs/EVIDENCE_CS_HEADLESS.md` (49/49 EditMode tests pass).
+- The **Unity-dependent C#** (`Scripts/Platform`, `Scripts/Presentation`, `Scripts/Editor`, `Simulation/VehicleController.cs`, `Simulation/ChaseCameraBehaviour.cs`, `Tests/PlayMode`) is **real source, parse-checked as C# 9, but not type-checked or executed** (KI-001/KI-003).
 - Everything under `Tools/Validation` and `Tools/Balance` is **Python and was executed here** — see `Docs/EVIDENCE_M0.md` for captured output.
 - Nothing in this repository is a fabricated build log, APK, IPA, or device measurement.
 
@@ -68,6 +69,22 @@ python3 Tools/Validation/formula_checks.py       # blueprint formulas & invarian
 python3 Tools/Balance/economy_sim.py             # §11.5 headless balance simulation
 ```
 
+## 3a. Headless C# compile + EditMode tests (**VERIFIED** — no Unity needed)
+
+```bash
+python3 Tools/Build/headless_cs.py all        # bootstrap (first run ≈1 min, cached in ~/.cache/wayfinder-headless-cs)
+                                              # + compile (C# 9, warn:4) + EditMode tests (NUnitLite)
+                                              # + .NET Standard 2.1 profile check + parse check of Unity files
+python3 Tools/Build/headless_cs.py test -- --where "class =~ PersistenceTests"   # any NUnit filter
+WAYFINDER_HEADLESS_CS_HOME=/tmp/wf-cs python3 Tools/Build/headless_cs.py all     # fresh cache
+```
+
+Needs Python 3.9+, Linux x86_64 and access to `github.com` / `api.github.com` / `codeload.github.com` /
+`files.pythonhosted.org` for the one-time bootstrap. Exit code is non-zero on any compile error,
+test failure, profile violation or syntax error. Outputs: `Logs/headless/compile-report.json`,
+`Logs/headless/EditMode.headless.xml` (NUnit3 XML). This is **not** a Unity build (KI-016): Unity's
+own Test Runner result (§3) remains the gate evidence and supersedes it.
+
 ## 4. Build a smoke build (**UNVERIFIED** — needs platform modules)
 
 Android (ARM64, IL2CPP, development build for M0 smoke):
@@ -118,6 +135,7 @@ Assets/Wayfinder/Tests/PlayMode          NUnit play tests (vehicle, hazards, rec
 Assets/Wayfinder/Content                 authoritative JSON content + input actions
 Tools/Validation                         headless validators (Python, runnable anywhere)
 Tools/Balance                            economy simulation (Python)
-Tools/Build                              pin_toolchain.py, platform build scripts
+Tools/Build                              pin_toolchain.py, headless_cs.py (C# compile+test without Unity), platform build scripts
+Docs/evidence                            committed raw evidence artifacts (NUnit XML, compile reports, console logs)
 Docs                                     status, decisions, issues, evidence, requirement map, assets
 ```

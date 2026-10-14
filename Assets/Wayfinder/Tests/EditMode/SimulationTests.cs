@@ -22,7 +22,9 @@ namespace Wayfinder.Tests
         {
             Assert.AreEqual(0f, FuelModel.LitersPerSecond(1f, 1f, 1f, false));
             float worst = FuelModel.LitersPerSecond(1f, 1f, 1f, true);
-            Assert.LessOrEqual(worst, 0.047f);
+            // 0.003 + 0.025 + 0.015 + 0.004 = 0.047 L/s is the formula's hard ceiling (§5.1);
+            // compare within float32 rounding (the exact sum lands on 0.0470000021f).
+            Assert.AreEqual(0.047f, worst, 1e-6f);
             float fuel = FuelModel.Integrate(5f, 24f, 0.02255f, 1f);
             Assert.Greater(fuel, 4.9f);
             Assert.AreEqual(0f, FuelModel.Integrate(0.1f, 24f, 1f, 100f)); // clamps at zero
@@ -101,7 +103,9 @@ namespace Wayfinder.Tests
             Assert.AreEqual(110f, Powertrain.TorqueAtRpm(spec, 800f), 1e-3f);
             Assert.AreEqual(240f, Powertrain.TorqueAtRpm(spec, 2500f), 1e-3f);
             Assert.AreEqual(140f, Powertrain.TorqueAtRpm(spec, 5200f), 1e-3f);
-            Assert.AreEqual(165f, Powertrain.TorqueAtRpm(spec, 1950f), 1e-2f); // linear between 1500..2500
+            // Linear between (1500,190) and (2500,240) per §4.3: 190 + 0.45 × 50 = 212.5 N·m.
+            // (The original expectation of 165 N·m was arithmetically wrong — revised after the first executed run.)
+            Assert.AreEqual(212.5f, Powertrain.TorqueAtRpm(spec, 1950f), 1e-2f);
         }
 
         [Test]

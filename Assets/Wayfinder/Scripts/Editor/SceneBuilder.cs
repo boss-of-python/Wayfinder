@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using Wayfinder.Platform;
+using Wayfinder.Core;
 using Wayfinder.Simulation;
 
 namespace Wayfinder.Editor

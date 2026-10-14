@@ -248,7 +248,8 @@ namespace Wayfinder.Simulation
             float baseAngle = steerCommand * max;
 
             // Wheel-radius-neutral approximation; arcade blend keeps both wheels closer to base.
-            float turnRadius = wheelbaseM / Math.Max(0.1f, Math.Tan(Math.Abs(baseAngle) * Math.PI / 180f)) * Math.Sign(baseAngle == 0 ? 1 : baseAngle);
+            double tanSteer = Math.Tan(Math.Abs(baseAngle) * Math.PI / 180.0);
+            float turnRadius = (float)(wheelbaseM / Math.Max(0.1, tanSteer)) * Math.Sign(baseAngle == 0 ? 1 : baseAngle);
             float inner = (float)(Math.Atan(wheelbaseM / Math.Max(0.5f, Math.Abs(turnRadius) - trackM / 2f)) * 180.0 / Math.PI) * Math.Sign(turnRadius);
             float outer = (float)(Math.Atan(wheelbaseM / (Math.Abs(turnRadius) + trackM / 2f)) * 180.0 / Math.PI) * Math.Sign(turnRadius);
 

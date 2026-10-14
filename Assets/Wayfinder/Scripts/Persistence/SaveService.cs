@@ -20,7 +20,8 @@ namespace Wayfinder.Persistence
         {
             Culture = System.Globalization.CultureInfo.InvariantCulture,
             NullValueHandling = NullValueHandling.Ignore,
-            Formatting = Formatting.None
+            Formatting = Formatting.None,
+            DateParseHandling = DateParseHandling.None
         };
 
         public static string Serialize(object value)
@@ -32,7 +33,17 @@ namespace Wayfinder.Persistence
         /// <summary>Sorts object keys recursively so checksums are stable across dictionary orderings.</summary>
         public static string Canonicalize(string json)
         {
-            var token = JToken.Parse(json);
+            // DateParseHandling.None: a string that merely looks like a date must stay a string,
+            // otherwise Json.NET would re-format it and the checksum would drift between write and read.
+            JToken token;
+            using (var reader = new JsonTextReader(new StringReader(json))
+            {
+                DateParseHandling = DateParseHandling.None,
+                FloatParseHandling = FloatParseHandling.Double
+            })
+            {
+                token = JToken.ReadFrom(reader);
+            }
             var sorted = SortToken(token);
             return sorted.ToString(Formatting.None);
         }
@@ -70,6 +81,33 @@ namespace Wayfinder.Persistence
     }
 
     /// <summary>
+    /// Json.NET settings for reading/writing save files. <b>ObjectCreationHandling.Replace is
+    /// mandatory</b>: the DTOs initialise their lists with defaults (e.g. <c>ownedVehicleIds</c>
+    /// contains the Scout), and Json.NET's default <c>Auto</c> handling would APPEND the JSON array
+    /// to that default list on load — duplicating entries and breaking the payload checksum.
+    /// (Found by the first executed run of PersistenceTests; see Docs/KNOWN_ISSUES.md KI-013.)
+    /// </summary>
+    public static class SaveJson
+    {
+        public static readonly JsonSerializerSettings ReadSettings = new JsonSerializerSettings
+        {
+            Culture = System.Globalization.CultureInfo.InvariantCulture,
+            ObjectCreationHandling = ObjectCreationHandling.Replace,
+            DateParseHandling = DateParseHandling.None,
+            MissingMemberHandling = MissingMemberHandling.Ignore
+        };
+
+        public static readonly JsonSerializerSettings WriteSettings = new JsonSerializerSettings
+        {
+            Culture = System.Globalization.CultureInfo.InvariantCulture,
+            DateParseHandling = DateParseHandling.None,
+            Formatting = Formatting.Indented
+        };
+
+        public static JsonSerializer Reader() => JsonSerializer.Create(ReadSettings);
+    }
+
+    /// <summary>
     /// Atomic persistence and recovery (§17.4):
     /// 1. capture immutable state revision N+1 on main thread
     /// 2. serialize canonical payload + checksum
@@ -88,7 +126,7 @@ namespace Wayfinder.Persistence
         public const string TempFileName = "current.json.tmp";
 
         readonly string _rootDirectory;
-        readonly Action<string> _atomicReplace;
+        readonly Action<string, string, string> _atomicReplace;
 
         /// <summary>Injected so EditMode tests can run without UnityEngine (atomic replace strategy).</summary>
         public SaveService(string rootDirectory, Action<string, string, string> atomicReplace = null)
@@ -135,7 +173,7 @@ namespace Wayfinder.Persistence
 
                 string canonical = CanonicalJson.Serialize(payload);
                 envelope.payloadChecksum = CanonicalJson.Sha256Hex(canonical);
-                string envelopeJson = JsonConvert.SerializeObject(envelope, Formatting.Indented);
+                string envelopeJson = JsonConvert.SerializeObject(envelope, SaveJson.WriteSettings);
 
                 string tempPath = PathFor(slot, TempFileName);
                 using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -224,7 +262,7 @@ namespace Wayfinder.Persistence
             try
             {
                 string json = File.ReadAllText(path);
-                var envelope = JsonConvert.DeserializeObject<SaveEnvelope>(json);
+                var envelope = JsonConvert.DeserializeObject<SaveEnvelope>(json, SaveJson.ReadSettings);
                 if (envelope == null || envelope.payload == null)
                     return (false, null, "empty");
                 if (envelope.schemaVersion > CurrentSchemaVersion)
@@ -289,7 +327,7 @@ namespace Wayfinder.Persistence
                 {
                     var obj = JObject.FromObject(envelope.payload);
                     step(obj);
-                    envelope.payload = obj.ToObject<SavePayload>();
+                    envelope.payload = obj.ToObject<SavePayload>(SaveJson.Reader());
                 }
                 envelope.schemaVersion++;
             }

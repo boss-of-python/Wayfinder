@@ -92,7 +92,21 @@ namespace Wayfinder.Simulation
         public void SetFuel(float liters) => _fuelLiters = MathUtil.Clamp(liters, 0f, spec.FuelCapacityLiters);
         public void SetSurfaceAtWheel(int index, SurfaceType surface) => _surfaces[index] = surface;
         public void SetEngineOn(bool on) => _engineOn = on;
-        public void ApplyWaterStall() { _damage.ApplyWaterStall(); _water.ClearStall(); SetEngineOn(false); }
+        /// <summary>
+        /// Water above intake for 2 s: engine stops and condition drops 10 once (§5.3). The water
+        /// model's latch is deliberately NOT cleared here — it is cleared by
+        /// <see cref="RestartAfterWaterRecovery"/> (winch-out/repair/rescue), so a vehicle sitting
+        /// in deep water is never charged again every two seconds.
+        /// </summary>
+        public void ApplyWaterStall() { _damage.ApplyWaterStall(); SetEngineOn(false); }
+
+        /// <summary>Recovery/repair path once the vehicle is out of the water: ends the incident and restarts the engine.</summary>
+        public void RestartAfterWaterRecovery()
+        {
+            _water.ClearStall();
+            _damage.EndWaterIncident();
+            if (!_damage.EngineDisabled) SetEngineOn(true);
+        }
 
         void FixedUpdate()
         {
