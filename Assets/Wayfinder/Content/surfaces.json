@@ -1,0 +1,79 @@
+[
+  {
+    "id": "intact_asphalt",
+    "dryGrip": 1.0,
+    "wetMultiplier": 0.75,
+    "rollingResistance": 0.015,
+    "behavior": "Predictable, longest coasting"
+  },
+  {
+    "id": "broken_asphalt",
+    "dryGrip": 0.9,
+    "wetMultiplier": 0.75,
+    "rollingResistance": 0.025,
+    "behavior": "Local bumps, good main road"
+  },
+  {
+    "id": "packed_dirt",
+    "dryGrip": 0.82,
+    "wetMultiplier": 0.72,
+    "rollingResistance": 0.035,
+    "behavior": "Baseline trail"
+  },
+  {
+    "id": "gravel",
+    "dryGrip": 0.7,
+    "wetMultiplier": 0.85,
+    "rollingResistance": 0.045,
+    "behavior": "Progressive lateral slip"
+  },
+  {
+    "id": "grass",
+    "dryGrip": 0.65,
+    "wetMultiplier": 0.65,
+    "rollingResistance": 0.05,
+    "behavior": "Wet side-slope warning"
+  },
+  {
+    "id": "rock",
+    "dryGrip": 0.9,
+    "wetMultiplier": 0.65,
+    "rollingResistance": 0.03,
+    "behavior": "Good dry climbing; abrupt ledges"
+  },
+  {
+    "id": "shallow_mud",
+    "dryGrip": 0.48,
+    "wetMultiplier": 0.8,
+    "rollingResistance": 0.11,
+    "behavior": "Slow, increased fuel demand"
+  },
+  {
+    "id": "deep_mud",
+    "dryGrip": 0.3,
+    "wetMultiplier": 0.8,
+    "rollingResistance": 0.2,
+    "behavior": "Requires line choice, tires, winch"
+  },
+  {
+    "id": "sand",
+    "dryGrip": 0.5,
+    "wetMultiplier": 1.0,
+    "rollingResistance": 0.1,
+    "behavior": "Momentum helps; turning digs in"
+  },
+  {
+    "id": "packed_snow",
+    "dryGrip": 0.38,
+    "wetMultiplier": 0.85,
+    "rollingResistance": 0.07,
+    "behavior": "Gentle inputs preferred"
+  },
+  {
+    "id": "ice",
+    "dryGrip": 0.12,
+    "wetMultiplier": 1.0,
+    "rollingResistance": 0.01,
+    "behavior": "Very long braking distance"
+  }
+]

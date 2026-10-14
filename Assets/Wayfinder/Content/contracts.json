@@ -1,0 +1,507 @@
+[
+  {
+    "id": "C_F01",
+    "biome": "forest",
+    "pattern": "Triangulate",
+    "regionIndex": 0,
+    "rewardSalvage": 250,
+    "rewardKey": "reward.contract.C_F01",
+    "targets": [
+      "contract_socket.forest.1.1",
+      "contract_socket.forest.1.2",
+      "contract_socket.forest.1.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_F02",
+    "biome": "forest",
+    "pattern": "GentleDelivery",
+    "regionIndex": 0,
+    "rewardSalvage": 400,
+    "rewardKey": "reward.contract.C_F02",
+    "targets": [
+      "contract_socket.forest.2.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_F03",
+    "biome": "forest",
+    "pattern": "HiddenVista",
+    "regionIndex": 0,
+    "rewardSalvage": 300,
+    "rewardKey": "reward.contract.C_F03",
+    "targets": [
+      "contract_socket.forest.3.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_F04",
+    "biome": "forest",
+    "pattern": "InfrastructureCheck",
+    "regionIndex": 0,
+    "rewardSalvage": 300,
+    "rewardKey": "reward.contract.C_F04",
+    "targets": [
+      "contract_socket.forest.4.1",
+      "contract_socket.forest.4.2",
+      "contract_socket.forest.4.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_F05",
+    "biome": "forest",
+    "pattern": "FieldSample",
+    "regionIndex": 0,
+    "rewardSalvage": 350,
+    "rewardKey": "reward.contract.C_F05",
+    "targets": [
+      "contract_socket.forest.5.1",
+      "contract_socket.forest.5.2",
+      "contract_socket.forest.5.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_F06",
+    "biome": "forest",
+    "pattern": "OldRoute",
+    "regionIndex": 0,
+    "rewardSalvage": 400,
+    "rewardKey": "reward.contract.C_F06",
+    "targets": [
+      "contract_socket.forest.6.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_C01",
+    "biome": "canyon",
+    "pattern": "Triangulate",
+    "regionIndex": 1,
+    "rewardSalvage": 350,
+    "rewardKey": "reward.contract.C_C01",
+    "targets": [
+      "contract_socket.canyon.1.1",
+      "contract_socket.canyon.1.2",
+      "contract_socket.canyon.1.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_C02",
+    "biome": "canyon",
+    "pattern": "GentleDelivery",
+    "regionIndex": 1,
+    "rewardSalvage": 500,
+    "rewardKey": "reward.contract.C_C02",
+    "targets": [
+      "contract_socket.canyon.2.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_C03",
+    "biome": "canyon",
+    "pattern": "HiddenVista",
+    "regionIndex": 1,
+    "rewardSalvage": 400,
+    "rewardKey": "reward.contract.C_C03",
+    "targets": [
+      "contract_socket.canyon.3.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_C04",
+    "biome": "canyon",
+    "pattern": "InfrastructureCheck",
+    "regionIndex": 1,
+    "rewardSalvage": 400,
+    "rewardKey": "reward.contract.C_C04",
+    "targets": [
+      "contract_socket.canyon.4.1",
+      "contract_socket.canyon.4.2",
+      "contract_socket.canyon.4.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_C05",
+    "biome": "canyon",
+    "pattern": "FieldSample",
+    "regionIndex": 1,
+    "rewardSalvage": 450,
+    "rewardKey": "reward.contract.C_C05",
+    "targets": [
+      "contract_socket.canyon.5.1",
+      "contract_socket.canyon.5.2",
+      "contract_socket.canyon.5.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_C06",
+    "biome": "canyon",
+    "pattern": "OldRoute",
+    "regionIndex": 1,
+    "rewardSalvage": 500,
+    "rewardKey": "reward.contract.C_C06",
+    "targets": [
+      "contract_socket.canyon.6.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_U01",
+    "biome": "city",
+    "pattern": "Triangulate",
+    "regionIndex": 2,
+    "rewardSalvage": 450,
+    "rewardKey": "reward.contract.C_U01",
+    "targets": [
+      "contract_socket.city.1.1",
+      "contract_socket.city.1.2",
+      "contract_socket.city.1.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_U02",
+    "biome": "city",
+    "pattern": "GentleDelivery",
+    "regionIndex": 2,
+    "rewardSalvage": 600,
+    "rewardKey": "reward.contract.C_U02",
+    "targets": [
+      "contract_socket.city.2.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_U03",
+    "biome": "city",
+    "pattern": "HiddenVista",
+    "regionIndex": 2,
+    "rewardSalvage": 500,
+    "rewardKey": "reward.contract.C_U03",
+    "targets": [
+      "contract_socket.city.3.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_U04",
+    "biome": "city",
+    "pattern": "InfrastructureCheck",
+    "regionIndex": 2,
+    "rewardSalvage": 500,
+    "rewardKey": "reward.contract.C_U04",
+    "targets": [
+      "contract_socket.city.4.1",
+      "contract_socket.city.4.2",
+      "contract_socket.city.4.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_U05",
+    "biome": "city",
+    "pattern": "FieldSample",
+    "regionIndex": 2,
+    "rewardSalvage": 550,
+    "rewardKey": "reward.contract.C_U05",
+    "targets": [
+      "contract_socket.city.5.1",
+      "contract_socket.city.5.2",
+      "contract_socket.city.5.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_U06",
+    "biome": "city",
+    "pattern": "OldRoute",
+    "regionIndex": 2,
+    "rewardSalvage": 600,
+    "rewardKey": "reward.contract.C_U06",
+    "targets": [
+      "contract_socket.city.6.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_W01",
+    "biome": "wetlands",
+    "pattern": "Triangulate",
+    "regionIndex": 3,
+    "rewardSalvage": 550,
+    "rewardKey": "reward.contract.C_W01",
+    "targets": [
+      "contract_socket.wetlands.1.1",
+      "contract_socket.wetlands.1.2",
+      "contract_socket.wetlands.1.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_W02",
+    "biome": "wetlands",
+    "pattern": "GentleDelivery",
+    "regionIndex": 3,
+    "rewardSalvage": 700,
+    "rewardKey": "reward.contract.C_W02",
+    "targets": [
+      "contract_socket.wetlands.2.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_W03",
+    "biome": "wetlands",
+    "pattern": "HiddenVista",
+    "regionIndex": 3,
+    "rewardSalvage": 600,
+    "rewardKey": "reward.contract.C_W03",
+    "targets": [
+      "contract_socket.wetlands.3.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_W04",
+    "biome": "wetlands",
+    "pattern": "InfrastructureCheck",
+    "regionIndex": 3,
+    "rewardSalvage": 600,
+    "rewardKey": "reward.contract.C_W04",
+    "targets": [
+      "contract_socket.wetlands.4.1",
+      "contract_socket.wetlands.4.2",
+      "contract_socket.wetlands.4.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_W05",
+    "biome": "wetlands",
+    "pattern": "FieldSample",
+    "regionIndex": 3,
+    "rewardSalvage": 650,
+    "rewardKey": "reward.contract.C_W05",
+    "targets": [
+      "contract_socket.wetlands.5.1",
+      "contract_socket.wetlands.5.2",
+      "contract_socket.wetlands.5.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_W06",
+    "biome": "wetlands",
+    "pattern": "OldRoute",
+    "regionIndex": 3,
+    "rewardSalvage": 700,
+    "rewardKey": "reward.contract.C_W06",
+    "targets": [
+      "contract_socket.wetlands.6.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_H01",
+    "biome": "highlands",
+    "pattern": "Triangulate",
+    "regionIndex": 4,
+    "rewardSalvage": 650,
+    "rewardKey": "reward.contract.C_H01",
+    "targets": [
+      "contract_socket.highlands.1.1",
+      "contract_socket.highlands.1.2",
+      "contract_socket.highlands.1.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_H02",
+    "biome": "highlands",
+    "pattern": "GentleDelivery",
+    "regionIndex": 4,
+    "rewardSalvage": 800,
+    "rewardKey": "reward.contract.C_H02",
+    "targets": [
+      "contract_socket.highlands.2.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_H03",
+    "biome": "highlands",
+    "pattern": "HiddenVista",
+    "regionIndex": 4,
+    "rewardSalvage": 700,
+    "rewardKey": "reward.contract.C_H03",
+    "targets": [
+      "contract_socket.highlands.3.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_H04",
+    "biome": "highlands",
+    "pattern": "InfrastructureCheck",
+    "regionIndex": 4,
+    "rewardSalvage": 700,
+    "rewardKey": "reward.contract.C_H04",
+    "targets": [
+      "contract_socket.highlands.4.1",
+      "contract_socket.highlands.4.2",
+      "contract_socket.highlands.4.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_H05",
+    "biome": "highlands",
+    "pattern": "FieldSample",
+    "regionIndex": 4,
+    "rewardSalvage": 750,
+    "rewardKey": "reward.contract.C_H05",
+    "targets": [
+      "contract_socket.highlands.5.1",
+      "contract_socket.highlands.5.2",
+      "contract_socket.highlands.5.3"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "C_H06",
+    "biome": "highlands",
+    "pattern": "OldRoute",
+    "regionIndex": 4,
+    "rewardSalvage": 800,
+    "rewardKey": "reward.contract.C_H06",
+    "targets": [
+      "contract_socket.highlands.6.1"
+    ],
+    "oneTime": true,
+    "validated": false
+  },
+  {
+    "id": "job.resurvey",
+    "biome": "any",
+    "pattern": "Repeatable",
+    "regionIndex": 0,
+    "rewardSalvage": null,
+    "rewardRange": [
+      150,
+      350
+    ],
+    "rewardFormula": "byValidatedRouteLength",
+    "description": "resurvey two known points",
+    "targets": 2,
+    "oneTime": false,
+    "maxAvailableAtGarage": 3,
+    "refresh": "afterExpeditionEnds"
+  },
+  {
+    "id": "job.supply_delivery",
+    "biome": "any",
+    "pattern": "Repeatable",
+    "regionIndex": 0,
+    "rewardSalvage": null,
+    "rewardRange": [
+      150,
+      350
+    ],
+    "rewardFormula": "byValidatedRouteLength",
+    "description": "deliver one 20 kg supply case",
+    "targets": 1,
+    "oneTime": false,
+    "maxAvailableAtGarage": 3,
+    "refresh": "afterExpeditionEnds"
+  },
+  {
+    "id": "job.utility_crate",
+    "biome": "any",
+    "pattern": "Repeatable",
+    "regionIndex": 0,
+    "rewardSalvage": null,
+    "rewardRange": [
+      150,
+      350
+    ],
+    "rewardFormula": "byValidatedRouteLength",
+    "description": "retrieve a marked utility crate",
+    "targets": 1,
+    "oneTime": false,
+    "maxAvailableAtGarage": 3,
+    "refresh": "afterExpeditionEnds"
+  },
+  {
+    "id": "job.weather_instruments",
+    "biome": "any",
+    "pattern": "Repeatable",
+    "regionIndex": 0,
+    "rewardSalvage": null,
+    "rewardRange": [
+      150,
+      350
+    ],
+    "rewardFormula": "byValidatedRouteLength",
+    "description": "inspect two weather instruments",
+    "targets": 2,
+    "oneTime": false,
+    "maxAvailableAtGarage": 3,
+    "refresh": "afterExpeditionEnds"
+  },
+  {
+    "id": "job.vista_photo",
+    "biome": "any",
+    "pattern": "Repeatable",
+    "regionIndex": 0,
+    "rewardSalvage": null,
+    "rewardRange": [
+      150,
+      350
+    ],
+    "rewardFormula": "byValidatedRouteLength",
+    "description": "photograph a known vista from a new socket",
+    "targets": 1,
+    "oneTime": false,
+    "maxAvailableAtGarage": 3,
+    "refresh": "afterExpeditionEnds"
+  }
+]

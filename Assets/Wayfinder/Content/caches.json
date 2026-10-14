@@ -1,0 +1,3602 @@
+[
+  {
+    "id": "cache.forest.001",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1073,
+      "y": 0,
+      "z": 2139
+    },
+    "salvageUnits": 77,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.001",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.002",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1016,
+      "y": 0,
+      "z": 2131
+    },
+    "salvageUnits": 91,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.002",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.003",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 835,
+      "y": 0,
+      "z": 2534
+    },
+    "salvageUnits": 100,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.003",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.004",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 778,
+      "y": 0,
+      "z": 2526
+    },
+    "salvageUnits": 73,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.004",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.005",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1197,
+      "y": 0,
+      "z": 2328
+    },
+    "salvageUnits": 82,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.005",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.006",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1140,
+      "y": 0,
+      "z": 2320
+    },
+    "salvageUnits": 96,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.006",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.007",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 959,
+      "y": 0,
+      "z": 2123
+    },
+    "salvageUnits": 64,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.007",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.008",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1006,
+      "y": 0,
+      "z": 2558
+    },
+    "salvageUnits": 99,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.008",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.009",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 825,
+      "y": 0,
+      "z": 2361
+    },
+    "salvageUnits": 67,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.009",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.010",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 863,
+      "y": 0,
+      "z": 2366
+    },
+    "salvageUnits": 68,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.010",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.011",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1044,
+      "y": 0,
+      "z": 2564
+    },
+    "salvageUnits": 100,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.011",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.012",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1101,
+      "y": 0,
+      "z": 2572
+    },
+    "salvageUnits": 86,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.012",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.013",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1282,
+      "y": 0,
+      "z": 2169
+    },
+    "salvageUnits": 77,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.013",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.014",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 739,
+      "y": 0,
+      "z": 2177
+    },
+    "salvageUnits": 63,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.014",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.015",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 920,
+      "y": 0,
+      "z": 2374
+    },
+    "salvageUnits": 95,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.015",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.016",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 977,
+      "y": 0,
+      "z": 2383
+    },
+    "salvageUnits": 81,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.016",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.017",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1158,
+      "y": 0,
+      "z": 2580
+    },
+    "salvageUnits": 72,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.017",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.018",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1111,
+      "y": 0,
+      "z": 2145
+    },
+    "salvageUnits": 78,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.018",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.019",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1292,
+      "y": 0,
+      "z": 2342
+    },
+    "salvageUnits": 69,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.019",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.020",
+    "biome": "forest",
+    "kind": "small",
+    "positionHint": {
+      "x": 1100,
+      "y": 0,
+      "z": 2486
+    },
+    "salvageUnits": 60,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.020",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.021",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 919,
+      "y": 0,
+      "z": 2289
+    },
+    "salvageUnits": 142,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.021",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.022",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 738,
+      "y": 0,
+      "z": 2091
+    },
+    "salvageUnits": 138,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.022",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.023",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1157,
+      "y": 0,
+      "z": 2494
+    },
+    "salvageUnits": 134,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.023",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.024",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 976,
+      "y": 0,
+      "z": 2297
+    },
+    "salvageUnits": 130,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.024",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.025",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 795,
+      "y": 0,
+      "z": 2099
+    },
+    "salvageUnits": 126,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.025",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.026",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1214,
+      "y": 0,
+      "z": 2502
+    },
+    "salvageUnits": 122,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.026",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.027",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1033,
+      "y": 0,
+      "z": 2305
+    },
+    "salvageUnits": 179,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.027",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.028",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 852,
+      "y": 0,
+      "z": 2108
+    },
+    "salvageUnits": 175,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.028",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.029",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1271,
+      "y": 0,
+      "z": 2510
+    },
+    "salvageUnits": 171,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.029",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.030",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1045,
+      "y": 0,
+      "z": 2307
+    },
+    "salvageUnits": 126,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.030",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.031",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1226,
+      "y": 0,
+      "z": 2504
+    },
+    "salvageUnits": 130,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.031",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.032",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 807,
+      "y": 0,
+      "z": 2101
+    },
+    "salvageUnits": 134,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.032",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.033",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 988,
+      "y": 0,
+      "z": 2298
+    },
+    "salvageUnits": 138,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.033",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.034",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 921,
+      "y": 0,
+      "z": 2117
+    },
+    "salvageUnits": 171,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.034",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.035",
+    "biome": "forest",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1102,
+      "y": 0,
+      "z": 2315
+    },
+    "salvageUnits": 175,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.035",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.036",
+    "biome": "forest",
+    "kind": "remote",
+    "positionHint": {
+      "x": 1283,
+      "y": 0,
+      "z": 2512
+    },
+    "salvageUnits": 238,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.036",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.037",
+    "biome": "forest",
+    "kind": "remote",
+    "positionHint": {
+      "x": 864,
+      "y": 0,
+      "z": 2109
+    },
+    "salvageUnits": 234,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.037",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.038",
+    "biome": "forest",
+    "kind": "remote",
+    "positionHint": {
+      "x": 797,
+      "y": 0,
+      "z": 2528
+    },
+    "salvageUnits": 262,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.038",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.039",
+    "biome": "forest",
+    "kind": "remote",
+    "positionHint": {
+      "x": 978,
+      "y": 0,
+      "z": 2126
+    },
+    "salvageUnits": 258,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.039",
+    "validated": false
+  },
+  {
+    "id": "cache.forest.040",
+    "biome": "forest",
+    "kind": "remote",
+    "positionHint": {
+      "x": 914,
+      "y": 0,
+      "z": 2116
+    },
+    "salvageUnits": 222,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.forest.040",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.001",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4752,
+      "y": 0,
+      "z": 4593
+    },
+    "salvageUnits": 68,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.001",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.002",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4809,
+      "y": 0,
+      "z": 4601
+    },
+    "salvageUnits": 95,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.002",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.003",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4390,
+      "y": 0,
+      "z": 4198
+    },
+    "salvageUnits": 86,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.003",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.004",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4591,
+      "y": 0,
+      "z": 4141
+    },
+    "salvageUnits": 78,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.004",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.005",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4772,
+      "y": 0,
+      "z": 4338
+    },
+    "salvageUnits": 69,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.005",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.006",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4829,
+      "y": 0,
+      "z": 4347
+    },
+    "salvageUnits": 96,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.006",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.007",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4410,
+      "y": 0,
+      "z": 4544
+    },
+    "salvageUnits": 87,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.007",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.008",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4323,
+      "y": 0,
+      "z": 4617
+    },
+    "salvageUnits": 67,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.008",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.009",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4504,
+      "y": 0,
+      "z": 4214
+    },
+    "salvageUnits": 99,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.009",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.010",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4858,
+      "y": 0,
+      "z": 4522
+    },
+    "salvageUnits": 73,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.010",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.011",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4677,
+      "y": 0,
+      "z": 4325
+    },
+    "salvageUnits": 82,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.011",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.012",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4620,
+      "y": 0,
+      "z": 4317
+    },
+    "salvageUnits": 96,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.012",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.013",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4439,
+      "y": 0,
+      "z": 4119
+    },
+    "salvageUnits": 64,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.013",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.014",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4734,
+      "y": 0,
+      "z": 4333
+    },
+    "salvageUnits": 68,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.014",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.015",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4657,
+      "y": 0,
+      "z": 4579
+    },
+    "salvageUnits": 81,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.015",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.016",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4496,
+      "y": 0,
+      "z": 4128
+    },
+    "salvageUnits": 91,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.016",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.017",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4315,
+      "y": 0,
+      "z": 4530
+    },
+    "salvageUnits": 100,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.017",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.018",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4714,
+      "y": 0,
+      "z": 4587
+    },
+    "salvageUnits": 67,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.018",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.019",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4533,
+      "y": 0,
+      "z": 4390
+    },
+    "salvageUnits": 76,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.019",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.020",
+    "biome": "canyon",
+    "kind": "small",
+    "positionHint": {
+      "x": 4625,
+      "y": 0,
+      "z": 4232
+    },
+    "salvageUnits": 70,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.020",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.021",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4806,
+      "y": 0,
+      "z": 4429
+    },
+    "salvageUnits": 130,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.021",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.022",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4387,
+      "y": 0,
+      "z": 4626
+    },
+    "salvageUnits": 134,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.022",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.023",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4568,
+      "y": 0,
+      "z": 4224
+    },
+    "salvageUnits": 138,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.023",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.024",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4749,
+      "y": 0,
+      "z": 4421
+    },
+    "salvageUnits": 142,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.024",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.025",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4330,
+      "y": 0,
+      "z": 4618
+    },
+    "salvageUnits": 146,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.025",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.026",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4511,
+      "y": 0,
+      "z": 4215
+    },
+    "salvageUnits": 150,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.026",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.027",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4692,
+      "y": 0,
+      "z": 4413
+    },
+    "salvageUnits": 154,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.027",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.028",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4873,
+      "y": 0,
+      "z": 4610
+    },
+    "salvageUnits": 158,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.028",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.029",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4454,
+      "y": 0,
+      "z": 4207
+    },
+    "salvageUnits": 162,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.029",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.030",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4416,
+      "y": 0,
+      "z": 4202
+    },
+    "salvageUnits": 126,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.030",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.031",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4835,
+      "y": 0,
+      "z": 4605
+    },
+    "salvageUnits": 122,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.031",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.032",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4654,
+      "y": 0,
+      "z": 4407
+    },
+    "salvageUnits": 179,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.032",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.033",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4473,
+      "y": 0,
+      "z": 4210
+    },
+    "salvageUnits": 175,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.033",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.034",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4540,
+      "y": 0,
+      "z": 4391
+    },
+    "salvageUnits": 142,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.034",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.035",
+    "biome": "canyon",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4359,
+      "y": 0,
+      "z": 4194
+    },
+    "salvageUnits": 138,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.035",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.036",
+    "biome": "canyon",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4778,
+      "y": 0,
+      "z": 4596
+    },
+    "salvageUnits": 247,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.036",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.037",
+    "biome": "canyon",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4597,
+      "y": 0,
+      "z": 4399
+    },
+    "salvageUnits": 251,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.037",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.038",
+    "biome": "canyon",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4664,
+      "y": 0,
+      "z": 4580
+    },
+    "salvageUnits": 223,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.038",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.039",
+    "biome": "canyon",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4483,
+      "y": 0,
+      "z": 4383
+    },
+    "salvageUnits": 227,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.039",
+    "validated": false
+  },
+  {
+    "id": "cache.canyon.040",
+    "biome": "canyon",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4807,
+      "y": 0,
+      "z": 4172
+    },
+    "salvageUnits": 293,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.canyon.040",
+    "validated": false
+  },
+  {
+    "id": "cache.city.001",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4895,
+      "y": 0,
+      "z": 2085
+    },
+    "salvageUnits": 78,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.001",
+    "validated": false
+  },
+  {
+    "id": "cache.city.002",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4714,
+      "y": 0,
+      "z": 2487
+    },
+    "salvageUnits": 87,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.002",
+    "validated": false
+  },
+  {
+    "id": "cache.city.003",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4533,
+      "y": 0,
+      "z": 2290
+    },
+    "salvageUnits": 96,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.003",
+    "validated": false
+  },
+  {
+    "id": "cache.city.004",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4352,
+      "y": 0,
+      "z": 2093
+    },
+    "salvageUnits": 64,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.004",
+    "validated": false
+  },
+  {
+    "id": "cache.city.005",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4771,
+      "y": 0,
+      "z": 2495
+    },
+    "salvageUnits": 73,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.005",
+    "validated": false
+  },
+  {
+    "id": "cache.city.006",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4590,
+      "y": 0,
+      "z": 2298
+    },
+    "salvageUnits": 82,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.006",
+    "validated": false
+  },
+  {
+    "id": "cache.city.007",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4409,
+      "y": 0,
+      "z": 2101
+    },
+    "salvageUnits": 91,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.007",
+    "validated": false
+  },
+  {
+    "id": "cache.city.008",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4724,
+      "y": 0,
+      "z": 2060
+    },
+    "salvageUnits": 79,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.008",
+    "validated": false
+  },
+  {
+    "id": "cache.city.009",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4543,
+      "y": 0,
+      "z": 2463
+    },
+    "salvageUnits": 88,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.009",
+    "validated": false
+  },
+  {
+    "id": "cache.city.010",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4685,
+      "y": 0,
+      "z": 2312
+    },
+    "salvageUnits": 69,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.010",
+    "validated": false
+  },
+  {
+    "id": "cache.city.011",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4866,
+      "y": 0,
+      "z": 2509
+    },
+    "salvageUnits": 60,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.011",
+    "validated": false
+  },
+  {
+    "id": "cache.city.012",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4447,
+      "y": 0,
+      "z": 2106
+    },
+    "salvageUnits": 92,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.012",
+    "validated": false
+  },
+  {
+    "id": "cache.city.013",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4628,
+      "y": 0,
+      "z": 2304
+    },
+    "salvageUnits": 83,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.013",
+    "validated": false
+  },
+  {
+    "id": "cache.city.014",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4561,
+      "y": 0,
+      "z": 2123
+    },
+    "salvageUnits": 64,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.014",
+    "validated": false
+  },
+  {
+    "id": "cache.city.015",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4742,
+      "y": 0,
+      "z": 2320
+    },
+    "salvageUnits": 96,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.015",
+    "validated": false
+  },
+  {
+    "id": "cache.city.016",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4323,
+      "y": 0,
+      "z": 2517
+    },
+    "salvageUnits": 87,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.016",
+    "validated": false
+  },
+  {
+    "id": "cache.city.017",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4504,
+      "y": 0,
+      "z": 2114
+    },
+    "salvageUnits": 78,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.017",
+    "validated": false
+  },
+  {
+    "id": "cache.city.018",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4333,
+      "y": 0,
+      "z": 2090
+    },
+    "salvageUnits": 79,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.018",
+    "validated": false
+  },
+  {
+    "id": "cache.city.019",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4514,
+      "y": 0,
+      "z": 2287
+    },
+    "salvageUnits": 70,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.019",
+    "validated": false
+  },
+  {
+    "id": "cache.city.020",
+    "biome": "city",
+    "kind": "small",
+    "positionHint": {
+      "x": 4894,
+      "y": 0,
+      "z": 2342
+    },
+    "salvageUnits": 69,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.020",
+    "validated": false
+  },
+  {
+    "id": "cache.city.021",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4713,
+      "y": 0,
+      "z": 2144
+    },
+    "salvageUnits": 121,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.021",
+    "validated": false
+  },
+  {
+    "id": "cache.city.022",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4656,
+      "y": 0,
+      "z": 2136
+    },
+    "salvageUnits": 133,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.022",
+    "validated": false
+  },
+  {
+    "id": "cache.city.023",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4475,
+      "y": 0,
+      "z": 2539
+    },
+    "salvageUnits": 129,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.023",
+    "validated": false
+  },
+  {
+    "id": "cache.city.024",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4418,
+      "y": 0,
+      "z": 2531
+    },
+    "salvageUnits": 141,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.024",
+    "validated": false
+  },
+  {
+    "id": "cache.city.025",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4837,
+      "y": 0,
+      "z": 2333
+    },
+    "salvageUnits": 137,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.025",
+    "validated": false
+  },
+  {
+    "id": "cache.city.026",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4780,
+      "y": 0,
+      "z": 2325
+    },
+    "salvageUnits": 149,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.026",
+    "validated": false
+  },
+  {
+    "id": "cache.city.027",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4599,
+      "y": 0,
+      "z": 2128
+    },
+    "salvageUnits": 145,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.027",
+    "validated": false
+  },
+  {
+    "id": "cache.city.028",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4542,
+      "y": 0,
+      "z": 2120
+    },
+    "salvageUnits": 157,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.028",
+    "validated": false
+  },
+  {
+    "id": "cache.city.029",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4361,
+      "y": 0,
+      "z": 2523
+    },
+    "salvageUnits": 153,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.029",
+    "validated": false
+  },
+  {
+    "id": "cache.city.030",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4631,
+      "y": 0,
+      "z": 2475
+    },
+    "salvageUnits": 172,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.030",
+    "validated": false
+  },
+  {
+    "id": "cache.city.031",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4812,
+      "y": 0,
+      "z": 2073
+    },
+    "salvageUnits": 176,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.031",
+    "validated": false
+  },
+  {
+    "id": "cache.city.032",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4869,
+      "y": 0,
+      "z": 2081
+    },
+    "salvageUnits": 164,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.032",
+    "validated": false
+  },
+  {
+    "id": "cache.city.033",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4450,
+      "y": 0,
+      "z": 2278
+    },
+    "salvageUnits": 168,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.033",
+    "validated": false
+  },
+  {
+    "id": "cache.city.034",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4507,
+      "y": 0,
+      "z": 2286
+    },
+    "salvageUnits": 156,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.034",
+    "validated": false
+  },
+  {
+    "id": "cache.city.035",
+    "biome": "city",
+    "kind": "standard",
+    "positionHint": {
+      "x": 4688,
+      "y": 0,
+      "z": 2484
+    },
+    "salvageUnits": 160,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.035",
+    "validated": false
+  },
+  {
+    "id": "cache.city.036",
+    "biome": "city",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4745,
+      "y": 0,
+      "z": 2492
+    },
+    "salvageUnits": 251,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.036",
+    "validated": false
+  },
+  {
+    "id": "cache.city.037",
+    "biome": "city",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4326,
+      "y": 0,
+      "z": 2089
+    },
+    "salvageUnits": 247,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.037",
+    "validated": false
+  },
+  {
+    "id": "cache.city.038",
+    "biome": "city",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4383,
+      "y": 0,
+      "z": 2097
+    },
+    "salvageUnits": 259,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.038",
+    "validated": false
+  },
+  {
+    "id": "cache.city.039",
+    "biome": "city",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4564,
+      "y": 0,
+      "z": 2294
+    },
+    "salvageUnits": 255,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.039",
+    "validated": false
+  },
+  {
+    "id": "cache.city.040",
+    "biome": "city",
+    "kind": "remote",
+    "positionHint": {
+      "x": 4840,
+      "y": 0,
+      "z": 2505
+    },
+    "salvageUnits": 290,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.city.040",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.001",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3414,
+      "y": 0,
+      "z": 1073
+    },
+    "salvageUnits": 85,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.001",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.002",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3595,
+      "y": 0,
+      "z": 670
+    },
+    "salvageUnits": 76,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.002",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.003",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3176,
+      "y": 0,
+      "z": 868
+    },
+    "salvageUnits": 67,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.003",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.004",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3109,
+      "y": 0,
+      "z": 687
+    },
+    "salvageUnits": 89,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.004",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.005",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3290,
+      "y": 0,
+      "z": 884
+    },
+    "salvageUnits": 80,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.005",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.006",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3471,
+      "y": 0,
+      "z": 1081
+    },
+    "salvageUnits": 71,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.006",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.007",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3052,
+      "y": 0,
+      "z": 678
+    },
+    "salvageUnits": 62,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.007",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.008",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3585,
+      "y": 0,
+      "z": 1097
+    },
+    "salvageUnits": 84,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.008",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.009",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3166,
+      "y": 0,
+      "z": 695
+    },
+    "salvageUnits": 75,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.009",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.010",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3392,
+      "y": 0,
+      "z": 898
+    },
+    "salvageUnits": 90,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.010",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.011",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3211,
+      "y": 0,
+      "z": 701
+    },
+    "salvageUnits": 99,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.011",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.012",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3030,
+      "y": 0,
+      "z": 504
+    },
+    "salvageUnits": 67,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.012",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.013",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3449,
+      "y": 0,
+      "z": 907
+    },
+    "salvageUnits": 76,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.013",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.014",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3268,
+      "y": 0,
+      "z": 709
+    },
+    "salvageUnits": 85,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.014",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.015",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3087,
+      "y": 0,
+      "z": 512
+    },
+    "salvageUnits": 94,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.015",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.016",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3506,
+      "y": 0,
+      "z": 915
+    },
+    "salvageUnits": 62,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.016",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.017",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3325,
+      "y": 0,
+      "z": 717
+    },
+    "salvageUnits": 71,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.017",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.018",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3144,
+      "y": 0,
+      "z": 520
+    },
+    "salvageUnits": 80,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.018",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.019",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3563,
+      "y": 0,
+      "z": 923
+    },
+    "salvageUnits": 89,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.019",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.020",
+    "biome": "wetlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 3051,
+      "y": 0,
+      "z": 935
+    },
+    "salvageUnits": 94,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.020",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.021",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3232,
+      "y": 0,
+      "z": 533
+    },
+    "salvageUnits": 149,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.021",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.022",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3289,
+      "y": 0,
+      "z": 541
+    },
+    "salvageUnits": 137,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.022",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.023",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3470,
+      "y": 0,
+      "z": 738
+    },
+    "salvageUnits": 141,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.023",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.024",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3527,
+      "y": 0,
+      "z": 746
+    },
+    "salvageUnits": 129,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.024",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.025",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3108,
+      "y": 0,
+      "z": 944
+    },
+    "salvageUnits": 133,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.025",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.026",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3165,
+      "y": 0,
+      "z": 952
+    },
+    "salvageUnits": 121,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.026",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.027",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3346,
+      "y": 0,
+      "z": 549
+    },
+    "salvageUnits": 125,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.027",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.028",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3299,
+      "y": 0,
+      "z": 714
+    },
+    "salvageUnits": 177,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.028",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.029",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3480,
+      "y": 0,
+      "z": 911
+    },
+    "salvageUnits": 120,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.029",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.030",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3442,
+      "y": 0,
+      "z": 906
+    },
+    "salvageUnits": 145,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.030",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.031",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3261,
+      "y": 0,
+      "z": 708
+    },
+    "salvageUnits": 141,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.031",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.032",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3204,
+      "y": 0,
+      "z": 700
+    },
+    "salvageUnits": 153,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.032",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.033",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3023,
+      "y": 0,
+      "z": 503
+    },
+    "salvageUnits": 149,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.033",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.034",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3566,
+      "y": 0,
+      "z": 1095
+    },
+    "salvageUnits": 161,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.034",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.035",
+    "biome": "wetlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 3385,
+      "y": 0,
+      "z": 897
+    },
+    "salvageUnits": 157,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.035",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.036",
+    "biome": "wetlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 3328,
+      "y": 0,
+      "z": 889
+    },
+    "salvageUnits": 237,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.036",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.037",
+    "biome": "wetlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 3147,
+      "y": 0,
+      "z": 692
+    },
+    "salvageUnits": 241,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.037",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.038",
+    "biome": "wetlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 3194,
+      "y": 0,
+      "z": 527
+    },
+    "salvageUnits": 293,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.038",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.039",
+    "biome": "wetlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 3013,
+      "y": 0,
+      "z": 930
+    },
+    "salvageUnits": 297,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.039",
+    "validated": false
+  },
+  {
+    "id": "cache.wetlands.040",
+    "biome": "wetlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 3205,
+      "y": 0,
+      "z": 786
+    },
+    "salvageUnits": 288,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.wetlands.040",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.001",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 2056,
+      "y": 0,
+      "z": 5222
+    },
+    "salvageUnits": 62,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.001",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.002",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1513,
+      "y": 0,
+      "z": 5230
+    },
+    "salvageUnits": 89,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.002",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.003",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1694,
+      "y": 0,
+      "z": 4827
+    },
+    "salvageUnits": 80,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.003",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.004",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1999,
+      "y": 0,
+      "z": 5214
+    },
+    "salvageUnits": 76,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.004",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.005",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1580,
+      "y": 0,
+      "z": 4811
+    },
+    "salvageUnits": 67,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.005",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.006",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1637,
+      "y": 0,
+      "z": 4819
+    },
+    "salvageUnits": 94,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.006",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.007",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1818,
+      "y": 0,
+      "z": 5016
+    },
+    "salvageUnits": 85,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.007",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.008",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1523,
+      "y": 0,
+      "z": 4803
+    },
+    "salvageUnits": 81,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.008",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.009",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1704,
+      "y": 0,
+      "z": 5000
+    },
+    "salvageUnits": 72,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.009",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.010",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1666,
+      "y": 0,
+      "z": 4995
+    },
+    "salvageUnits": 71,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.010",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.011",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 2085,
+      "y": 0,
+      "z": 5397
+    },
+    "salvageUnits": 80,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.011",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.012",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 2028,
+      "y": 0,
+      "z": 5389
+    },
+    "salvageUnits": 94,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.012",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.013",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1847,
+      "y": 0,
+      "z": 5192
+    },
+    "salvageUnits": 62,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.013",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.014",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1542,
+      "y": 0,
+      "z": 4806
+    },
+    "salvageUnits": 66,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.014",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.015",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1961,
+      "y": 0,
+      "z": 5208
+    },
+    "salvageUnits": 75,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.015",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.016",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1904,
+      "y": 0,
+      "z": 5200
+    },
+    "salvageUnits": 89,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.016",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.017",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1723,
+      "y": 0,
+      "z": 5003
+    },
+    "salvageUnits": 98,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.017",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.018",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1914,
+      "y": 0,
+      "z": 5373
+    },
+    "salvageUnits": 81,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.018",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.019",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 1733,
+      "y": 0,
+      "z": 5176
+    },
+    "salvageUnits": 90,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.019",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.020",
+    "biome": "highlands",
+    "kind": "small",
+    "positionHint": {
+      "x": 2057,
+      "y": 0,
+      "z": 4965
+    },
+    "salvageUnits": 71,
+    "materials": [],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.020",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.021",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1638,
+      "y": 0,
+      "z": 5162
+    },
+    "salvageUnits": 172,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.021",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.022",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1819,
+      "y": 0,
+      "z": 5359
+    },
+    "salvageUnits": 176,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.022",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.023",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 2000,
+      "y": 0,
+      "z": 4957
+    },
+    "salvageUnits": 180,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.023",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.024",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1581,
+      "y": 0,
+      "z": 5154
+    },
+    "salvageUnits": 123,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.024",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.025",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1762,
+      "y": 0,
+      "z": 5351
+    },
+    "salvageUnits": 127,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.025",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.026",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1943,
+      "y": 0,
+      "z": 4949
+    },
+    "salvageUnits": 131,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.026",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.027",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1524,
+      "y": 0,
+      "z": 5146
+    },
+    "salvageUnits": 135,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.027",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.028",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1809,
+      "y": 0,
+      "z": 5187
+    },
+    "salvageUnits": 136,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.028",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.029",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1990,
+      "y": 0,
+      "z": 5384
+    },
+    "salvageUnits": 140,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.029",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.030",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1848,
+      "y": 0,
+      "z": 4935
+    },
+    "salvageUnits": 168,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.030",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.031",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1667,
+      "y": 0,
+      "z": 5338
+    },
+    "salvageUnits": 164,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.031",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.032",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 2086,
+      "y": 0,
+      "z": 5140
+    },
+    "salvageUnits": 160,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.032",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.033",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1905,
+      "y": 0,
+      "z": 4943
+    },
+    "salvageUnits": 156,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.033",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.034",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1972,
+      "y": 0,
+      "z": 5124
+    },
+    "salvageUnits": 123,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.034",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.035",
+    "biome": "highlands",
+    "kind": "standard",
+    "positionHint": {
+      "x": 1791,
+      "y": 0,
+      "z": 4927
+    },
+    "salvageUnits": 180,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.035",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.036",
+    "biome": "highlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 1610,
+      "y": 0,
+      "z": 5330
+    },
+    "salvageUnits": 293,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.036",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.037",
+    "biome": "highlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 2029,
+      "y": 0,
+      "z": 5132
+    },
+    "salvageUnits": 297,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.037",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.038",
+    "biome": "highlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 1600,
+      "y": 0,
+      "z": 5157
+    },
+    "salvageUnits": 232,
+    "materials": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.038",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.039",
+    "biome": "highlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 2019,
+      "y": 0,
+      "z": 4959
+    },
+    "salvageUnits": 236,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.039",
+    "validated": false
+  },
+  {
+    "id": "cache.highlands.040",
+    "biome": "highlands",
+    "kind": "remote",
+    "positionHint": {
+      "x": 1903,
+      "y": 0,
+      "z": 5114
+    },
+    "salvageUnits": 299,
+    "materials": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "oneTime": true,
+    "rewardKey": "reward.cache.cache.highlands.040",
+    "validated": false
+  }
+]

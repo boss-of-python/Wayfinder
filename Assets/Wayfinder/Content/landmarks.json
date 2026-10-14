@@ -1,0 +1,1902 @@
+[
+  {
+    "id": "landmark.forest.01",
+    "biome": "forest",
+    "name": "Ranger Rise",
+    "nameKey": "landmark.forest.01.name",
+    "hook": "first safe vista and tutorial discovery",
+    "heroSite": true,
+    "positionHint": {
+      "x": 861,
+      "y": 0,
+      "z": 2157
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.01",
+    "clueKey": "landmark.forest.01.clue",
+    "loreKey": "landmark.forest.01.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.02",
+    "biome": "forest",
+    "name": "Hollow Crown",
+    "nameKey": "landmark.forest.02.name",
+    "hook": "giant hollow tree beside a shallow alternate track",
+    "heroSite": true,
+    "positionHint": {
+      "x": 898,
+      "y": 0,
+      "z": 2210
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.02",
+    "clueKey": "landmark.forest.02.clue",
+    "loreKey": "landmark.forest.02.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.03",
+    "biome": "forest",
+    "name": "Old Logging Trestle",
+    "nameKey": "landmark.forest.03.name",
+    "hook": "intact viewing approach, bridge silhouette clue",
+    "heroSite": true,
+    "positionHint": {
+      "x": 935,
+      "y": 0,
+      "z": 2263
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.03",
+    "clueKey": "landmark.forest.03.clue",
+    "loreKey": "landmark.forest.03.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.04",
+    "biome": "forest",
+    "name": "Creek Gauge",
+    "nameKey": "landmark.forest.04.name",
+    "hook": "tutorial depth poles; story inspection",
+    "heroSite": true,
+    "positionHint": {
+      "x": 972,
+      "y": 0,
+      "z": 2316
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.04",
+    "clueKey": "landmark.forest.04.clue",
+    "loreKey": "landmark.forest.04.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.05",
+    "biome": "forest",
+    "name": "Mosswheel Mill",
+    "nameKey": "landmark.forest.05.name",
+    "hook": "waterwheel landmark and easy cache",
+    "heroSite": true,
+    "positionHint": {
+      "x": 1009,
+      "y": 0,
+      "z": 2369
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.05",
+    "clueKey": "landmark.forest.05.clue",
+    "loreKey": "landmark.forest.05.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.06",
+    "biome": "forest",
+    "name": "Firewatch Nine",
+    "nameKey": "landmark.forest.06.name",
+    "hook": "switchback climb and survey reveal",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1046,
+      "y": 0,
+      "z": 2422
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.06",
+    "clueKey": "landmark.forest.06.clue",
+    "loreKey": "landmark.forest.06.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.07",
+    "biome": "forest",
+    "name": "Ferncut Tunnel",
+    "nameKey": "landmark.forest.07.name",
+    "hook": "short mesh tunnel through a rocky spur",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1083,
+      "y": 0,
+      "z": 2475
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.07",
+    "clueKey": "landmark.forest.07.clue",
+    "loreKey": "landmark.forest.07.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.08",
+    "biome": "forest",
+    "name": "Two Pines Crossing",
+    "nameKey": "landmark.forest.08.name",
+    "hook": "safe ford with dry detour",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1120,
+      "y": 0,
+      "z": 2128
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.08",
+    "clueKey": "landmark.forest.08.clue",
+    "loreKey": "landmark.forest.08.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.09",
+    "biome": "forest",
+    "name": "The Quiet Yard",
+    "nameKey": "landmark.forest.09.name",
+    "hook": "abandoned forestry equipment and salvage",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1157,
+      "y": 0,
+      "z": 2181
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.09",
+    "clueKey": "landmark.forest.09.clue",
+    "loreKey": "landmark.forest.09.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.10",
+    "biome": "forest",
+    "name": "Amber Pool",
+    "nameKey": "landmark.forest.10.name",
+    "hook": "reflective clearing, no deep-water requirement",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1194,
+      "y": 0,
+      "z": 2234
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.10",
+    "clueKey": "landmark.forest.10.clue",
+    "loreKey": "landmark.forest.10.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.11",
+    "biome": "forest",
+    "name": "Ridge Radio Hut",
+    "nameKey": "landmark.forest.11.name",
+    "hook": "clue to forest relay",
+    "heroSite": false,
+    "positionHint": {
+      "x": 831,
+      "y": 0,
+      "z": 2287
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.11",
+    "clueKey": "landmark.forest.11.clue",
+    "loreKey": "landmark.forest.11.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.12",
+    "biome": "forest",
+    "name": "Rootbridge Hollow",
+    "nameKey": "landmark.forest.12.name",
+    "hook": "visual root arch over trail",
+    "heroSite": false,
+    "positionHint": {
+      "x": 868,
+      "y": 0,
+      "z": 2340
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.12",
+    "clueKey": "landmark.forest.12.clue",
+    "loreKey": "landmark.forest.12.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.13",
+    "biome": "forest",
+    "name": "North Logger's Camp",
+    "nameKey": "landmark.forest.13.name",
+    "hook": "camp-adjacent historical remains",
+    "heroSite": false,
+    "positionHint": {
+      "x": 905,
+      "y": 0,
+      "z": 2393
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.13",
+    "clueKey": "landmark.forest.13.clue",
+    "loreKey": "landmark.forest.13.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.14",
+    "biome": "forest",
+    "name": "The Split Boulder",
+    "nameKey": "landmark.forest.14.name",
+    "hook": "narrow optional shortcut",
+    "heroSite": false,
+    "positionHint": {
+      "x": 942,
+      "y": 0,
+      "z": 2446
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.14",
+    "clueKey": "landmark.forest.14.clue",
+    "loreKey": "landmark.forest.14.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.15",
+    "biome": "forest",
+    "name": "Rain Shelter",
+    "nameKey": "landmark.forest.15.name",
+    "hook": "visible refuge and weather tutorial cue",
+    "heroSite": false,
+    "positionHint": {
+      "x": 979,
+      "y": 0,
+      "z": 2499
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.15",
+    "clueKey": "landmark.forest.15.clue",
+    "loreKey": "landmark.forest.15.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.16",
+    "biome": "forest",
+    "name": "Stone Lantern Bend",
+    "nameKey": "landmark.forest.16.name",
+    "hook": "old trail marker and relic clue",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1016,
+      "y": 0,
+      "z": 2152
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.16",
+    "clueKey": "landmark.forest.16.clue",
+    "loreKey": "landmark.forest.16.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.17",
+    "biome": "forest",
+    "name": "Greenwater Spillway",
+    "nameKey": "landmark.forest.17.name",
+    "hook": "water control structure",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1053,
+      "y": 0,
+      "z": 2205
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.17",
+    "clueKey": "landmark.forest.17.clue",
+    "loreKey": "landmark.forest.17.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.18",
+    "biome": "forest",
+    "name": "The Leaning Stack",
+    "nameKey": "landmark.forest.18.name",
+    "hook": "kiln/chimney silhouette above trees",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1090,
+      "y": 0,
+      "z": 2258
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.18",
+    "clueKey": "landmark.forest.18.clue",
+    "loreKey": "landmark.forest.18.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.19",
+    "biome": "forest",
+    "name": "Lost Survey Wagon",
+    "nameKey": "landmark.forest.19.name",
+    "hook": "remote cache and story fragment",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1127,
+      "y": 0,
+      "z": 2311
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.19",
+    "clueKey": "landmark.forest.19.clue",
+    "loreKey": "landmark.forest.19.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.forest.20",
+    "biome": "forest",
+    "name": "Mosswood Relay",
+    "nameKey": "landmark.forest.20.name",
+    "hook": "regional mission culmination",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1164,
+      "y": 0,
+      "z": 2364
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.forest.20",
+    "clueKey": "landmark.forest.20.clue",
+    "loreKey": "landmark.forest.20.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.01",
+    "biome": "canyon",
+    "name": "Red Gate Overlook",
+    "nameKey": "landmark.canyon.01.name",
+    "hook": "entry panorama",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4437,
+      "y": 0,
+      "z": 4253
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.01",
+    "clueKey": "landmark.canyon.01.clue",
+    "loreKey": "landmark.canyon.01.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.02",
+    "biome": "canyon",
+    "name": "Echo Arch",
+    "nameKey": "landmark.canyon.02.name",
+    "hook": "natural arch with route choice",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4474,
+      "y": 0,
+      "z": 4306
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.02",
+    "clueKey": "landmark.canyon.02.clue",
+    "loreKey": "landmark.canyon.02.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.03",
+    "biome": "canyon",
+    "name": "Copper Steps",
+    "nameKey": "landmark.canyon.03.name",
+    "hook": "terraced old mine approach",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4511,
+      "y": 0,
+      "z": 4359
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.03",
+    "clueKey": "landmark.canyon.03.clue",
+    "loreKey": "landmark.canyon.03.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.04",
+    "biome": "canyon",
+    "name": "Dry River Shrine",
+    "nameKey": "landmark.canyon.04.name",
+    "hook": "optional relic socket",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4548,
+      "y": 0,
+      "z": 4412
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.04",
+    "clueKey": "landmark.canyon.04.clue",
+    "loreKey": "landmark.canyon.04.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.05",
+    "biome": "canyon",
+    "name": "The Hanging Road",
+    "nameKey": "landmark.canyon.05.name",
+    "hook": "narrow visible service shelf with safe detour",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4585,
+      "y": 0,
+      "z": 4465
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.05",
+    "clueKey": "landmark.canyon.05.clue",
+    "loreKey": "landmark.canyon.05.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.06",
+    "biome": "canyon",
+    "name": "Dustwell Station",
+    "nameKey": "landmark.canyon.06.name",
+    "hook": "refueling-era ruins, not free field fuel",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4622,
+      "y": 0,
+      "z": 4518
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.06",
+    "clueKey": "landmark.canyon.06.clue",
+    "loreKey": "landmark.canyon.06.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.07",
+    "biome": "canyon",
+    "name": "Twin Chimneys",
+    "nameKey": "landmark.canyon.07.name",
+    "hook": "rock pillars visible at long range",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4659,
+      "y": 0,
+      "z": 4571
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.07",
+    "clueKey": "landmark.canyon.07.clue",
+    "loreKey": "landmark.canyon.07.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.08",
+    "biome": "canyon",
+    "name": "Switchback Seven",
+    "nameKey": "landmark.canyon.08.name",
+    "hook": "grade-reading challenge",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4696,
+      "y": 0,
+      "z": 4224
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.08",
+    "clueKey": "landmark.canyon.08.clue",
+    "loreKey": "landmark.canyon.08.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.09",
+    "biome": "canyon",
+    "name": "Sunken Quarry",
+    "nameKey": "landmark.canyon.09.name",
+    "hook": "descent planning and return route",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4733,
+      "y": 0,
+      "z": 4277
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.09",
+    "clueKey": "landmark.canyon.09.clue",
+    "loreKey": "landmark.canyon.09.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.10",
+    "biome": "canyon",
+    "name": "The Broken Conveyor",
+    "nameKey": "landmark.canyon.10.name",
+    "hook": "salvage-rich industrial silhouette",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4770,
+      "y": 0,
+      "z": 4330
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.10",
+    "clueKey": "landmark.canyon.10.clue",
+    "loreKey": "landmark.canyon.10.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.11",
+    "biome": "canyon",
+    "name": "Salt Ribbon",
+    "nameKey": "landmark.canyon.11.name",
+    "hook": "firm white track through soft sand",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4407,
+      "y": 0,
+      "z": 4383
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.11",
+    "clueKey": "landmark.canyon.11.clue",
+    "loreKey": "landmark.canyon.11.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.12",
+    "biome": "canyon",
+    "name": "Surveyor's Needle",
+    "nameKey": "landmark.canyon.12.name",
+    "hook": "distant navigational reference",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4444,
+      "y": 0,
+      "z": 4436
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.12",
+    "clueKey": "landmark.canyon.12.clue",
+    "loreKey": "landmark.canyon.12.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.13",
+    "biome": "canyon",
+    "name": "The Painted Wall",
+    "nameKey": "landmark.canyon.13.name",
+    "hook": "geological strata and photo socket",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4481,
+      "y": 0,
+      "z": 4489
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.13",
+    "clueKey": "landmark.canyon.13.clue",
+    "loreKey": "landmark.canyon.13.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.14",
+    "biome": "canyon",
+    "name": "Old Cable Landing",
+    "nameKey": "landmark.canyon.14.name",
+    "hook": "winch practice on optional route",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4518,
+      "y": 0,
+      "z": 4542
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.14",
+    "clueKey": "landmark.canyon.14.clue",
+    "loreKey": "landmark.canyon.14.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.15",
+    "biome": "canyon",
+    "name": "Windcut Basin",
+    "nameKey": "landmark.canyon.15.name",
+    "hook": "protected campsite neighborhood",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4555,
+      "y": 0,
+      "z": 4595
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.15",
+    "clueKey": "landmark.canyon.15.clue",
+    "loreKey": "landmark.canyon.15.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.16",
+    "biome": "canyon",
+    "name": "Bridge Ledger Site",
+    "nameKey": "landmark.canyon.16.name",
+    "hook": "story delivery/inspection",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4592,
+      "y": 0,
+      "z": 4248
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.16",
+    "clueKey": "landmark.canyon.16.clue",
+    "loreKey": "landmark.canyon.16.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.17",
+    "biome": "canyon",
+    "name": "The Narrow Shade",
+    "nameKey": "landmark.canyon.17.name",
+    "hook": "rock corridor with width warning",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4629,
+      "y": 0,
+      "z": 4301
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.17",
+    "clueKey": "landmark.canyon.17.clue",
+    "loreKey": "landmark.canyon.17.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.18",
+    "biome": "canyon",
+    "name": "Redwater Tanks",
+    "nameKey": "landmark.canyon.18.name",
+    "hook": "utility landmark and electronics cache",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4666,
+      "y": 0,
+      "z": 4354
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.18",
+    "clueKey": "landmark.canyon.18.clue",
+    "loreKey": "landmark.canyon.18.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.19",
+    "biome": "canyon",
+    "name": "Evening Mesa",
+    "nameKey": "landmark.canyon.19.name",
+    "hook": "long but nontechnical viewpoint route",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4703,
+      "y": 0,
+      "z": 4407
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.19",
+    "clueKey": "landmark.canyon.19.clue",
+    "loreKey": "landmark.canyon.19.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.canyon.20",
+    "biome": "canyon",
+    "name": "Echo Relay",
+    "nameKey": "landmark.canyon.20.name",
+    "hook": "regional relay and city connection",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4740,
+      "y": 0,
+      "z": 4460
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.canyon.20",
+    "clueKey": "landmark.canyon.20.clue",
+    "loreKey": "landmark.canyon.20.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.01",
+    "biome": "city",
+    "name": "South Transit Gate",
+    "nameKey": "landmark.city.01.name",
+    "hook": "city entry marker",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4437,
+      "y": 0,
+      "z": 2153
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.01",
+    "clueKey": "landmark.city.01.clue",
+    "loreKey": "landmark.city.01.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.02",
+    "biome": "city",
+    "name": "Clockless Square",
+    "nameKey": "landmark.city.02.name",
+    "hook": "open turning/tutorial area for urban navigation",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4474,
+      "y": 0,
+      "z": 2206
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.02",
+    "clueKey": "landmark.city.02.clue",
+    "loreKey": "landmark.city.02.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.03",
+    "biome": "city",
+    "name": "The Archive Van",
+    "nameKey": "landmark.city.03.name",
+    "hook": "main-story protected case",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4511,
+      "y": 0,
+      "z": 2259
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.03",
+    "clueKey": "landmark.city.03.clue",
+    "loreKey": "landmark.city.03.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.04",
+    "biome": "city",
+    "name": "Greenline Station",
+    "nameKey": "landmark.city.04.name",
+    "hook": "overgrown train platform viewed from service lane",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4548,
+      "y": 0,
+      "z": 2312
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.04",
+    "clueKey": "landmark.city.04.clue",
+    "loreKey": "landmark.city.04.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.05",
+    "biome": "city",
+    "name": "Rooftop Orchard",
+    "nameKey": "landmark.city.05.name",
+    "hook": "authored parking-ramp viewpoint",
+    "heroSite": true,
+    "positionHint": {
+      "x": 4585,
+      "y": 0,
+      "z": 2365
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.05",
+    "clueKey": "landmark.city.05.clue",
+    "loreKey": "landmark.city.05.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.06",
+    "biome": "city",
+    "name": "Flooded Underpass",
+    "nameKey": "landmark.city.06.name",
+    "hook": "depth warning and marked detour",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4622,
+      "y": 0,
+      "z": 2418
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.06",
+    "clueKey": "landmark.city.06.clue",
+    "loreKey": "landmark.city.06.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.07",
+    "biome": "city",
+    "name": "The Leaning Crane",
+    "nameKey": "landmark.city.07.name",
+    "hook": "skyline orientation cue",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4659,
+      "y": 0,
+      "z": 2471
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.07",
+    "clueKey": "landmark.city.07.clue",
+    "loreKey": "landmark.city.07.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.08",
+    "biome": "city",
+    "name": "Depot Seventeen",
+    "nameKey": "landmark.city.08.name",
+    "hook": "cargo contract hub",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4696,
+      "y": 0,
+      "z": 2124
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.08",
+    "clueKey": "landmark.city.08.clue",
+    "loreKey": "landmark.city.08.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.09",
+    "biome": "city",
+    "name": "Blue Tile Courtyard",
+    "nameKey": "landmark.city.09.name",
+    "hook": "compact-vehicle optional route",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4733,
+      "y": 0,
+      "z": 2177
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.09",
+    "clueKey": "landmark.city.09.clue",
+    "loreKey": "landmark.city.09.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.10",
+    "biome": "city",
+    "name": "Last Cinema",
+    "nameKey": "landmark.city.10.name",
+    "hook": "facade lore and relic clue",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4770,
+      "y": 0,
+      "z": 2230
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.10",
+    "clueKey": "landmark.city.10.clue",
+    "loreKey": "landmark.city.10.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.11",
+    "biome": "city",
+    "name": "Power Exchange",
+    "nameKey": "landmark.city.11.name",
+    "hook": "story cable delivery",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4407,
+      "y": 0,
+      "z": 2283
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.11",
+    "clueKey": "landmark.city.11.clue",
+    "loreKey": "landmark.city.11.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.12",
+    "biome": "city",
+    "name": "Canal Service Bridge",
+    "nameKey": "landmark.city.12.name",
+    "hook": "infrastructure unlock",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4444,
+      "y": 0,
+      "z": 2336
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.12",
+    "clueKey": "landmark.city.12.clue",
+    "loreKey": "landmark.city.12.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.13",
+    "biome": "city",
+    "name": "Rust Garden",
+    "nameKey": "landmark.city.13.name",
+    "hook": "reclaimed machine sculptures",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4481,
+      "y": 0,
+      "z": 2389
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.13",
+    "clueKey": "landmark.city.13.clue",
+    "loreKey": "landmark.city.13.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.14",
+    "biome": "city",
+    "name": "Observatory Annex",
+    "nameKey": "landmark.city.14.name",
+    "hook": "hint toward final biome",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4518,
+      "y": 0,
+      "z": 2442
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.14",
+    "clueKey": "landmark.city.14.clue",
+    "loreKey": "landmark.city.14.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.15",
+    "biome": "city",
+    "name": "The Silent Loop",
+    "nameKey": "landmark.city.15.name",
+    "hook": "circular rail turnaround",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4555,
+      "y": 0,
+      "z": 2495
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.15",
+    "clueKey": "landmark.city.15.clue",
+    "loreKey": "landmark.city.15.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.16",
+    "biome": "city",
+    "name": "East Reservoir",
+    "nameKey": "landmark.city.16.name",
+    "hook": "road-level viewpoint",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4592,
+      "y": 0,
+      "z": 2148
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.16",
+    "clueKey": "landmark.city.16.clue",
+    "loreKey": "landmark.city.16.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.17",
+    "biome": "city",
+    "name": "Market Arcade",
+    "nameKey": "landmark.city.17.name",
+    "hook": "driveable covered lane, no interior simulation",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4629,
+      "y": 0,
+      "z": 2201
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.17",
+    "clueKey": "landmark.city.17.clue",
+    "loreKey": "landmark.city.17.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.18",
+    "biome": "city",
+    "name": "Meridian Workshop",
+    "nameKey": "landmark.city.18.name",
+    "hook": "regional garage neighborhood",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4666,
+      "y": 0,
+      "z": 2254
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.18",
+    "clueKey": "landmark.city.18.clue",
+    "loreKey": "landmark.city.18.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.19",
+    "biome": "city",
+    "name": "Signal Rooftop",
+    "nameKey": "landmark.city.19.name",
+    "hook": "observation from adjacent ramp",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4703,
+      "y": 0,
+      "z": 2307
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.19",
+    "clueKey": "landmark.city.19.clue",
+    "loreKey": "landmark.city.19.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.city.20",
+    "biome": "city",
+    "name": "Meridian Relay",
+    "nameKey": "landmark.city.20.name",
+    "hook": "city broadcast restoration",
+    "heroSite": false,
+    "positionHint": {
+      "x": 4740,
+      "y": 0,
+      "z": 2360
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.city.20",
+    "clueKey": "landmark.city.20.clue",
+    "loreKey": "landmark.city.20.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.01",
+    "biome": "wetlands",
+    "name": "Reedwatch Causeway",
+    "nameKey": "landmark.wetlands.01.name",
+    "hook": "safe biome introduction",
+    "heroSite": true,
+    "positionHint": {
+      "x": 3137,
+      "y": 0,
+      "z": 653
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.01",
+    "clueKey": "landmark.wetlands.01.clue",
+    "loreKey": "landmark.wetlands.01.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.02",
+    "biome": "wetlands",
+    "name": "Three Depth Poles",
+    "nameKey": "landmark.wetlands.02.name",
+    "hook": "main-story water reading",
+    "heroSite": true,
+    "positionHint": {
+      "x": 3174,
+      "y": 0,
+      "z": 706
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.02",
+    "clueKey": "landmark.wetlands.02.clue",
+    "loreKey": "landmark.wetlands.02.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.03",
+    "biome": "wetlands",
+    "name": "Old Pump House",
+    "nameKey": "landmark.wetlands.03.name",
+    "hook": "diagram recovery",
+    "heroSite": true,
+    "positionHint": {
+      "x": 3211,
+      "y": 0,
+      "z": 759
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.03",
+    "clueKey": "landmark.wetlands.03.clue",
+    "loreKey": "landmark.wetlands.03.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.04",
+    "biome": "wetlands",
+    "name": "Lantern Pier",
+    "nameKey": "landmark.wetlands.04.name",
+    "hook": "shoreline observation socket",
+    "heroSite": true,
+    "positionHint": {
+      "x": 3248,
+      "y": 0,
+      "z": 812
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.04",
+    "clueKey": "landmark.wetlands.04.clue",
+    "loreKey": "landmark.wetlands.04.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.05",
+    "biome": "wetlands",
+    "name": "Glasswater Bend",
+    "nameKey": "landmark.wetlands.05.name",
+    "hook": "reflection/photo site",
+    "heroSite": true,
+    "positionHint": {
+      "x": 3285,
+      "y": 0,
+      "z": 865
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.05",
+    "clueKey": "landmark.wetlands.05.clue",
+    "loreKey": "landmark.wetlands.05.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.06",
+    "biome": "wetlands",
+    "name": "Sunken Bus Stop",
+    "nameKey": "landmark.wetlands.06.name",
+    "hook": "viewed safely from bank",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3322,
+      "y": 0,
+      "z": 918
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.06",
+    "clueKey": "landmark.wetlands.06.clue",
+    "loreKey": "landmark.wetlands.06.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.07",
+    "biome": "wetlands",
+    "name": "The Salt Works",
+    "nameKey": "landmark.wetlands.07.name",
+    "hook": "machinery and alloy cache",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3359,
+      "y": 0,
+      "z": 971
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.07",
+    "clueKey": "landmark.wetlands.07.clue",
+    "loreKey": "landmark.wetlands.07.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.08",
+    "biome": "wetlands",
+    "name": "Heron Platform",
+    "nameKey": "landmark.wetlands.08.name",
+    "hook": "noninteractive wildlife viewpoint",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3396,
+      "y": 0,
+      "z": 624
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.08",
+    "clueKey": "landmark.wetlands.08.clue",
+    "loreKey": "landmark.wetlands.08.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.09",
+    "biome": "wetlands",
+    "name": "Mangrove Gate",
+    "nameKey": "landmark.wetlands.09.name",
+    "hook": "firm trail through dense vegetation",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3433,
+      "y": 0,
+      "z": 677
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.09",
+    "clueKey": "landmark.wetlands.09.clue",
+    "loreKey": "landmark.wetlands.09.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.10",
+    "biome": "wetlands",
+    "name": "Broken Sluice",
+    "nameKey": "landmark.wetlands.10.name",
+    "hook": "current demonstration from safe ground",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3470,
+      "y": 0,
+      "z": 730
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.10",
+    "clueKey": "landmark.wetlands.10.clue",
+    "loreKey": "landmark.wetlands.10.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.11",
+    "biome": "wetlands",
+    "name": "Weatherboat Memorial",
+    "nameKey": "landmark.wetlands.11.name",
+    "hook": "relic clue, boat is static scenery",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3107,
+      "y": 0,
+      "z": 783
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.11",
+    "clueKey": "landmark.wetlands.11.clue",
+    "loreKey": "landmark.wetlands.11.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.12",
+    "biome": "wetlands",
+    "name": "White Reed Island",
+    "nameKey": "landmark.wetlands.12.name",
+    "hook": "reachable by validated shallow causeway",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3144,
+      "y": 0,
+      "z": 836
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.12",
+    "clueKey": "landmark.wetlands.12.clue",
+    "loreKey": "landmark.wetlands.12.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.13",
+    "biome": "wetlands",
+    "name": "Tide Marker Twelve",
+    "nameKey": "landmark.wetlands.13.name",
+    "hook": "dual water-state inspection",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3181,
+      "y": 0,
+      "z": 889
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.13",
+    "clueKey": "landmark.wetlands.13.clue",
+    "loreKey": "landmark.wetlands.13.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.14",
+    "biome": "wetlands",
+    "name": "Longboard Crossing",
+    "nameKey": "landmark.wetlands.14.name",
+    "hook": "narrow but safe authored bridge",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3218,
+      "y": 0,
+      "z": 942
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.14",
+    "clueKey": "landmark.wetlands.14.clue",
+    "loreKey": "landmark.wetlands.14.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.15",
+    "biome": "wetlands",
+    "name": "The Dry Knoll",
+    "nameKey": "landmark.wetlands.15.name",
+    "hook": "forward camp neighborhood",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3255,
+      "y": 0,
+      "z": 995
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.15",
+    "clueKey": "landmark.wetlands.15.clue",
+    "loreKey": "landmark.wetlands.15.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.16",
+    "biome": "wetlands",
+    "name": "Cable Marsh",
+    "nameKey": "landmark.wetlands.16.name",
+    "hook": "avoidable bog and raised route",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3292,
+      "y": 0,
+      "z": 648
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.16",
+    "clueKey": "landmark.wetlands.16.clue",
+    "loreKey": "landmark.wetlands.16.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.17",
+    "biome": "wetlands",
+    "name": "Estuary Window",
+    "nameKey": "landmark.wetlands.17.name",
+    "hook": "broad panorama",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3329,
+      "y": 0,
+      "z": 701
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.17",
+    "clueKey": "landmark.wetlands.17.clue",
+    "loreKey": "landmark.wetlands.17.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.18",
+    "biome": "wetlands",
+    "name": "Pumpkeeper's House",
+    "nameKey": "landmark.wetlands.18.name",
+    "hook": "exterior narrative site",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3366,
+      "y": 0,
+      "z": 754
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.18",
+    "clueKey": "landmark.wetlands.18.clue",
+    "loreKey": "landmark.wetlands.18.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.19",
+    "biome": "wetlands",
+    "name": "Firmground Survey",
+    "nameKey": "landmark.wetlands.19.name",
+    "hook": "main-story route markers",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3403,
+      "y": 0,
+      "z": 807
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.19",
+    "clueKey": "landmark.wetlands.19.clue",
+    "loreKey": "landmark.wetlands.19.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.wetlands.20",
+    "biome": "wetlands",
+    "name": "Tideglass Relay",
+    "nameKey": "landmark.wetlands.20.name",
+    "hook": "raised regional mast",
+    "heroSite": false,
+    "positionHint": {
+      "x": 3440,
+      "y": 0,
+      "z": 860
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.wetlands.20",
+    "clueKey": "landmark.wetlands.20.clue",
+    "loreKey": "landmark.wetlands.20.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.01",
+    "biome": "highlands",
+    "name": "High Road Gate",
+    "nameKey": "landmark.highlands.01.name",
+    "hook": "mountain entry view",
+    "heroSite": true,
+    "positionHint": {
+      "x": 1637,
+      "y": 0,
+      "z": 4953
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.01",
+    "clueKey": "landmark.highlands.01.clue",
+    "loreKey": "landmark.highlands.01.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.02",
+    "biome": "highlands",
+    "name": "Shepherd's Turn",
+    "nameKey": "landmark.highlands.02.name",
+    "hook": "first gentle snow patch",
+    "heroSite": true,
+    "positionHint": {
+      "x": 1674,
+      "y": 0,
+      "z": 5006
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.02",
+    "clueKey": "landmark.highlands.02.clue",
+    "loreKey": "landmark.highlands.02.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.03",
+    "biome": "highlands",
+    "name": "Slate Basin",
+    "nameKey": "landmark.highlands.03.name",
+    "hook": "gravel-to-rock handling contrast",
+    "heroSite": true,
+    "positionHint": {
+      "x": 1711,
+      "y": 0,
+      "z": 5059
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.03",
+    "clueKey": "landmark.highlands.03.clue",
+    "loreKey": "landmark.highlands.03.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.04",
+    "biome": "highlands",
+    "name": "White Cairn",
+    "nameKey": "landmark.highlands.04.name",
+    "hook": "visible ridge marker",
+    "heroSite": true,
+    "positionHint": {
+      "x": 1748,
+      "y": 0,
+      "z": 5112
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.04",
+    "clueKey": "landmark.highlands.04.clue",
+    "loreKey": "landmark.highlands.04.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.05",
+    "biome": "highlands",
+    "name": "Weather Station East",
+    "nameKey": "landmark.highlands.05.name",
+    "hook": "story sensor inspection",
+    "heroSite": true,
+    "positionHint": {
+      "x": 1785,
+      "y": 0,
+      "z": 5165
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.05",
+    "clueKey": "landmark.highlands.05.clue",
+    "loreKey": "landmark.highlands.05.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.06",
+    "biome": "highlands",
+    "name": "Weather Station West",
+    "nameKey": "landmark.highlands.06.name",
+    "hook": "alternate approach comparison",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1822,
+      "y": 0,
+      "z": 5218
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.06",
+    "clueKey": "landmark.highlands.06.clue",
+    "loreKey": "landmark.highlands.06.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.07",
+    "biome": "highlands",
+    "name": "The Old Funicular",
+    "nameKey": "landmark.highlands.07.name",
+    "hook": "static rail slope, drive alongside only",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1859,
+      "y": 0,
+      "z": 5271
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.07",
+    "clueKey": "landmark.highlands.07.clue",
+    "loreKey": "landmark.highlands.07.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.08",
+    "biome": "highlands",
+    "name": "Cloudbreak Shelter",
+    "nameKey": "landmark.highlands.08.name",
+    "hook": "safe view and camp neighborhood",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1896,
+      "y": 0,
+      "z": 4924
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.08",
+    "clueKey": "landmark.highlands.08.clue",
+    "loreKey": "landmark.highlands.08.lore",
+    "capabilityBand": "Gentle",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.09",
+    "biome": "highlands",
+    "name": "Frozen Mirror",
+    "nameKey": "landmark.highlands.09.name",
+    "hook": "ice edge observed from stable road",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1933,
+      "y": 0,
+      "z": 4977
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.09",
+    "clueKey": "landmark.highlands.09.clue",
+    "loreKey": "landmark.highlands.09.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.10",
+    "biome": "highlands",
+    "name": "Needle Pass",
+    "nameKey": "landmark.highlands.10.name",
+    "hook": "technical optional shortcut",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1970,
+      "y": 0,
+      "z": 5030
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.10",
+    "clueKey": "landmark.highlands.10.clue",
+    "loreKey": "landmark.highlands.10.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.11",
+    "biome": "highlands",
+    "name": "Summit Service Yard",
+    "nameKey": "landmark.highlands.11.name",
+    "hook": "cargo turnaround and salvage",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1607,
+      "y": 0,
+      "z": 5083
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.11",
+    "clueKey": "landmark.highlands.11.clue",
+    "loreKey": "landmark.highlands.11.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.12",
+    "biome": "highlands",
+    "name": "The Copper Dome",
+    "nameKey": "landmark.highlands.12.name",
+    "hook": "observatory silhouette clue",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1644,
+      "y": 0,
+      "z": 5136
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.12",
+    "clueKey": "landmark.highlands.12.clue",
+    "loreKey": "landmark.highlands.12.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.13",
+    "biome": "highlands",
+    "name": "Meltwater Steps",
+    "nameKey": "landmark.highlands.13.name",
+    "hook": "seasonal-looking but validated crossing",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1681,
+      "y": 0,
+      "z": 5189
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.13",
+    "clueKey": "landmark.highlands.13.clue",
+    "loreKey": "landmark.highlands.13.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.14",
+    "biome": "highlands",
+    "name": "Stonewind Bridge",
+    "nameKey": "landmark.highlands.14.name",
+    "hook": "highland infrastructure landmark",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1718,
+      "y": 0,
+      "z": 5242
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.14",
+    "clueKey": "landmark.highlands.14.clue",
+    "loreKey": "landmark.highlands.14.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.15",
+    "biome": "highlands",
+    "name": "Last Green Meadow",
+    "nameKey": "landmark.highlands.15.name",
+    "hook": "quiet contrast after snowy climb",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1755,
+      "y": 0,
+      "z": 5295
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.15",
+    "clueKey": "landmark.highlands.15.clue",
+    "loreKey": "landmark.highlands.15.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.16",
+    "biome": "highlands",
+    "name": "Surveyor's Rest",
+    "nameKey": "landmark.highlands.16.name",
+    "hook": "relic set finale",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1792,
+      "y": 0,
+      "z": 4948
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.16",
+    "clueKey": "landmark.highlands.16.clue",
+    "loreKey": "landmark.highlands.16.lore",
+    "capabilityBand": "Demanding",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.17",
+    "biome": "highlands",
+    "name": "Sensor Cache",
+    "nameKey": "landmark.highlands.17.name",
+    "hook": "protected story core site",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1829,
+      "y": 0,
+      "z": 5001
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.17",
+    "clueKey": "landmark.highlands.17.clue",
+    "loreKey": "landmark.highlands.17.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.18",
+    "biome": "highlands",
+    "name": "The Last Mast",
+    "nameKey": "landmark.highlands.18.name",
+    "hook": "fifth relay",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1866,
+      "y": 0,
+      "z": 5054
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.18",
+    "clueKey": "landmark.highlands.18.clue",
+    "loreKey": "landmark.highlands.18.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.19",
+    "biome": "highlands",
+    "name": "Atlas Approach",
+    "nameKey": "landmark.highlands.19.name",
+    "hook": "final climb with loaded-return-safe route",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1903,
+      "y": 0,
+      "z": 5107
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.19",
+    "clueKey": "landmark.highlands.19.clue",
+    "loreKey": "landmark.highlands.19.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  },
+  {
+    "id": "landmark.highlands.20",
+    "biome": "highlands",
+    "name": "Frontier Observatory",
+    "nameKey": "landmark.highlands.20.name",
+    "hook": "final transmission and credits",
+    "heroSite": false,
+    "positionHint": {
+      "x": 1940,
+      "y": 0,
+      "z": 5160
+    },
+    "discoveryRewardSalvage": 120,
+    "rewardKey": "reward.landmark.landmark.highlands.20",
+    "clueKey": "landmark.highlands.20.clue",
+    "loreKey": "landmark.highlands.20.lore",
+    "capabilityBand": "Technical",
+    "validated": false
+  }
+]

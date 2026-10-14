@@ -1,0 +1,56 @@
+[
+  {
+    "tier": "BatteryLow",
+    "targetFps": 30,
+    "renderScale": [
+      0.7,
+      0.85
+    ],
+    "shadowDistance": 35,
+    "shadowCascades": 1,
+    "foliageDensity": 0.5,
+    "additionalPixelLights": [
+      0,
+      0
+    ],
+    "msaa": "Off/2x",
+    "post": "Color grade only",
+    "textureLimit": "lower mip budget"
+  },
+  {
+    "tier": "Balanced",
+    "targetFps": 60,
+    "renderScale": [
+      0.85,
+      1.0
+    ],
+    "shadowDistance": 60,
+    "shadowCascades": 2,
+    "foliageDensity": 0.75,
+    "additionalPixelLights": [
+      0,
+      1
+    ],
+    "msaa": "2x",
+    "post": "Grade + restrained bloom",
+    "textureLimit": "standard"
+  },
+  {
+    "tier": "High",
+    "targetFps": 60,
+    "renderScale": [
+      1.0,
+      1.0
+    ],
+    "shadowDistance": 85,
+    "shadowCascades": 2,
+    "foliageDensity": 1.0,
+    "additionalPixelLights": [
+      1,
+      2
+    ],
+    "msaa": "4x only when budget permits",
+    "post": "Same, higher quality",
+    "textureLimit": "higher budget"
+  }
+]
