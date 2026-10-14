@@ -1,0 +1,26 @@
+{
+  "dependencies": {
+    "com.unity.addressables": "2.7.6",
+    "com.unity.inputsystem": "1.16.0",
+    "com.unity.localization": "1.5.9",
+    "com.unity.modules.accessibility": "1.0.0",
+    "com.unity.modules.androidjni": "1.0.0",
+    "com.unity.modules.animation": "1.0.0",
+    "com.unity.modules.assetbundle": "1.0.0",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.imageconversion": "1.0.0",
+    "com.unity.modules.imgui": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.particlesystem": "1.0.0",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.screencapture": "1.0.0",
+    "com.unity.modules.terrain": "1.0.0",
+    "com.unity.modules.terrainphysics": "1.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.uielements": "1.0.0",
+    "com.unity.modules.vehicles": "1.0.0",
+    "com.unity.render-pipelines.universal": "17.3.0",
+    "com.unity.test-framework": "1.6.0",
+    "com.unity.ugui": "2.0.0"
+  }
+}

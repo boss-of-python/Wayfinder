@@ -1,0 +1,42 @@
+# Unity-generated caches and local state
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Bb]uild/
+/[Bb]uilds/
+/Artifacts/
+/MemoryCaptures/
+/Recordings/
+.vs/
+.idea/
+*.csproj
+*.sln
+*.slnx
+*.user
+*.pidb
+*.booproj
+*.apk
+*.aab
+*.ipa
+*.pdb
+.DS_Store
+__pycache__/
+*.pyc
+# Owner credentials: never commit signing material or local environment
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+*.cer
+*.key
+# Addressables generated output, not authored settings
+/ServerData/
+/Assets/StreamingAssets/aa/
+/Assets/StreamingAssets/aa.meta
+/Assets/AddressableAssetsData/*/*.bin*
+/Assets/AddressableAssetsData/*/addressables_content_state.bin*

@@ -1,0 +1,14 @@
+* text=auto
+*.cs text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.unity text eol=lf
+*.asset text eol=lf
+*.meta text eol=lf
+*.inputactions text eol=lf
+*.png binary
+*.wav binary
+*.fbx binary
