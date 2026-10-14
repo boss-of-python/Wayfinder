@@ -133,6 +133,44 @@ namespace Wayfinder.Progression
 
         public bool ProtectedLedgerContains(string itemId) => _protectedLedger.Contains(itemId);
 
+        /// <summary>
+        /// Placement plan for a pickup: top up compatible partial stacks first (same item + mission
+        /// instance), then open new stacks of at most <c>MaxStack</c>. A quantity larger than one
+        /// stack therefore needs several slots — the previous implementation stored it as one
+        /// oversized stack, which under-counted slots (found by ProgressionTests QA case 9).
+        /// </summary>
+        struct PlacementPlan
+        {
+            public List<(int index, int add)> Merges;
+            public List<int> NewStackQuantities;
+            public int RequiredSlots => NewStackQuantities?.Count ?? 0;
+        }
+
+        PlacementPlan Plan(InventoryId target, ItemStack stack, ItemDefinition def)
+        {
+            var plan = new PlacementPlan { Merges = new List<(int, int)>(), NewStackQuantities = new List<int>() };
+            int maxStack = Math.Max(1, def.MaxStack);
+            int remaining = stack.Quantity;
+            var existing = Stacks(target);
+            for (int i = 0; i < existing.Count && remaining > 0; i++)
+            {
+                var s = existing[i];
+                if (s.ItemId.Value != stack.ItemId.Value || s.MissionInstanceId != stack.MissionInstanceId) continue;
+                int room = maxStack - s.Quantity;
+                if (room <= 0) continue;
+                int add = Math.Min(room, remaining);
+                plan.Merges.Add((i, add));
+                remaining -= add;
+            }
+            while (remaining > 0)
+            {
+                int q = Math.Min(maxStack, remaining);
+                plan.NewStackQuantities.Add(q);
+                remaining -= q;
+            }
+            return plan;
+        }
+
         public CapacityResult CanAdd(InventoryId target, ItemStack stack)
         {
             var def = ItemCatalog.Get(stack.ItemId);
@@ -145,19 +183,7 @@ namespace Wayfinder.Progression
             int freeSlots = cap.slots - UsedSlots(target);
             float freeMass = cap.massKg - TotalMassKg(target);
 
-            // Merge into an existing compatible stack if possible (same item + mission instance).
-            bool canMerge = false;
-            foreach (var s in Stacks(target))
-            {
-                if (s.ItemId.Value == stack.ItemId.Value && s.MissionInstanceId == stack.MissionInstanceId
-                    && s.Quantity + stack.Quantity <= def.MaxStack)
-                {
-                    canMerge = true;
-                    break;
-                }
-            }
-
-            int requiredSlots = canMerge ? 0 : 1;
+            int requiredSlots = Plan(target, stack, def).RequiredSlots;
             if (requiredSlots > freeSlots)
                 return CapacityResult.Rejected(FailureReason.InsufficientSlots, requiredSlots, freeSlots, stack.MassKg, freeMass);
             if (stack.MassKg > freeMass + 1e-4f)
@@ -167,7 +193,8 @@ namespace Wayfinder.Progression
 
         /// <summary>
         /// Adds items. Returns typed failure WITHOUT mutating state when capacity fails
-        /// (QA case 3: the pickup source must not be consumed by a failed add).
+        /// (QA case 3: the pickup source must not be consumed by a failed add). The whole
+        /// quantity is placed or nothing is.
         /// </summary>
         public CommandResult Add(InventoryId target, ItemStack stack)
         {
@@ -182,6 +209,7 @@ namespace Wayfinder.Progression
                 _protectedLedger.Add(stack.ItemId.Value);
                 return CommandResult.Ok();
             }
+            if (stack.Quantity == 0) return CommandResult.Ok();
 
             if (!_stacks.TryGetValue(target, out var list))
             {
@@ -189,17 +217,14 @@ namespace Wayfinder.Progression
                 _stacks[target] = list;
             }
 
-            for (int i = 0; i < list.Count; i++)
+            var plan = Plan(target, stack, def);
+            foreach (var (index, add) in plan.Merges)
             {
-                var s = list[i];
-                if (s.ItemId.Value == stack.ItemId.Value && s.MissionInstanceId == stack.MissionInstanceId
-                    && s.Quantity + stack.Quantity <= def.MaxStack)
-                {
-                    list[i] = new ItemStack(s.ItemId, s.Quantity + stack.Quantity, s.MissionInstanceId);
-                    return CommandResult.Ok();
-                }
+                var s = list[index];
+                list[index] = new ItemStack(s.ItemId, s.Quantity + add, s.MissionInstanceId);
             }
-            list.Add(stack);
+            foreach (int q in plan.NewStackQuantities)
+                list.Add(new ItemStack(stack.ItemId, q, stack.MissionInstanceId));
             return CommandResult.Ok();
         }
 

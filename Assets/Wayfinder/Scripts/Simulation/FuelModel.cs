@@ -174,15 +174,34 @@ namespace Wayfinder.Simulation
             return CommandResult.Ok();
         }
 
-        /// <summary>Water stall: engine condition drops 10 ONCE per incident (§5.3).</summary>
-        public void ApplyWaterStall()
+        bool _waterIncidentActive;
+
+        /// <summary>True from the stall until the incident is ended by repair/recovery.</summary>
+        public bool WaterIncidentActive => _waterIncidentActive;
+
+        /// <summary>
+        /// Water stall: engine condition drops 10 ONCE per incident (§5.3). Idempotent while the
+        /// incident is active, so neither deep submersion nor a duplicate caller can drain
+        /// condition repeatedly. Returns true only when the drop was applied.
+        /// </summary>
+        public bool ApplyWaterStall()
         {
+            if (_waterIncidentActive) return false;
+            _waterIncidentActive = true;
             EngineCondition = Clamp0to100(EngineCondition - (int)WaterStallConditionDrop);
+            return true;
+        }
+
+        /// <summary>Ends the water incident (vehicle recovered/repaired out of the water).</summary>
+        public void EndWaterIncident()
+        {
+            _waterIncidentActive = false;
         }
 
         public void RepairFully()
         {
             EngineCondition = SuspensionCondition = TiresCondition = BodyCondition = 100;
+            _waterIncidentActive = false;
         }
 
         public bool EngineDisabled => EngineCondition <= 0;

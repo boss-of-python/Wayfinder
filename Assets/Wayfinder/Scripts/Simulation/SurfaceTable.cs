@@ -4,21 +4,8 @@ using Wayfinder.Core;
 
 namespace Wayfinder.Simulation
 {
-    /// <summary>Gameplay surface labels (§4.4). Shared by visuals and physics — one source.</summary>
-    public enum SurfaceType
-    {
-        IntactAsphalt = 0,
-        BrokenAsphalt = 1,
-        PackedDirt = 2,
-        Gravel = 3,
-        Grass = 4,
-        Rock = 5,
-        ShallowMud = 6,
-        DeepMud = 7,
-        Sand = 8,
-        PackedSnow = 9,
-        Ice = 10
-    }
+    // SurfaceType (§4.4 surface labels) lives in Wayfinder.Core.SurfaceType so that World and
+    // Simulation share one definition without an assembly dependency between them.
 
     /// <summary>
     /// Tuning coefficients per §4.4. These are game tuning values, not measured tire-material

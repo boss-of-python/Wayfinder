@@ -68,3 +68,29 @@ Log format: date, decision, rationale, status (Approved / Provisional / Rejected
 **Decision:** (a) C# NUnit EditMode/PlayMode suites committed for Unity Test Runner; (b) Python `Tools/Validation/validate_content.py`, `formula_checks.py`, `Tools/Balance/economy_sim.py` executed in this environment as real evidence for the data/formula layer. C# results remain unverified here.
 **Rationale:** Best available real evidence without Unity; never present Python results as Unity test results.
 **Status:** Approved.
+
+## 2026-10-14 — D-014 Headless C# verification harness with pinned provenance
+**Decision:** Add `Tools/Build/headless_cs.py`, which bootstraps a real Roslyn 3.9.0 `csc` (C# 9, the Unity 6 language level) on a .NET Core 3.1.23 runtime, builds Newtonsoft.Json 13.0.3, NUnit 3.13.3/NUnitLite and a .NET Standard 2.1 reference assembly from source, and then (a) compiles every non-Unity assembly with the real `.asmdef` reference graph at `-warn:4`, (b) runs the EditMode NUnit suites, (c) recompiles the runtime assemblies against **only** the .NET Standard 2.1 reference (Unity's API profile), (d) parse-checks the Unity-dependent files. Every artifact is pinned by commit/tree hash or SHA-256 and comes only from the hosts reachable here (GitHub, PyPI). Run outputs go to `Logs/headless/` (ignored); cited results are copied under `Docs/evidence/`.
+**Rationale:** D-003 forbade calling C# "Verified" without a compiler. Rather than keep guessing, obtain a real compiler within the egress policy. The harness is explicitly *not* a Unity build (KI-016) and `Implemented`→`Verified (headless)` is only claimed for assemblies that compiled, passed the profile check and executed their tests.
+**Alternatives rejected:** Building Mono from source (hours, needs OpenSSL build); .NET SDK from the npm mirror (its 2.0 runtime needs `libunwind.so.8`, absent); vendoring compiler binaries into the repo (size, licensing).
+**Status:** Approved. Evidence: `Docs/EVIDENCE_CS_HEADLESS.md`.
+
+## 2026-10-14 — D-015 `SurfaceType` lives in `Wayfinder.Core`
+**Decision:** The `SurfaceType` enum moved from `Wayfinder.Simulation` (`SurfaceTable.cs`) to `Wayfinder.Core` (`Core/SurfaceType.cs`). `SurfaceTable` and all consumers are unchanged apart from `using Wayfinder.Core;`.
+**Rationale:** `Wayfinder.World` consumed the enum but its asmdef does not (and per ARCH-01 should not) reference `Simulation`; the headless compile exposed this as CS0246. Surface identity is a shared vocabulary term, which is what `Core` is for.
+**Status:** Approved.
+
+## 2026-10-14 — D-016 EditMode tests must not require `UnityEngine` to locate content
+**Decision:** `ContentCatalogTests` resolves `Assets/Wayfinder/Content` via `UnityEngine.Application.dataPath` only under `UNITY_5_3_OR_NEWER`; otherwise via `WAYFINDER_CONTENT_DIR` or walking up from the test assembly to the repository root. Suites in `Wayfinder.Tests.EditMode` stay free of `UnityEngine` unless a test genuinely needs the engine.
+**Rationale:** Keeps the EditMode suites runnable both in the Unity Test Runner and headlessly (D-014).
+**Status:** Approved.
+
+## 2026-10-14 — D-017 Save serialization uses explicit `SaveJson` settings
+**Decision:** All `SaveService` serialize/deserialize/verify calls go through the `SaveJson` settings: `ReadSettings` = invariant culture, `ObjectCreationHandling.Replace`, `DateParseHandling.None`, `MissingMemberHandling.Ignore` (forward-compatible reads); `WriteSettings` = invariant culture, `DateParseHandling.None`, indented. `CanonicalJson` (checksum input) also parses with `DateParseHandling.None` so ISO timestamps are never re-formatted.
+**Rationale:** Newtonsoft's default `ObjectCreationHandling.Auto` appends arrays into pre-initialised `List<T>` fields, which doubled every list on parse-verify and made the checksum fail on 100 % of saves (KI-013). Explicit settings make the save format independent of DTO field initialisers and of Newtonsoft defaults between versions.
+**Status:** Approved.
+
+## 2026-10-14 — D-018 `ResearchService` takes an injected story-gate predicate
+**Decision:** `public ResearchService(Func<string, bool> isMissionCompleted = null)`; when null it falls back to `MissionService.Global`. `ResearchService.Global` keeps the fallback. The composition root may pass `MissionService.Global.IsCompletedCode` explicitly.
+**Rationale:** The implicit static dependency made research tests order-dependent and hid the coupling; injection is the smallest change that keeps the no-monolith rule (ARCH-02) and makes the gate testable in isolation.
+**Status:** Approved.

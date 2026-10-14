@@ -33,10 +33,18 @@ requires a Unity editor on your machine.
 - **Verified evidence (ran in this repo):** content validation, 35 formula/invariant checks
   (including terrain seam agreement ≤ 1 mm and the §5.1 fuel example), economy simulation with
   no deadlocks and no arbitrage. See `Docs/EVIDENCE_M0.md`.
-- **Not yet verified:** C# compilation, PlayMode physics, device builds, touch play, thermal
-  performance — the authoring environment had no Unity/.NET/Android/Xcode toolchain
-  (`Docs/KNOWN_ISSUES.md` KI-001). Nothing here claims a build log, APK, IPA, screenshot or
-  device measurement that does not exist.
+- **Verified without Unity (headless C#):** the non-Unity assemblies (Core, pure Simulation
+  math, World, Progression, Persistence) compile with a real Roslyn C# 9 compiler at warning level 4
+  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 49 EditMode NUnit tests
+  pass** (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
+  write-up in `Docs/EVIDENCE_CS_HEADLESS.md`). Running them found and fixed a save-checksum bug that
+  would have blocked every save (KI-013), a water-stall re-drain (KI-014) and an inventory stack bug
+  (KI-015).
+- **Not yet verified:** Unity's own compile of the engine-facing code (`Platform`, `Presentation`,
+  `Editor`, `VehicleController`, `ChaseCamera`, PlayMode tests — parse-checked only), PlayMode
+  physics, device builds, touch play, thermal performance — the authoring environment had no
+  Unity/Android/Xcode toolchain (`Docs/KNOWN_ISSUES.md` KI-001). Nothing here claims a build log,
+  APK, IPA, screenshot or device measurement that does not exist.
 
 ## Quick start (owner machine)
 
@@ -46,6 +54,7 @@ requires a Unity editor on your machine.
 python3 Tools/Build/pin_toolchain.py --editor-version 6000.3.<patch>f1
 # 3. Open this folder in Unity → menu Tools → Wayfinder → Setup Project
 # 4. Run headless checks any time (no Unity needed):
+python3 Tools/Build/headless_cs.py all           # real C# 9 compile + 49 EditMode NUnit tests
 python3 Tools/Validation/validate_content.py
 python3 Tools/Validation/formula_checks.py
 python3 Tools/Balance/economy_sim.py

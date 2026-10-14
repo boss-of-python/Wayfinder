@@ -126,7 +126,10 @@ namespace Wayfinder.Tests
         public void Research_SequentialWithStoryGates_QA7()
         {
             var economy = new EconomyService();
-            var research = new ResearchService();
+            // Story-gate predicate is injected: the test must not depend on MissionService.Global,
+            // whose state other tests in this fixture legitimately mutate (test-order independence).
+            var completedMissions = new HashSet<string>();
+            var research = new ResearchService(completedMissions.Contains);
             Assert.AreEqual(32200, research.TotalCostSalvage);
 
             economy.Grant(100000);
@@ -136,7 +139,7 @@ namespace Wayfinder.Tests
             Assert.IsFalse(research.TryPurchase(new ContentId("upgrade.scout.01.trailTires1"), economy).Success,
                 "Q01 story gate not completed");
 
-            MissionService.Global.Restore(new[] { "Q01" }, null);
+            completedMissions.Add("Q01");
             Assert.IsTrue(research.TryPurchase(new ContentId("upgrade.scout.01.trailTires1"), economy).Success);
             Assert.IsTrue(research.IsResearched("upgrade.scout.01.trailTires1"));
             Assert.AreEqual(100000 - 200, economy.BankedSalvage);
@@ -146,10 +149,12 @@ namespace Wayfinder.Tests
         public void Research_CapacityModuleRemovalBlockedWhenOver_QA9()
         {
             var inv = NewInventory(slots: 12, mass: 99999f);
-            var research = new ResearchService();
+            var research = new ResearchService(_ => true);
             Assert.IsTrue(research.CanSwapModuleOut(inv, Cargo));
-            inv.Add(Cargo, new ItemStack(new ContentId("scrap_metal"), 20)); // 20 stacks > 12 slots? stacks merge: 2 stacks of 10
-            // Force over-capacity: reduce container.
+            // scrap_metal stacks to 10, so 20 units must occupy exactly two slots.
+            Assert.IsTrue(inv.Add(Cargo, new ItemStack(new ContentId("scrap_metal"), 20)).Success);
+            Assert.AreEqual(2, inv.UsedSlots(Cargo), "oversize pickup is split into MaxStack-sized stacks");
+            // Force over-capacity: simulate removing the cargo rack (container shrinks to 1 slot).
             inv.Restore(Cargo, inv.Stacks(Cargo), (1, 99999f));
             Assert.IsTrue(inv.IsOverCapacity(Cargo));
             Assert.IsFalse(research.CanSwapModuleOut(inv, Cargo), "over capacity blocks rack removal");

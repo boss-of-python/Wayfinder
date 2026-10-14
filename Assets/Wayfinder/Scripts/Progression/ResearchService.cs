@@ -29,9 +29,17 @@ namespace Wayfinder.Progression
 
         readonly List<UpgradeDefinition> _tiers = new List<UpgradeDefinition>(20);
         readonly HashSet<string> _researched = new HashSet<string>(StringComparer.Ordinal);
+        readonly Func<string, bool> _isMissionCompleted;
 
-        ResearchService()
+        /// <summary>
+        /// <paramref name="isMissionCompleted"/> answers "is story mission code X completed?"
+        /// (story gates, §11.1). Defaults to <see cref="MissionService.Global"/> for the runtime;
+        /// tests inject a local predicate so no hidden global state leaks between them.
+        /// The tier table itself is immutable canonical data.
+        /// </summary>
+        public ResearchService(Func<string, bool> isMissionCompleted = null)
         {
+            _isMissionCompleted = isMissionCompleted ?? (code => MissionService.Global.IsCompletedCode(code));
             // Canonical table (§11.2). Content/upgrades.json mirrors this data; ContentValidators
             // assert the two agree so drift is a build error.
             Add(1, "upgrade.scout.01.trailTires1", 200, "Q01", "upgrade.trailTires1.name",
@@ -130,7 +138,7 @@ namespace Wayfinder.Progression
                 return CommandResult.Fail(FailureReason.PrerequisiteNotMet, "previous tier required");
 
             if (!string.IsNullOrEmpty(def.RequiredMissionCode) &&
-                !MissionService.Global.IsCompletedCode(def.RequiredMissionCode))
+                !_isMissionCompleted(def.RequiredMissionCode))
                 return CommandResult.Fail(FailureReason.PrerequisiteNotMet, $"requires {def.RequiredMissionCode}");
 
             var spend = economy.TrySpend(def.CostSalvage, default);

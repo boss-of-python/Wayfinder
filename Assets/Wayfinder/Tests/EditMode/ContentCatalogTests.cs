@@ -13,8 +13,37 @@ namespace Wayfinder.Tests
     /// </summary>
     public class ContentCatalogTests
     {
-        static string ContentDir =>
-            Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "Wayfinder", "Content"));
+        /// <summary>
+        /// Inside Unity the catalog lives under Application.dataPath. Under the headless NUnit
+        /// runner (Tools/Build/headless_cs.py) there is no UnityEngine, so we honour
+        /// WAYFINDER_CONTENT_DIR or walk up from the working directory to find Assets/Wayfinder/Content.
+        /// </summary>
+        static string ContentDir => _contentDir ??= LocateContentDir();
+        static string _contentDir;
+
+        static string LocateContentDir()
+        {
+#if UNITY_5_3_OR_NEWER
+            return Path.GetFullPath(Path.Combine(UnityEngine.Application.dataPath, "Wayfinder", "Content"));
+#else
+            string overrideDir = Environment.GetEnvironmentVariable("WAYFINDER_CONTENT_DIR");
+            if (!string.IsNullOrEmpty(overrideDir) && Directory.Exists(overrideDir))
+                return Path.GetFullPath(overrideDir);
+
+            foreach (string start in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
+            {
+                var dir = new DirectoryInfo(start);
+                while (dir != null)
+                {
+                    string candidate = Path.Combine(dir.FullName, "Assets", "Wayfinder", "Content");
+                    if (Directory.Exists(candidate)) return candidate;
+                    dir = dir.Parent;
+                }
+            }
+            throw new DirectoryNotFoundException(
+                "Assets/Wayfinder/Content not found; set WAYFINDER_CONTENT_DIR or run from the repository.");
+#endif
+        }
 
         static JArray Load(string name) =>
             JArray.Parse(File.ReadAllText(Path.Combine(ContentDir, name)));

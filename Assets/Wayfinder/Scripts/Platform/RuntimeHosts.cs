@@ -1,4 +1,5 @@
 using UnityEngine;
+using Wayfinder.Core;
 using Wayfinder.Simulation;
 
 namespace Wayfinder.Platform
