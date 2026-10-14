@@ -1,0 +1,117 @@
+[
+  {
+    "id": "garage.home",
+    "biome": "forest",
+    "positionHint": {
+      "x": 1024,
+      "y": 0,
+      "z": 2304
+    },
+    "isHome": true,
+    "services": [
+      "fuel",
+      "repair",
+      "save",
+      "research",
+      "vehicleChange",
+      "loadout",
+      "storage",
+      "crafting",
+      "paint",
+      "routePlanning",
+      "hubTravel"
+    ]
+  },
+  {
+    "id": "garage.canyon",
+    "biome": "canyon",
+    "positionHint": {
+      "x": 4800,
+      "y": 0,
+      "z": 4400
+    },
+    "isHome": false,
+    "services": [
+      "fuel",
+      "repair",
+      "save",
+      "research",
+      "vehicleChange",
+      "loadout",
+      "storage",
+      "crafting",
+      "paint",
+      "routePlanning",
+      "hubTravel"
+    ]
+  },
+  {
+    "id": "garage.city",
+    "biome": "city",
+    "positionHint": {
+      "x": 4600,
+      "y": 0,
+      "z": 2300
+    },
+    "isHome": false,
+    "services": [
+      "fuel",
+      "repair",
+      "save",
+      "research",
+      "vehicleChange",
+      "loadout",
+      "storage",
+      "crafting",
+      "paint",
+      "routePlanning",
+      "hubTravel"
+    ]
+  },
+  {
+    "id": "garage.wetlands",
+    "biome": "wetlands",
+    "positionHint": {
+      "x": 3300,
+      "y": 0,
+      "z": 800
+    },
+    "isHome": false,
+    "services": [
+      "fuel",
+      "repair",
+      "save",
+      "research",
+      "vehicleChange",
+      "loadout",
+      "storage",
+      "crafting",
+      "paint",
+      "routePlanning",
+      "hubTravel"
+    ]
+  },
+  {
+    "id": "garage.highlands",
+    "biome": "highlands",
+    "positionHint": {
+      "x": 1800,
+      "y": 0,
+      "z": 5100
+    },
+    "isHome": false,
+    "services": [
+      "fuel",
+      "repair",
+      "save",
+      "research",
+      "vehicleChange",
+      "loadout",
+      "storage",
+      "crafting",
+      "paint",
+      "routePlanning",
+      "hubTravel"
+    ]
+  }
+]

@@ -1,0 +1,16 @@
+# ProjectVersion — intentionally NOT a fabricated pin.
+
+# The implementation environment had no Unity editor installed (KI-002), and
+# Blueprint §15.2 forbids inventing an editor patch number. Unity writes the
+# real ProjectSettings/ProjectVersion.txt automatically the first time this
+# project is opened with the chosen 6000.3.x editor.
+
+# After that first open:
+#   1. Record the full editor version in Docs/BUILD_AND_RUN.md §1.
+#   2. Commit ProjectSettings/ProjectVersion.txt and Packages/packages-lock.json.
+#
+# To pre-stamp before opening (optional):
+#   python3 Tools/Build/pin_toolchain.py --editor-version 6000.3.<patch>f1
+
+m_EditorVersion: 6000.3.UNVERIFIED-PIN-REQUIRED
+m_EditorVersionWithRevision: 6000.3.UNVERIFIED-PIN-REQUIRED

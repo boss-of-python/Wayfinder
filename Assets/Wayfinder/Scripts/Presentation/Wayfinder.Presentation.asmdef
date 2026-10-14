@@ -1,0 +1,14 @@
+{
+    "name": "Wayfinder.Presentation",
+    "rootNamespace": "Wayfinder.Presentation",
+    "references": ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World", "Wayfinder.Progression", "Wayfinder.Persistence", "Wayfinder.Platform"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

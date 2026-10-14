@@ -1,0 +1,92 @@
+[
+  {
+    "id": "biome.forest",
+    "key": "forest",
+    "name": "Mosswood Forest",
+    "areaShare": 0.24,
+    "relayId": "relay.forest",
+    "relayAnchor": {
+      "x": 1408,
+      "z": 2816
+    },
+    "hazards": [
+      "shallow mud",
+      "roots",
+      "wet grass side slopes",
+      "narrow switchbacks",
+      "one optional deep bog"
+    ]
+  },
+  {
+    "id": "biome.canyon",
+    "key": "canyon",
+    "name": "Redscar Canyon",
+    "areaShare": 0.22,
+    "relayId": "relay.canyon",
+    "relayAnchor": {
+      "x": 4864,
+      "z": 4608
+    },
+    "hazards": [
+      "loose gravel",
+      "sand pockets",
+      "sharp ledges",
+      "exposed side slopes",
+      "scripted rockfall barriers"
+    ]
+  },
+  {
+    "id": "biome.city",
+    "key": "city",
+    "name": "Meridian Ruins",
+    "areaShare": 0.16,
+    "relayId": "relay.city",
+    "relayAnchor": {
+      "x": 4608,
+      "z": 2304
+    },
+    "hazards": [
+      "rubble",
+      "tight turns",
+      "blocked roads",
+      "slippery painted concrete",
+      "damaged bridges"
+    ]
+  },
+  {
+    "id": "biome.wetlands",
+    "key": "wetlands",
+    "name": "Tideglass Wetlands",
+    "areaShare": 0.2,
+    "relayId": "relay.wetlands",
+    "relayAnchor": {
+      "x": 3328,
+      "z": 768
+    },
+    "hazards": [
+      "water depth",
+      "current",
+      "mud",
+      "soft shoulders",
+      "fog"
+    ]
+  },
+  {
+    "id": "biome.highlands",
+    "key": "highlands",
+    "name": "Frostline Highlands",
+    "areaShare": 0.18,
+    "relayId": "relay.highlands",
+    "relayAnchor": {
+      "x": 1792,
+      "z": 5120
+    },
+    "hazards": [
+      "packed snow",
+      "ice patches",
+      "longer climbs",
+      "visibility changes",
+      "loaded descent braking"
+    ]
+  }
+]

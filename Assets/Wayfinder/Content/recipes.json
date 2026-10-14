@@ -1,0 +1,74 @@
+[
+  {
+    "id": "recipe.repair_kit",
+    "output": {
+      "itemId": "repair_kit",
+      "quantity": 1
+    },
+    "inputs": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 2
+      },
+      {
+        "itemId": "polymer",
+        "quantity": 1
+      }
+    ],
+    "salvageFee": 20
+  },
+  {
+    "id": "recipe.tire_patch",
+    "output": {
+      "itemId": "tire_patch",
+      "quantity": 1
+    },
+    "inputs": [
+      {
+        "itemId": "polymer",
+        "quantity": 1
+      }
+    ],
+    "salvageFee": 10
+  },
+  {
+    "id": "recipe.recovery_boards",
+    "output": {
+      "itemId": "recovery_boards",
+      "quantity": 1
+    },
+    "inputs": [
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "scrap_metal",
+        "quantity": 1
+      }
+    ],
+    "salvageFee": 15
+  },
+  {
+    "id": "recipe.camp_kit",
+    "output": {
+      "itemId": "camp_kit",
+      "quantity": 1
+    },
+    "inputs": [
+      {
+        "itemId": "scrap_metal",
+        "quantity": 4
+      },
+      {
+        "itemId": "polymer",
+        "quantity": 2
+      },
+      {
+        "itemId": "electronics",
+        "quantity": 1
+      }
+    ],
+    "salvageFee": 80
+  }
+]

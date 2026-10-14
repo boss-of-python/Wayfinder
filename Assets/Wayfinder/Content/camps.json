@@ -1,0 +1,222 @@
+[
+  {
+    "id": "camp.forest.a",
+    "biome": "forest",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": true,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  },
+  {
+    "id": "camp.forest.b",
+    "biome": "forest",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": false,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  },
+  {
+    "id": "camp.canyon.a",
+    "biome": "canyon",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": false,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  },
+  {
+    "id": "camp.canyon.b",
+    "biome": "canyon",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": false,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  },
+  {
+    "id": "camp.city.a",
+    "biome": "city",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": false,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  },
+  {
+    "id": "camp.city.b",
+    "biome": "city",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": false,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  },
+  {
+    "id": "camp.wetlands.a",
+    "biome": "wetlands",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": false,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  },
+  {
+    "id": "camp.wetlands.b",
+    "biome": "wetlands",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": false,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  },
+  {
+    "id": "camp.highlands.a",
+    "biome": "highlands",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": false,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  },
+  {
+    "id": "camp.highlands.b",
+    "biome": "highlands",
+    "storageCapacityKg": 500,
+    "requiresItem": "camp_kit",
+    "q03ProvidesFirst": false,
+    "functions": [
+      "save",
+      "deposit",
+      "fuel",
+      "repairSupplies",
+      "timeOfDay",
+      "map",
+      "hubTravel"
+    ],
+    "positionHint": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "validated": false
+  }
+]

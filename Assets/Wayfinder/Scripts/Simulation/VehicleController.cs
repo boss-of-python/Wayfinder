@@ -1,0 +1,295 @@
+using System;
+using UnityEngine;
+using Wayfinder.Core;
+
+namespace Wayfinder.Simulation
+{
+    /// <summary>
+    /// Rigidbody + four WheelCollider vehicle controller (§4.1, Appendix D physics outline).
+    /// Owns actuation only — no UI, no permanent save writes (§16.1).
+    /// All per-tick work is allocation-free.
+    /// </summary>
+    [RequireComponent(typeof(Rigidbody))]
+    public sealed class VehicleController : MonoBehaviour
+    {
+        [Header("Wheel colliders (front-left, front-right, rear-left, rear-right)")]
+        public WheelCollider wheelFrontLeft;
+        public WheelCollider wheelFrontRight;
+        public WheelCollider wheelRearLeft;
+        public WheelCollider wheelRearRight;
+
+        [Header("Wheel visual transforms (optional)")]
+        public Transform wheelVisualFrontLeft;
+        public Transform wheelVisualFrontRight;
+        public Transform wheelVisualRearLeft;
+        public Transform wheelVisualRearRight;
+
+        [Header("Configuration")]
+        public VehicleSpec spec;
+        public TireSet tireSet = TireSet.AllTerrain;
+
+        Rigidbody _rb;
+        readonly Powertrain _powertrain = new Powertrain();
+        readonly DamageModel _damage = new DamageModel();
+        readonly MudSinkModel _mud = new MudSinkModel();
+        readonly WaterCrossingModel _water = new WaterCrossingModel();
+        readonly RolloverMonitor _rollover = new RolloverMonitor();
+        readonly VehicleStatsResolver _resolver = new VehicleStatsResolver();
+
+        float _steerCommand;
+        float _throttleCommand;
+        float _brakeCommand;
+        bool _handbrake;
+        bool _crawl;
+        bool _engineOn = true;
+        float _fuelLiters;
+        float _cargoMassKg;
+
+        // Reused buffers — zero steady-state allocation (§18.2).
+        readonly bool[] _grounded = new bool[4];
+        readonly float[] _slip = new float[4];
+        readonly float[] _wheelTorque = new float[4];
+        readonly SurfaceType[] _surfaces = new SurfaceType[4];
+
+        public float FuelLiters => _fuelLiters;
+        public float SpeedMetersPerSecond => _rb != null ? _rb.linearVelocity.magnitude : 0f;
+        public float SpeedKph => SpeedMetersPerSecond * 3.6f;
+        public DamageModel Damage => _damage;
+        public MudSinkModel Mud => _mud;
+        public WaterCrossingModel Water => _water;
+        public RolloverMonitor Rollover => _rollover;
+        public Powertrain PowertrainSystem => _powertrain;
+        public VehicleState State { get; private set; } = VehicleState.Parked;
+
+        void Awake()
+        {
+            _rb = GetComponent<Rigidbody>();
+            if (spec == null) spec = VehicleSpec.ScoutS1();
+            _fuelLiters = spec.FuelCapacityLiters;
+            _powertrain.Reset(spec);
+        }
+
+        /// <summary>Latest normalized command from InputRouter (read per rendered frame, §3.2).</summary>
+        public void SetDriveCommand(float steer, float throttle, float brake, bool handbrake, bool crawl)
+        {
+            _steerCommand = MathUtil.Clamp(steer, -1f, 1f);
+            _throttleCommand = MathUtil.Clamp01(throttle);
+            _brakeCommand = MathUtil.Clamp01(brake);
+            _handbrake = handbrake;
+            _crawl = crawl;
+        }
+
+        /// <summary>Losing focus/pause zeroes throttle and applies a parking hold (§3.2).</summary>
+        public void ZeroInputsAndHold()
+        {
+            _throttleCommand = 0f;
+            _brakeCommand = 1f;
+            _steerCommand = 0f;
+        }
+
+        public void SetCargoMass(float kg) => _cargoMassKg = Math.Max(0f, kg);
+        public void RefuelFully() => _fuelLiters = spec.FuelCapacityLiters;
+        public void SetFuel(float liters) => _fuelLiters = MathUtil.Clamp(liters, 0f, spec.FuelCapacityLiters);
+        public void SetSurfaceAtWheel(int index, SurfaceType surface) => _surfaces[index] = surface;
+        public void SetEngineOn(bool on) => _engineOn = on;
+        public void ApplyWaterStall() { _damage.ApplyWaterStall(); _water.ClearStall(); SetEngineOn(false); }
+
+        void FixedUpdate()
+        {
+            if (spec == null) return;
+            float dt = Time.fixedDeltaTime;
+
+            SampleGrounded();
+            var stats = ResolveStats();
+
+            bool reverseIndicated;
+            float totalDriveTorque = _powertrain.Step(
+                spec, stats,
+                AverageWheelSpeedMs(),
+                _throttleCommand, _brakeCommand, _handbrake, _crawl,
+                dt, out reverseIndicated);
+
+            for (int i = 0; i < 4; i++)
+            {
+                _slip[i] = FuelModel.SlipRatio(
+                    _grounded[i] ? GetWheel(i).rpm * Mathf.PI / 30f : 0f,
+                    spec.WheelRadiusM,
+                    LongitudinalSpeedMs());
+            }
+            _powertrain.SplitAwdTorque(totalDriveTorque, _grounded, _slip, _wheelTorque, _powertrain.DiffLockEngaged);
+
+            ApplyWheelForces(stats, reverseIndicated);
+
+            // Hazards and fuel (simulation delta only).
+            _mud.Step(_throttleCommand, LongitudinalSpeedMs(), CurrentMudDepthM(), dt);
+            float intakeHeight = stats.SafeWadingDepthM;
+            if (_water.Step(CurrentWaterDepthM(), intakeHeight, dt, out bool stallEvent) && stallEvent)
+                ApplyWaterStall();
+
+            _damage.Tick(dt);
+            _rollover.Step(CurrentBodyRollDegrees(), SpeedMetersPerSecond, CurrentTerrainSlopeDegrees(), dt);
+
+            float slipSeverity = FuelModel.SlipSeverity(_slip);
+            float load = FuelModel.EstimateLoad(
+                _powertrain.LastCommandedTorque / Math.Max(1f, spec.PeakTorqueNm * spec.FinalDrive),
+                CurrentTerrainSlopeRadians(), 0.035f);
+            float drain = FuelModel.LitersPerSecond(_throttleCommand, load, slipSeverity, _engineOn)
+                          * stats.PoweredFuelDrainFactor
+                          * (1f + _mud.SinkFraction);
+            _fuelLiters = FuelModel.Integrate(_fuelLiters, stats.FuelCapacityLiters, drain, dt);
+
+            UpdateState();
+        }
+
+        void ApplyWheelForces(EffectiveVehicleStats stats, bool reverseIndicated)
+        {
+            float maxSteer = SteeringModel.SteerAngleLimitDegrees(SpeedKph);
+            SteeringModel.AckermannAngles(_steerCommand, SpeedKph, spec.WheelbaseM, spec.TrackM,
+                out float inner, out float outer);
+            bool turningLeft = _steerCommand < 0f;
+
+            // Per-wheel: steer (front), motor torque, brake torque scaled by surface grip.
+            SetWheelDrive(wheelFrontLeft, _wheelTorque[0], _brakeCommand, stats,
+                turningLeft ? inner : outer);
+            SetWheelDrive(wheelFrontRight, _wheelTorque[1], _brakeCommand, stats,
+                turningLeft ? outer : inner);
+            SetWheelDrive(wheelRearLeft, _wheelTorque[2], _brakeCommand, stats, 0f);
+            SetWheelDrive(wheelRearRight, _wheelTorque[3], _brakeCommand, stats, 0f);
+
+            if (_handbrake)
+            {
+                wheelRearLeft.brakeTorque = spec.BrakeTorqueRearNmPerWheel * 1.5f;
+                wheelRearRight.brakeTorque = spec.BrakeTorqueRearNmPerWheel * 1.5f;
+            }
+
+            // Anti-roll (§4.5), both axles.
+            ApplyAntiRoll(wheelFrontLeft, wheelFrontRight, stats);
+            ApplyAntiRoll(wheelRearLeft, wheelRearRight, stats);
+        }
+
+        void SetWheelDrive(WheelCollider wheel, float motorTorque, float brakeCmd, EffectiveVehicleStats stats, float steerDegrees)
+        {
+            if (wheel == null) return;
+            wheel.steerAngle = steerDegrees;
+            wheel.motorTorque = motorTorque;
+
+            float surfaceGrip = SurfaceTable.Get(_surfaces[WheelIndex(wheel)]).EffectiveGrip(false);
+            float brakeScale = MathUtil.Clamp01(surfaceGrip / 0.9f + 0.1f); // ABS-ish assist envelope
+            wheel.brakeTorque = brakeCmd * (wheel == wheelFrontLeft || wheel == wheelFrontRight
+                ? spec.BrakeTorqueFrontNmPerWheel
+                : spec.BrakeTorqueRearNmPerWheel) * brakeScale;
+
+            // WheelCollider friction shaped toward the composed effective grip (§4.4 calibration note:
+            // setting μ does NOT create an exact physical coefficient — M1 calibration required).
+            var fwd = wheel.forwardFriction;
+            fwd.stiffness = stats.EffectiveGrip * (1f + _mud.SinkFraction * -0.5f) * _mud.TractionMultiplier;
+            wheel.forwardFriction = fwd;
+            var side = wheel.sidewaysFriction;
+            side.stiffness = stats.EffectiveGrip * stats.LateralGripFactor * _mud.TractionMultiplier;
+            wheel.sidewaysFriction = side;
+        }
+
+        void ApplyAntiRoll(WheelCollider left, WheelCollider right, EffectiveVehicleStats stats)
+        {
+            if (left == null || right == null) return;
+            bool groundedL = left.isGrounded;
+            bool groundedR = right.isGrounded;
+            float compL = SuspensionCompression(left);
+            float compR = SuspensionCompression(right);
+            float force = AntiRoll.Force(compL, compR, spec.AntiRollCouplingNm, groundedL, groundedR);
+            if (Mathf.Approximately(force, 0f)) return;
+            if (groundedL) _rb.AddForceAtPosition(left.transform.up * -force, left.transform.position);
+            if (groundedR) _rb.AddForceAtPosition(right.transform.up * force, right.transform.position);
+        }
+
+        static float SuspensionCompression(WheelCollider wheel)
+        {
+            if (!wheel.GetGroundHit(out WheelHit hit)) return 0f;
+            return Mathf.Clamp01(1f - hit.distance / wheel.suspensionDistance) * wheel.suspensionDistance;
+        }
+
+        EffectiveVehicleStats ResolveStats()
+        {
+            var stats = _resolver.Resolve(
+                spec, _fuelLiters, _cargoMassKg, tireSet, SurfaceType.PackedDirt, false,
+                _damage.EngineCondition, _damage.SuspensionCondition, _damage.TiresCondition,
+                true, true, true);
+            stats.PunctureActive = _damage.TiresCondition < 30;
+            return stats;
+        }
+
+        void SampleGrounded()
+        {
+            _grounded[0] = wheelFrontLeft != null && wheelFrontLeft.isGrounded;
+            _grounded[1] = wheelFrontRight != null && wheelFrontRight.isGrounded;
+            _grounded[2] = wheelRearLeft != null && wheelRearLeft.isGrounded;
+            _grounded[3] = wheelRearRight != null && wheelRearRight.isGrounded;
+        }
+
+        WheelCollider GetWheel(int i) => i switch
+        {
+            0 => wheelFrontLeft, 1 => wheelFrontRight, 2 => wheelRearLeft, _ => wheelRearRight
+        };
+
+        int WheelIndex(WheelCollider w)
+        {
+            if (w == wheelFrontLeft) return 0;
+            if (w == wheelFrontRight) return 1;
+            if (w == wheelRearLeft) return 2;
+            return 3;
+        }
+
+        float AverageWheelSpeedMs()
+        {
+            // rpm → rad/s → linear
+            float sum = 0f;
+            int n = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                if (!_grounded[i]) continue;
+                sum += GetWheel(i).rpm * Mathf.PI / 30f * spec.WheelRadiusM;
+                n++;
+            }
+            return n > 0 ? sum / n : LongitudinalSpeedMs();
+        }
+
+        float LongitudinalSpeedMs() => Vector3.Dot(_rb.linearVelocity, transform.forward);
+
+        // --- Hazard probes. In M1/M2 these read authored hazard volumes and terrain alphamaps
+        // via SurfaceService; the defaults keep the vehicle fully functional on flat ground. ---
+        float CurrentMudDepthM() => SurfaceTable.IsMud(_surfaces[0]) ? 0.10f : 0f;
+        float CurrentWaterDepthM() => 0f;
+        float CurrentBodyRollDegrees() => Vector3.SignedAngle(transform.up, Vector3.up, transform.forward);
+        float CurrentTerrainSlopeDegrees() => Vector3.Angle(transform.forward,
+            Vector3.ProjectOnPlane(transform.forward, Vector3.up)) ;
+        float CurrentTerrainSlopeRadians() => Mathf.Asin(Mathf.Clamp(transform.up.y - 1f, -1f, 0f) * -1f);
+
+        void UpdateState()
+        {
+            if (_damage.EngineDisabled || _fuelLiters <= 0f && !_engineOn)
+                State = VehicleState.Disabled;
+            else if (_engineOn == false && SpeedMetersPerSecond < 0.2f)
+                State = VehicleState.Stalled;
+            else if (SpeedMetersPerSecond > 0.5f)
+                State = VehicleState.Driving;
+            else
+                State = VehicleState.Parked;
+        }
+
+        void LateUpdate()
+        {
+            // Cosmetic wheel visuals only (§18.2: nothing heavy here).
+            SyncWheelVisual(wheelFrontLeft, wheelVisualFrontLeft);
+            SyncWheelVisual(wheelFrontRight, wheelVisualFrontRight);
+            SyncWheelVisual(wheelRearLeft, wheelVisualRearLeft);
+            SyncWheelVisual(wheelRearRight, wheelVisualRearRight);
+        }
+
+        static void SyncWheelVisual(WheelCollider wheel, Transform visual)
+        {
+            if (wheel == null || visual == null) return;
+            wheel.GetWorldPose(out Vector3 pos, out Quaternion rot);
+            visual.SetPositionAndRotation(pos, rot);
+        }
+    }
+}

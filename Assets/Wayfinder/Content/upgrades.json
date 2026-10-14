@@ -1,0 +1,385 @@
+[
+  {
+    "id": "upgrade.scout.01.trailTires1",
+    "tier": 1,
+    "costSalvage": 200,
+    "prerequisites": [],
+    "requiredMission": "Q01",
+    "effects": [
+      {
+        "stat": "dirtGravelGrip",
+        "operation": "Multiply",
+        "value": 1.1
+      }
+    ],
+    "nameKey": "upgrade.trailTires1.name",
+    "descriptionKey": "upgrade.trailTires1.description",
+    "result": "Dirt/gravel grip +10% relative to baseline"
+  },
+  {
+    "id": "upgrade.scout.02.underbodyGuard",
+    "tier": 2,
+    "costSalvage": 300,
+    "prerequisites": [
+      "upgrade.scout.01.trailTires1"
+    ],
+    "requiredMission": "Q02",
+    "effects": [
+      {
+        "stat": "underbodyDamageFactor",
+        "operation": "Multiply",
+        "value": 0.75
+      }
+    ],
+    "nameKey": "upgrade.underbodyGuard.name",
+    "descriptionKey": "upgrade.underbodyGuard.description",
+    "result": "Underbody collision damage x0.75"
+  },
+  {
+    "id": "upgrade.scout.03.fieldWinch1",
+    "tier": 3,
+    "costSalvage": 450,
+    "prerequisites": [
+      "upgrade.scout.02.underbodyGuard"
+    ],
+    "requiredMission": "Q02",
+    "effects": [
+      {
+        "stat": "winchReachM",
+        "operation": "Set",
+        "value": 12
+      },
+      {
+        "stat": "winchForceCapN",
+        "operation": "Set",
+        "value": 8000
+      }
+    ],
+    "nameKey": "upgrade.fieldWinch1.name",
+    "descriptionKey": "upgrade.fieldWinch1.description",
+    "result": "12 m anchor reach; capped 8 kN pull"
+  },
+  {
+    "id": "upgrade.scout.04.cargoOrganizer",
+    "tier": 4,
+    "costSalvage": 550,
+    "prerequisites": [
+      "upgrade.scout.03.fieldWinch1"
+    ],
+    "requiredMission": "Q03",
+    "effects": [
+      {
+        "stat": "cargoSlots",
+        "operation": "Set",
+        "value": 14
+      }
+    ],
+    "nameKey": "upgrade.cargoOrganizer.name",
+    "descriptionKey": "upgrade.cargoOrganizer.description",
+    "result": "12->14 slots; payload unchanged"
+  },
+  {
+    "id": "upgrade.scout.05.suspension1",
+    "tier": 5,
+    "costSalvage": 700,
+    "prerequisites": [
+      "upgrade.scout.04.cargoOrganizer"
+    ],
+    "requiredMission": "Q04",
+    "effects": [
+      {
+        "stat": "suspensionTravelM",
+        "operation": "Set",
+        "value": 0.34
+      },
+      {
+        "stat": "groundClearanceM",
+        "operation": "Set",
+        "value": 0.27
+      }
+    ],
+    "nameKey": "upgrade.suspension1.name",
+    "descriptionKey": "upgrade.suspension1.description",
+    "result": "Travel 0.28->0.34 m; clearance 0.24->0.27 m"
+  },
+  {
+    "id": "upgrade.scout.06.tank1",
+    "tier": 6,
+    "costSalvage": 850,
+    "prerequisites": [
+      "upgrade.scout.05.suspension1"
+    ],
+    "requiredMission": "Q04",
+    "effects": [
+      {
+        "stat": "fuelCapacityLiters",
+        "operation": "Set",
+        "value": 30
+      }
+    ],
+    "nameKey": "upgrade.tank1.name",
+    "descriptionKey": "upgrade.tank1.description",
+    "result": "Capacity 24->30 L"
+  },
+  {
+    "id": "upgrade.scout.07.lowRange",
+    "tier": 7,
+    "costSalvage": 1000,
+    "prerequisites": [
+      "upgrade.scout.06.tank1"
+    ],
+    "requiredMission": "Q05",
+    "effects": [],
+    "nameKey": "upgrade.lowRange.name",
+    "descriptionKey": "upgrade.lowRange.description",
+    "result": "Optional 1.8x low range; 25 km/h cap"
+  },
+  {
+    "id": "upgrade.scout.08.mudTires",
+    "tier": 8,
+    "costSalvage": 1150,
+    "prerequisites": [
+      "upgrade.scout.07.lowRange"
+    ],
+    "requiredMission": "Q06",
+    "effects": [],
+    "nameKey": "upgrade.mudTires.name",
+    "descriptionKey": "upgrade.mudTires.description",
+    "result": "Unlock swappable mud tires"
+  },
+  {
+    "id": "upgrade.scout.09.radar1",
+    "tier": 9,
+    "costSalvage": 1300,
+    "prerequisites": [
+      "upgrade.scout.08.mudTires"
+    ],
+    "requiredMission": "Q07",
+    "effects": [
+      {
+        "stat": "signalRadiusM",
+        "operation": "Set",
+        "value": 140
+      }
+    ],
+    "nameKey": "upgrade.radar1.name",
+    "descriptionKey": "upgrade.radar1.description",
+    "result": "Signal radius 80->140 m"
+  },
+  {
+    "id": "upgrade.scout.10.engineTune1",
+    "tier": 10,
+    "costSalvage": 1450,
+    "prerequisites": [
+      "upgrade.scout.09.radar1"
+    ],
+    "requiredMission": "Q08",
+    "effects": [
+      {
+        "stat": "peakTorqueNm",
+        "operation": "Multiply",
+        "value": 1.1
+      },
+      {
+        "stat": "poweredFuelDrainFactor",
+        "operation": "Multiply",
+        "value": 1.04
+      }
+    ],
+    "nameKey": "upgrade.engineTune1.name",
+    "descriptionKey": "upgrade.engineTune1.description",
+    "result": "Torque curve x1.10; fuel under power x1.04"
+  },
+  {
+    "id": "upgrade.scout.11.reinforcedRack",
+    "tier": 11,
+    "costSalvage": 1600,
+    "prerequisites": [
+      "upgrade.scout.10.engineTune1"
+    ],
+    "requiredMission": "Q09",
+    "effects": [
+      {
+        "stat": "cargoSlots",
+        "operation": "Set",
+        "value": 16
+      },
+      {
+        "stat": "payloadKg",
+        "operation": "Set",
+        "value": 180
+      }
+    ],
+    "nameKey": "upgrade.reinforcedRack.name",
+    "descriptionKey": "upgrade.reinforcedRack.description",
+    "result": "14->16 slots; payload 120->180 kg"
+  },
+  {
+    "id": "upgrade.scout.12.raisedIntake",
+    "tier": 12,
+    "costSalvage": 1750,
+    "prerequisites": [
+      "upgrade.scout.11.reinforcedRack"
+    ],
+    "requiredMission": "Q10",
+    "effects": [],
+    "nameKey": "upgrade.raisedIntake.name",
+    "descriptionKey": "upgrade.raisedIntake.description",
+    "result": "Safe wading 0.55->0.85 m"
+  },
+  {
+    "id": "upgrade.scout.13.diffLock",
+    "tier": 13,
+    "costSalvage": 1900,
+    "prerequisites": [
+      "upgrade.scout.12.raisedIntake"
+    ],
+    "requiredMission": "Q11",
+    "effects": [],
+    "nameKey": "upgrade.diffLock.name",
+    "descriptionKey": "upgrade.diffLock.description",
+    "result": "Toggle low-speed lock; turning scrub; unlock rock tires"
+  },
+  {
+    "id": "upgrade.scout.14.suspension2",
+    "tier": 14,
+    "costSalvage": 2100,
+    "prerequisites": [
+      "upgrade.scout.13.diffLock"
+    ],
+    "requiredMission": "Q12",
+    "effects": [
+      {
+        "stat": "suspensionTravelM",
+        "operation": "Set",
+        "value": 0.4
+      },
+      {
+        "stat": "groundClearanceM",
+        "operation": "Set",
+        "value": 0.3
+      }
+    ],
+    "nameKey": "upgrade.suspension2.name",
+    "descriptionKey": "upgrade.suspension2.description",
+    "result": "Travel 0.34->0.40 m; clearance 0.27->0.30 m"
+  },
+  {
+    "id": "upgrade.scout.15.fieldWinch2",
+    "tier": 15,
+    "costSalvage": 2300,
+    "prerequisites": [
+      "upgrade.scout.14.suspension2"
+    ],
+    "requiredMission": "Q13",
+    "effects": [
+      {
+        "stat": "winchReachM",
+        "operation": "Set",
+        "value": 20
+      },
+      {
+        "stat": "winchForceCapN",
+        "operation": "Set",
+        "value": 12000
+      }
+    ],
+    "nameKey": "upgrade.fieldWinch2.name",
+    "descriptionKey": "upgrade.fieldWinch2.description",
+    "result": "Reach 12->20 m; force cap 8->12 kN"
+  },
+  {
+    "id": "upgrade.scout.16.tank2",
+    "tier": 16,
+    "costSalvage": 2500,
+    "prerequisites": [
+      "upgrade.scout.15.fieldWinch2"
+    ],
+    "requiredMission": "Q14",
+    "effects": [
+      {
+        "stat": "fuelCapacityLiters",
+        "operation": "Set",
+        "value": 40
+      }
+    ],
+    "nameKey": "upgrade.tank2.name",
+    "descriptionKey": "upgrade.tank2.description",
+    "result": "Capacity 30->40 L"
+  },
+  {
+    "id": "upgrade.scout.17.expeditionRack",
+    "tier": 17,
+    "costSalvage": 2700,
+    "prerequisites": [
+      "upgrade.scout.16.tank2"
+    ],
+    "requiredMission": "Q15",
+    "effects": [
+      {
+        "stat": "cargoSlots",
+        "operation": "Set",
+        "value": 20
+      },
+      {
+        "stat": "payloadKg",
+        "operation": "Set",
+        "value": 240
+      }
+    ],
+    "nameKey": "upgrade.expeditionRack.name",
+    "descriptionKey": "upgrade.expeditionRack.description",
+    "result": "16->20 slots; payload 180->240 kg; loaded COM penalty"
+  },
+  {
+    "id": "upgrade.scout.18.coldKit",
+    "tier": 18,
+    "costSalvage": 2900,
+    "prerequisites": [
+      "upgrade.scout.17.expeditionRack"
+    ],
+    "requiredMission": "Q16",
+    "effects": [],
+    "nameKey": "upgrade.coldKit.name",
+    "descriptionKey": "upgrade.coldKit.description",
+    "result": "Unlock snow tires; improved cold-start presentation only"
+  },
+  {
+    "id": "upgrade.scout.19.radar2",
+    "tier": 19,
+    "costSalvage": 3100,
+    "prerequisites": [
+      "upgrade.scout.18.coldKit"
+    ],
+    "requiredMission": "Q17",
+    "effects": [
+      {
+        "stat": "signalRadiusM",
+        "operation": "Set",
+        "value": 220
+      }
+    ],
+    "nameKey": "upgrade.radar2.name",
+    "descriptionKey": "upgrade.radar2.description",
+    "result": "Signal radius 140->220 m"
+  },
+  {
+    "id": "upgrade.scout.20.expeditionCalibration",
+    "tier": 20,
+    "costSalvage": 3400,
+    "prerequisites": [
+      "upgrade.scout.19.radar2"
+    ],
+    "requiredMission": "Q19",
+    "effects": [
+      {
+        "stat": "poweredFuelDrainFactor",
+        "operation": "Multiply",
+        "value": 0.9
+      }
+    ],
+    "nameKey": "upgrade.expeditionCalibration.name",
+    "descriptionKey": "upgrade.expeditionCalibration.description",
+    "result": "Powered fuel drain x0.90; upgraded-suspension damping profile"
+  }
+]

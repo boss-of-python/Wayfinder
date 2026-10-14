@@ -1,0 +1,588 @@
+[
+  {
+    "id": "mission.Q01",
+    "displayCode": "Q01",
+    "name": "First Tracks",
+    "nameKey": "mission.q01.name",
+    "prerequisites": [],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "CollectQuestItem",
+        "targetId": "salvage_bundle",
+        "count": 1
+      },
+      {
+        "type": "DiscoverLandmark",
+        "targetId": "landmark.forest.01",
+        "count": 1
+      },
+      {
+        "type": "ReturnToHub",
+        "targetId": "garage.home",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.home",
+    "reward": {
+      "salvage": 150,
+      "rewardKey": "reward.story.Q01"
+    }
+  },
+  {
+    "id": "mission.Q02",
+    "displayCode": "Q02",
+    "name": "The Creek Gauge",
+    "nameKey": "mission.q02.name",
+    "prerequisites": [
+      "mission.Q01"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "InspectObject",
+        "targetId": "landmark.forest.04",
+        "count": 1
+      },
+      {
+        "type": "TraverseCheckpoints",
+        "targetId": "route.forest.ford",
+        "count": 2
+      }
+    ],
+    "turnInHub": "garage.home",
+    "reward": {
+      "salvage": 200,
+      "rewardKey": "reward.story.Q02"
+    }
+  },
+  {
+    "id": "mission.Q03",
+    "displayCode": "Q03",
+    "name": "A Place to Stay",
+    "nameKey": "mission.q03.name",
+    "prerequisites": [
+      "mission.Q02"
+    ],
+    "onAcceptGrant": [
+      {
+        "itemId": "camp_kit",
+        "quantity": 1,
+        "destination": "garageStorage"
+      }
+    ],
+    "objectives": [
+      {
+        "type": "EstablishCamp",
+        "targetId": "camp.forest.a",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.home",
+    "reward": {
+      "salvage": 300,
+      "rewardKey": "reward.story.Q03"
+    }
+  },
+  {
+    "id": "mission.Q04",
+    "displayCode": "Q04",
+    "name": "A Signal Through the Trees",
+    "nameKey": "mission.q04.name",
+    "prerequisites": [
+      "mission.Q03"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "CollectQuestItem",
+        "targetId": "relay_fuse",
+        "count": 1
+      },
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.forest",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.home",
+    "reward": {
+      "salvage": 500,
+      "rewardKey": "reward.story.Q04"
+    }
+  },
+  {
+    "id": "mission.Q05",
+    "displayCode": "Q05",
+    "name": "Red Dust",
+    "nameKey": "mission.q05.name",
+    "prerequisites": [
+      "mission.Q04"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "VisitVolume",
+        "targetId": "garage.canyon",
+        "count": 1
+      },
+      {
+        "type": "InspectObject",
+        "targetId": "site.canyon.washed_out",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.canyon",
+    "reward": {
+      "salvage": 300,
+      "rewardKey": "reward.story.Q05"
+    }
+  },
+  {
+    "id": "mission.Q06",
+    "displayCode": "Q06",
+    "name": "The Safer Line",
+    "nameKey": "mission.q06.name",
+    "prerequisites": [
+      "mission.Q05"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "InspectObject",
+        "targetId": "marker.canyon.01",
+        "count": 1
+      },
+      {
+        "type": "InspectObject",
+        "targetId": "marker.canyon.02",
+        "count": 1
+      },
+      {
+        "type": "InspectObject",
+        "targetId": "marker.canyon.03",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.canyon",
+    "reward": {
+      "salvage": 400,
+      "rewardKey": "reward.story.Q06"
+    }
+  },
+  {
+    "id": "mission.Q07",
+    "displayCode": "Q07",
+    "name": "Bridge Ledger",
+    "nameKey": "mission.q07.name",
+    "prerequisites": [
+      "mission.Q06"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "CollectQuestItem",
+        "targetId": "quest.brace_manifest",
+        "count": 1
+      },
+      {
+        "type": "DeliverQuestItem",
+        "targetId": "site.canyon.bridge",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.canyon",
+    "reward": {
+      "salvage": 500,
+      "rewardKey": "reward.story.Q07"
+    }
+  },
+  {
+    "id": "mission.Q08",
+    "displayCode": "Q08",
+    "name": "The Echo Relay",
+    "nameKey": "mission.q08.name",
+    "prerequisites": [
+      "mission.Q07"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.canyon",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.canyon",
+    "reward": {
+      "salvage": 700,
+      "rewardKey": "reward.story.Q08"
+    }
+  },
+  {
+    "id": "mission.Q09",
+    "displayCode": "Q09",
+    "name": "Streets Without Names",
+    "nameKey": "mission.q09.name",
+    "prerequisites": [
+      "mission.Q08"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "InspectObject",
+        "targetId": "junction.city.01",
+        "count": 1
+      },
+      {
+        "type": "InspectObject",
+        "targetId": "junction.city.02",
+        "count": 1
+      },
+      {
+        "type": "InspectObject",
+        "targetId": "junction.city.03",
+        "count": 1
+      },
+      {
+        "type": "VisitVolume",
+        "targetId": "garage.city",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.city",
+    "reward": {
+      "salvage": 400,
+      "rewardKey": "reward.story.Q09"
+    }
+  },
+  {
+    "id": "mission.Q10",
+    "displayCode": "Q10",
+    "name": "The Archive Van",
+    "nameKey": "mission.q10.name",
+    "prerequisites": [
+      "mission.Q09"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "CollectQuestItem",
+        "targetId": "quest.archive_case",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.city",
+    "reward": {
+      "salvage": 500,
+      "rewardKey": "reward.story.Q10"
+    }
+  },
+  {
+    "id": "mission.Q11",
+    "displayCode": "Q11",
+    "name": "Power for the Crossing",
+    "nameKey": "mission.q11.name",
+    "prerequisites": [
+      "mission.Q10"
+    ],
+    "onAcceptGrant": [
+      {
+        "itemId": "quest.cable_spool",
+        "quantity": 1,
+        "destination": "garageStorage"
+      }
+    ],
+    "objectives": [
+      {
+        "type": "DeliverQuestItem",
+        "targetId": "quest.cable_spool",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.city",
+    "reward": {
+      "salvage": 650,
+      "rewardKey": "reward.story.Q11"
+    }
+  },
+  {
+    "id": "mission.Q12",
+    "displayCode": "Q12",
+    "name": "Meridian Broadcast",
+    "nameKey": "mission.q12.name",
+    "prerequisites": [
+      "mission.Q11"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.city",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.city",
+    "reward": {
+      "salvage": 850,
+      "rewardKey": "reward.story.Q12"
+    }
+  },
+  {
+    "id": "mission.Q13",
+    "displayCode": "Q13",
+    "name": "Reading the Water",
+    "nameKey": "mission.q13.name",
+    "prerequisites": [
+      "mission.Q12"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "InspectObject",
+        "targetId": "pole.wetlands.01",
+        "count": 1
+      },
+      {
+        "type": "InspectObject",
+        "targetId": "pole.wetlands.02",
+        "count": 1
+      },
+      {
+        "type": "InspectObject",
+        "targetId": "pole.wetlands.03",
+        "count": 1
+      },
+      {
+        "type": "TraverseCheckpoints",
+        "targetId": "route.wetlands.crossing",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.wetlands",
+    "reward": {
+      "salvage": 500,
+      "rewardKey": "reward.story.Q13"
+    }
+  },
+  {
+    "id": "mission.Q14",
+    "displayCode": "Q14",
+    "name": "Pump House Notes",
+    "nameKey": "mission.q14.name",
+    "prerequisites": [
+      "mission.Q13"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "CollectQuestItem",
+        "targetId": "document.pump_diagram",
+        "count": 1
+      },
+      {
+        "type": "InspectObject",
+        "targetId": "site.wetlands.alt_causeway",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.wetlands",
+    "reward": {
+      "salvage": 650,
+      "rewardKey": "reward.story.Q14"
+    }
+  },
+  {
+    "id": "mission.Q15",
+    "displayCode": "Q15",
+    "name": "Ground That Holds",
+    "nameKey": "mission.q15.name",
+    "prerequisites": [
+      "mission.Q14"
+    ],
+    "onAcceptGrant": [
+      {
+        "itemId": "quest.stabilizer_plates",
+        "quantity": 1,
+        "destination": "garageStorage"
+      }
+    ],
+    "objectives": [
+      {
+        "type": "TraverseCheckpoints",
+        "targetId": "route.wetlands.firm",
+        "count": 3
+      },
+      {
+        "type": "DeliverQuestItem",
+        "targetId": "quest.stabilizer_plates",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.wetlands",
+    "reward": {
+      "salvage": 800,
+      "rewardKey": "reward.story.Q15"
+    }
+  },
+  {
+    "id": "mission.Q16",
+    "displayCode": "Q16",
+    "name": "Tideglass Signal",
+    "nameKey": "mission.q16.name",
+    "prerequisites": [
+      "mission.Q15"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.wetlands",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.wetlands",
+    "reward": {
+      "salvage": 1000,
+      "rewardKey": "reward.story.Q16"
+    }
+  },
+  {
+    "id": "mission.Q17",
+    "displayCode": "Q17",
+    "name": "The High Road",
+    "nameKey": "mission.q17.name",
+    "prerequisites": [
+      "mission.Q16"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "VisitVolume",
+        "targetId": "garage.highlands",
+        "count": 1
+      },
+      {
+        "type": "TraverseCheckpoints",
+        "targetId": "route.highlands.allweather",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.highlands",
+    "reward": {
+      "salvage": 650,
+      "rewardKey": "reward.story.Q17"
+    }
+  },
+  {
+    "id": "mission.Q18",
+    "displayCode": "Q18",
+    "name": "Before the Whiteout",
+    "nameKey": "mission.q18.name",
+    "prerequisites": [
+      "mission.Q17"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "InspectObject",
+        "targetId": "station.highlands.east",
+        "count": 1
+      },
+      {
+        "type": "InspectObject",
+        "targetId": "station.highlands.west",
+        "count": 1
+      },
+      {
+        "type": "CollectQuestItem",
+        "targetId": "sensor_core",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.highlands",
+    "reward": {
+      "salvage": 800,
+      "rewardKey": "reward.story.Q18"
+    }
+  },
+  {
+    "id": "mission.Q19",
+    "displayCode": "Q19",
+    "name": "The Last Mast",
+    "nameKey": "mission.q19.name",
+    "prerequisites": [
+      "mission.Q18"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "DeliverQuestItem",
+        "targetId": "sensor_core",
+        "count": 1
+      },
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.highlands",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.highlands",
+    "reward": {
+      "salvage": 1000,
+      "rewardKey": "reward.story.Q19"
+    }
+  },
+  {
+    "id": "mission.Q20",
+    "displayCode": "Q20",
+    "name": "An Atlas for Everyone",
+    "nameKey": "mission.q20.name",
+    "prerequisites": [
+      "mission.Q19"
+    ],
+    "onAcceptGrant": [],
+    "objectives": [
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.forest",
+        "count": 1
+      },
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.canyon",
+        "count": 1
+      },
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.city",
+        "count": 1
+      },
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.wetlands",
+        "count": 1
+      },
+      {
+        "type": "ActivateRelay",
+        "targetId": "relay.highlands",
+        "count": 1
+      },
+      {
+        "type": "RevealMapPercent",
+        "targetId": "map",
+        "count": 60
+      },
+      {
+        "type": "VisitVolume",
+        "targetId": "site.highlands.observatory",
+        "count": 1
+      }
+    ],
+    "turnInHub": "garage.highlands",
+    "reward": {
+      "salvage": 1500,
+      "rewardKey": "reward.story.Q20"
+    }
+  }
+]

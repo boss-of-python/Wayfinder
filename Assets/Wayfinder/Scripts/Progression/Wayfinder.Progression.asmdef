@@ -1,0 +1,14 @@
+{
+    "name": "Wayfinder.Progression",
+    "rootNamespace": "Wayfinder.Progression",
+    "references": ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
