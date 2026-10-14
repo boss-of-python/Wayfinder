@@ -1,0 +1,14 @@
+{
+    "name": "Wayfinder.Platform",
+    "rootNamespace": "Wayfinder.Platform",
+    "references": ["Wayfinder.Core", "Wayfinder.Persistence", "Wayfinder.Progression"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

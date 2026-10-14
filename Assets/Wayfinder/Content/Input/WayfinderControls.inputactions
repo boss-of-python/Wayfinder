@@ -1,0 +1,82 @@
+{
+    "name": "WayfinderControls",
+    "maps": [
+        {
+            "name": "Driving",
+            "id": "0f1a2b3c-0001-4000-8000-000000000001",
+            "actions": [
+                { "name": "Steer", "type": "Value", "id": "0f1a2b3c-0002-4000-8000-000000000001", "expectedControlType": "Axis", "processors": "", "interactions": "", "initialStateCheck": true },
+                { "name": "Throttle", "type": "Value", "id": "0f1a2b3c-0002-4000-8000-000000000002", "expectedControlType": "Axis", "processors": "", "interactions": "", "initialStateCheck": true },
+                { "name": "Brake", "type": "Value", "id": "0f1a2b3c-0002-4000-8000-000000000003", "expectedControlType": "Axis", "processors": "", "interactions": "", "initialStateCheck": true },
+                { "name": "Handbrake", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-000000000004", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "CrawlToggle", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-000000000005", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "SteerLeftButton", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-000000000006", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "SteerRightButton", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-000000000007", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "CameraLook", "type": "Value", "id": "0f1a2b3c-0002-4000-8000-000000000008", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true },
+                { "name": "CameraRecenter", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-000000000009", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Interact", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-00000000000a", "expectedControlType": "Button", "processors": "", "interactions": "hold(duration=0.35)", "initialStateCheck": false },
+                { "name": "InteractTap", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-00000000000b", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Map", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-00000000000c", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Pause", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-00000000000d", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Recovery", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-00000000000e", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WinchMode", "type": "Button", "id": "0f1a2b3c-0002-4000-8000-00000000000f", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WinchReel", "type": "Value", "id": "0f1a2b3c-0002-4000-8000-000000000010", "expectedControlType": "Axis", "processors": "", "interactions": "", "initialStateCheck": true }
+            ],
+            "bindings": [
+                { "name": "A", "id": "0f1a2b3c-0003-4000-8000-000000000001", "path": "<Keyboard>/a", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Steer", "isComposite": false, "isPartOfComposite": true },
+                { "name": "D", "id": "0f1a2b3c-0003-4000-8000-000000000002", "path": "<Keyboard>/d", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Steer", "isComposite": false, "isPartOfComposite": true },
+                { "name": "leftArrow", "id": "0f1a2b3c-0003-4000-8000-000000000003", "path": "<Keyboard>/leftArrow", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Steer", "isComposite": false, "isPartOfComposite": true },
+                { "name": "rightArrow", "id": "0f1a2b3c-0003-4000-8000-000000000004", "path": "<Keyboard>/rightArrow", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Steer", "isComposite": false, "isPartOfComposite": true },
+                { "name": "gamepadLeftStick", "id": "0f1a2b3c-0003-4000-8000-000000000005", "path": "<Gamepad>/leftStick/x", "interactions": "", "processors": "stickdeadzone(min=0.08)", "groups": "Gamepad", "action": "Steer", "isComposite": false, "isPartOfComposite": false },
+                { "name": "virtualJoystick", "id": "0f1a2b3c-0003-4000-8000-000000000006", "path": "<VirtualJoystick>/x", "interactions": "", "processors": "stickdeadzone(min=0.08)", "groups": "Touch", "action": "Steer", "isComposite": false, "isPartOfComposite": false },
+                { "name": "W", "id": "0f1a2b3c-0003-4000-8000-000000000007", "path": "<Keyboard>/w", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Throttle", "isComposite": false, "isPartOfComposite": false },
+                { "name": "upArrow", "id": "0f1a2b3c-0003-4000-8000-000000000008", "path": "<Keyboard>/upArrow", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Throttle", "isComposite": false, "isPartOfComposite": false },
+                { "name": "rightTrigger", "id": "0f1a2b3c-0003-4000-8000-000000000009", "path": "<Gamepad>/rightTrigger", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Throttle", "isComposite": false, "isPartOfComposite": false },
+                { "name": "S", "id": "0f1a2b3c-0003-4000-8000-00000000000a", "path": "<Keyboard>/s", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Brake", "isComposite": false, "isPartOfComposite": false },
+                { "name": "downArrow", "id": "0f1a2b3c-0003-4000-8000-00000000000b", "path": "<Keyboard>/downArrow", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Brake", "isComposite": false, "isPartOfComposite": false },
+                { "name": "leftTrigger", "id": "0f1a2b3c-0003-4000-8000-00000000000c", "path": "<Gamepad>/leftTrigger", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Brake", "isComposite": false, "isPartOfComposite": false },
+                { "name": "space", "id": "0f1a2b3c-0003-4000-8000-00000000000d", "path": "<Keyboard>/space", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Handbrake", "isComposite": false, "isPartOfComposite": false },
+                { "name": "southButton", "id": "0f1a2b3c-0003-4000-8000-00000000000e", "path": "<Gamepad>/buttonSouth", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Handbrake", "isComposite": false, "isPartOfComposite": false },
+                { "name": "c", "id": "0f1a2b3c-0003-4000-8000-00000000000f", "path": "<Keyboard>/c", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "CrawlToggle", "isComposite": false, "isPartOfComposite": false },
+                { "name": "q", "id": "0f1a2b3c-0003-4000-8000-000000000010", "path": "<Keyboard>/q", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "SteerLeftButton", "isComposite": false, "isPartOfComposite": false },
+                { "name": "e", "id": "0f1a2b3c-0003-4000-8000-000000000011", "path": "<Keyboard>/e", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "SteerRightButton", "isComposite": false, "isPartOfComposite": false },
+                { "name": "mouseDelta", "id": "0f1a2b3c-0003-4000-8000-000000000012", "path": "<Mouse>/delta", "interactions": "", "processors": "scaleVector2(x=0.15,y=0.15)", "groups": "KeyboardMouse", "action": "CameraLook", "isComposite": false, "isPartOfComposite": false },
+                { "name": "rightStick", "id": "0f1a2b3c-0003-4000-8000-000000000013", "path": "<Gamepad>/rightStick", "interactions": "", "processors": "", "groups": "Gamepad", "action": "CameraLook", "isComposite": false, "isPartOfComposite": false },
+                { "name": "r", "id": "0f1a2b3c-0003-4000-8000-000000000014", "path": "<Keyboard>/r", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "CameraRecenter", "isComposite": false, "isPartOfComposite": false },
+                { "name": "e", "id": "0f1a2b3c-0003-4000-8000-000000000015", "path": "<Keyboard>/e", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Interact", "isComposite": false, "isPartOfComposite": false },
+                { "name": "eastButton", "id": "0f1a2b3c-0003-4000-8000-000000000016", "path": "<Gamepad>/buttonEast", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Interact", "isComposite": false, "isPartOfComposite": false },
+                { "name": "m", "id": "0f1a2b3c-0003-4000-8000-000000000017", "path": "<Keyboard>/m", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Map", "isComposite": false, "isPartOfComposite": false },
+                { "name": "escape", "id": "0f1a2b3c-0003-4000-8000-000000000018", "path": "<Keyboard>/escape", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Pause", "isComposite": false, "isPartOfComposite": false },
+                { "name": "start", "id": "0f1a2b3c-0003-4000-8000-000000000019", "path": "<Gamepad>/start", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Pause", "isComposite": false, "isPartOfComposite": false },
+                { "name": "r", "id": "0f1a2b3c-0003-4000-8000-00000000001a", "path": "<Keyboard>/r", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Recovery", "isComposite": false, "isPartOfComposite": false },
+                { "name": "v", "id": "0f1a2b3c-0003-4000-8000-00000000001b", "path": "<Keyboard>/v", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "WinchMode", "isComposite": false, "isPartOfComposite": false },
+                { "name": "q", "id": "0f1a2b3c-0003-4000-8000-00000000001c", "path": "<Keyboard>/q", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "WinchReel", "isComposite": false, "isPartOfComposite": false },
+                { "name": "touchThrottle", "id": "0f1a2b3c-0003-4000-8000-00000000001d", "path": "<Touchscreen>/primaryTouch/tap", "interactions": "", "processors": "", "groups": "Touch", "action": "InteractTap", "isComposite": false, "isPartOfComposite": false }
+            ]
+        },
+        {
+            "name": "UI",
+            "id": "0f1a2b3c-0001-4000-8000-000000000002",
+            "actions": [
+                { "name": "Navigate", "type": "Value", "id": "0f1a2b3c-0004-4000-8000-000000000001", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true },
+                { "name": "Submit", "type": "Button", "id": "0f1a2b3c-0004-4000-8000-000000000002", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Cancel", "type": "Button", "id": "0f1a2b3c-0004-4000-8000-000000000003", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
+            ],
+            "bindings": [
+                { "name": "wasd", "id": "0f1a2b3c-0005-4000-8000-000000000001", "path": "2DVector", "interactions": "", "processors": "", "groups": "", "action": "Navigate", "isComposite": true, "isPartOfComposite": false },
+                { "name": "up", "id": "0f1a2b3c-0005-4000-8000-000000000002", "path": "<Keyboard>/w", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Navigate", "isComposite": false, "isPartOfComposite": true },
+                { "name": "down", "id": "0f1a2b3c-0005-4000-8000-000000000003", "path": "<Keyboard>/s", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Navigate", "isComposite": false, "isPartOfComposite": true },
+                { "name": "left", "id": "0f1a2b3c-0005-4000-8000-000000000004", "path": "<Keyboard>/a", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Navigate", "isComposite": false, "isPartOfComposite": true },
+                { "name": "right", "id": "0f1a2b3c-0005-4000-8000-000000000005", "path": "<Keyboard>/d", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Navigate", "isComposite": false, "isPartOfComposite": true },
+                { "name": "enter", "id": "0f1a2b3c-0005-4000-8000-000000000006", "path": "<Keyboard>/enter", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Submit", "isComposite": false, "isPartOfComposite": false },
+                { "name": "escape", "id": "0f1a2b3c-0005-4000-8000-000000000007", "path": "<Keyboard>/escape", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Cancel", "isComposite": false, "isPartOfComposite": false },
+                { "name": "androidBack", "id": "0f1a2b3c-0005-4000-8000-000000000008", "path": "<Android>/back", "interactions": "", "processors": "", "groups": "Touch", "action": "Cancel", "isComposite": false, "isPartOfComposite": false }
+            ]
+        }
+    ],
+    "controlSchemes": [
+        { "name": "KeyboardMouse", "bindingGroup": "KeyboardMouse", "devices": [ { "devicePath": "<Keyboard>", "isOptional": false, "isOR": false }, { "devicePath": "<Mouse>", "isOptional": false, "isOR": false } ] },
+        { "name": "Gamepad", "bindingGroup": "Gamepad", "devices": [ { "devicePath": "<Gamepad>", "isOptional": false, "isOR": false } ] },
+        { "name": "Touch", "bindingGroup": "Touch", "devices": [ { "devicePath": "<Touchscreen>", "isOptional": false, "isOR": false } ] }
+    ]
+}

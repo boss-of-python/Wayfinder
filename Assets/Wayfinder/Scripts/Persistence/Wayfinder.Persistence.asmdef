@@ -1,0 +1,14 @@
+{
+    "name": "Wayfinder.Persistence",
+    "rootNamespace": "Wayfinder.Persistence",
+    "references": ["Wayfinder.Core", "Wayfinder.Progression", "Wayfinder.Simulation", "Wayfinder.World", "Unity.Newtonsoft.Json"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
