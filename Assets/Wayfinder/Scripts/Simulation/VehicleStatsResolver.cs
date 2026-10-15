@@ -184,11 +184,25 @@ namespace Wayfinder.Simulation
                 : MathUtil.Lerp(0.80f, 1.0f, tireC / 50f);
 
             // Tire/surface lookup — tire multipliers compose exactly once here (QA case 8).
-            float grip = TireSetRules.SurfaceMultiplier(tires, surface, wet, out float lateral);
-            stats.EffectiveGrip = Math.Min(grip * stats.TireGripFactor, SurfaceTable.EffectiveGripCap);
+            stats.EffectiveGrip = GripFor(tires, surface, wet, stats.TireGripFactor, out float lateral);
             stats.LateralGripFactor = lateral;
 
             return stats;
+        }
+
+        /// <summary>
+        /// Grip on one surface: tire-set table → researched Trail Tires I bonus → tire condition → cap.
+        /// Trail Tires I is "dirt/gravel grip +10 % relative to baseline" (§11.1 tier 1) and applies
+        /// only to the base all-terrain set on packed dirt or gravel; a specialized set already
+        /// carries its progression bonus, so it is never granted twice (§11.1 note, QA case 8).
+        /// Before 2026-10-15 the DirtGravelGrip modifier was recorded but never composed (KI-032).
+        /// </summary>
+        public float GripFor(TireSet tires, SurfaceType surface, bool wet, float tireConditionFactor, out float lateralMultiplier)
+        {
+            float grip = TireSetRules.SurfaceMultiplier(tires, surface, wet, out lateralMultiplier);
+            if (tires == TireSet.AllTerrain && (surface == SurfaceType.PackedDirt || surface == SurfaceType.Gravel))
+                grip *= Compose(Stat.DirtGravelGrip, 1f);
+            return Math.Min(grip * tireConditionFactor, SurfaceTable.EffectiveGripCap);
         }
     }
 

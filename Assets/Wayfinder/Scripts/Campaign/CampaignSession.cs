@@ -275,11 +275,24 @@ namespace Wayfinder.Campaign
             Inventory.ConfigureContainer(CampStorage, CampStorageSlots, CampService.CampStorageCapacityKg);
         }
 
+        /// <summary>
+        /// Configures any stat resolver — the garage display's or the Unity <c>VehicleController</c>'s —
+        /// with exactly the researched modules, so researched torque, grip, wading depth, fuel drain
+        /// and tank size reach physics (KI-025, D-030). Clears first: calling it after every research,
+        /// load or extraction can never double-apply a bonus (QA case 8).
+        /// </summary>
+        public void ConfigureResolver(VehicleStatsResolver resolver)
+        {
+            if (resolver == null) throw new ArgumentNullException(nameof(resolver));
+            resolver.Clear();
+            Research.ApplyTo(resolver);
+        }
+
         /// <summary>The single authoritative stat resolution shared by garage display and driving (§11.2).</summary>
         public EffectiveVehicleStats ResolveStats()
         {
             var resolver = new VehicleStatsResolver();
-            Research.ApplyTo(resolver);
+            ConfigureResolver(resolver);
             return resolver.Resolve(Vehicle, FuelLiters, Inventory.TotalMassKg(Cargo), TireSet.AllTerrain, SurfaceType.PackedDirt,
                 false, Damage.EngineCondition, Damage.SuspensionCondition, Damage.TiresCondition, false, false, false);
         }

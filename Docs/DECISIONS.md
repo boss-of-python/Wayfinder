@@ -151,3 +151,25 @@ Log format: date, decision, rationale, status (Approved / Provisional / Rejected
 The reveal path is `DiscoveryService.RevealVisibleAround`, called by `CampaignSession.RevealAround` for drive and vista reveals; heights come from `CampaignSession.MapTerrain` (the slice greybox profile, KI-029). **Fix:** vista *surveyed* flags now obey the same filter; before, a cell behind a ridge could be "surveyed" without being revealed. `SliceFieldController.RevealIntervalSeconds` changes from 1 s to **0.5 s** (§16.2 "map reveal 2 Hz"); the ≥ 16 m travel gate is unchanged, so a parked car does no work.
 **Rationale:** The 4 m tolerance stops bumps and props from punching holes in the map. The slice's 8 m hill already hides part of its far side from Firewatch Nine. Reveals happen every 0.5 s **or** 16 m of travel, whichever comes later. At slice speeds the 16 m gate dominates (≈ 1.2 s at 50 km/h), and the 2 Hz cap only binds above ≈ 115 km/h. Either way the frontier stays far inside the 96 m radius.
 **Status:** Approved; retune the tolerance with the baked M3 heightfield.
+
+## 2026-10-15 — D-029 Field supplies and selling in the campaign session
+**Decision:** `CampaignSession.Supplies` exposes the §5.5/§5.6/§10.3/§10.4 rules.
+- **Fuel can:** usable only during an expedition, with ≥ 1 L missing. It adds `min(6, capacity − fuel)`. If any of the can would be wasted, the caller must confirm (`acceptWaste`); otherwise the result is `Cancelled` and nothing changes. The UI arms on the first tap and uses on the second. A partly used can still costs one item.
+- **Repair kit:** +35 to one chosen subsystem, only while stopped (≤ 1 km/h) and out of water. It refuses a subsystem at 100, so a kit is never wasted. An engine repair ends a water-stall incident.
+- **Tire patch:** v1 models a puncture as the tire-condition band < 30 (`DamageModel.PunctureThreshold`, already what `VehicleController` used). A patch lifts tires to 30: the 25 km/h cap goes, but the below-50 grip penalty stays until a free garage repair. No new save state is needed.
+- Every successful use is one idempotent `UseItem` transaction. `TransactionService` consumes exactly one consumable and rejects non-consumables. Supply use is field progress (debounced autosave, D-020).
+- **Selling:** only at a garage, one source at a time (garage storage or loaded cargo), 40 % of purchase price rounded down per unit. It never sells Salvage bundles (they bank 1:1), protected-ledger objects or mission cargo. It keeps as many camp kits as pending `EstablishCamp` objectives need, so Q03's free kit cannot be sold out from under the mission. A sale changes banked Salvage, so it is a **critical** operation (verified save, rollback on write failure). The garage UI asks for a confirming second tap.
+
+**Rationale:** These follow the blueprint rules directly. Refusing wasteful uses and requiring a confirmation protect players from irreversible mistakes (§13 error states).
+**Status:** Approved (implementation-side); the puncture band is a v1 simplification.
+
+## 2026-10-15 — D-030 Researched stats reach the physics rig (KI-025 partial) and two composition fixes (KI-032)
+**Decision:**
+- `CampaignSession.ConfigureResolver(VehicleStatsResolver)` clears a resolver and applies exactly the researched modules, so repeated calls cannot double-apply (QA case 8). `ResolveStats()` (garage display) uses it.
+- `VehicleController` exposes its own resolver (`StatsResolver`). `VerticalSliceDriver.ApplySessionToVehicle` configures it after load, research, extraction and supply use. From then on every stat the rig resolves includes research: wading depth, fuel drain, tank capacity, grip baseline, torque.
+- The rig clamps fuel to the **resolved** capacity, so the driver no longer widens `spec.FuelCapacityLiters` at runtime.
+- Two defects found while wiring this are fixed (KI-032): `VehicleStatsResolver.GripFor` now composes Trail Tires I (`DirtGravelGrip` ×1.10) on packed dirt/gravel for the all-terrain set only (§11.1 tier 1 + note), and `Powertrain` scales the torque curve by `stats.PeakTorqueNm / spec.PeakTorqueNm` (Engine Tune).
+- **Deferred to M1 calibration:** WheelCollider friction still uses the resolver's packed-dirt baseline for all four wheels; per-wheel surface grip only scales braking. In physics the Trail Tires bonus therefore applies on every surface; the garage display is exact. Suspension travel/clearance research is not yet applied to WheelCollider geometry.
+
+**Rationale:** One authoritative resolver configuration for display and driving (§11.2). Per-surface friction changes vehicle feel and interacts with the mud traction model, so it needs in-editor tuning, not blind edits.
+**Status:** Approved; KI-025 stays open for the calibration items.

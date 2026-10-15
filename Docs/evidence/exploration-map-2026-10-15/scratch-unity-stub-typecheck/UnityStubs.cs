@@ -84,6 +84,8 @@ namespace Wayfinder.Simulation
         public void ZeroInputsAndHold() { }
         public void SetCargoMass(float kg) { }
         public void SetFuel(float liters) { }
+        public VehicleStatsResolver StatsResolver => null;
+        public float FuelCapacityLiters => 0f;
         public void RestartAfterWaterRecovery() { }
     }
     public sealed class ChaseCameraBehaviour : UnityEngine.MonoBehaviour { public UnityEngine.Transform target; public void SetOrbitInput(float yawDelta, float pitchDelta) { } }

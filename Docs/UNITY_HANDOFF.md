@@ -16,13 +16,27 @@ scratch stub type-check that is not Unity evidence:
 - `Tests/PlayMode/MapPlayModeTests.cs` (2 tests; 11 PlayMode tests total).
 
 First-open checklist for this batch:
-1. Test Runner EditMode (expect 130) and PlayMode (expect 11).
+1. Test Runner EditMode (expect 143 after the continuation below) and PlayMode (expect 11).
 2. Play the VerticalSlice: the minimap should start parchment-blank.
 3. Drive: green terrain appears around the car within about half a second.
 4. Press M: the simulation freezes. Pinch/drag (or wheel/arrows), tap the garage, long-press → Place,
    Route here → a dashed line appears. Close with M.
 5. Stop at Ranger Rise for 2 s: a wide area fills in.
 6. Save & quit → Continue: the same map and markers come back.
+
+**Same batch, continued:**
+- Field supplies and selling (D-029): a HUD **Supplies** button opens an overlay that holds the
+  vehicle, and the garage stack rows gain **Sell +N → Confirm?**.
+- Research reaches the physics rig (D-030, KI-025 partial): `VehicleController.StatsResolver` is
+  configured by `CampaignSession.ConfigureResolver`, and the tank clamp uses the resolved capacity.
+- KI-032 fixed: Trail Tires I and Engine Tune previously had no effect.
+
+Headless: **143/143** tests. Extra first-open checks for this part:
+1. Depart. Supplies → *Use fuel can* is disabled while the tank is full.
+2. Repair buttons stay disabled until the vehicle stops.
+3. In the garage, sell one tire patch: the wallet gains 8 Salvage after the confirm tap.
+4. After researching Engine Tune (tier 10), compare acceleration. M1 calibration is still needed for
+   per-surface friction (KI-025).
 
 ## Campaign composition batch (Batch C)
 

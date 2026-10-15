@@ -42,6 +42,9 @@ namespace Wayfinder.Presentation
         float _nextHud, _toastTimer;
         MapPresenter _mapPresenter;
         MinimapView _minimap;
+        Button _suppliesButton;
+        readonly SuppliesModel _supplies = new SuppliesModel();
+        string _armedSupply = string.Empty, _supplyMessage = string.Empty, _armedSellKey = string.Empty;
         MapOverlayView _mapView;
         bool _mapPausedField;
         int _mapClosedFrame = -1;
@@ -199,7 +202,9 @@ namespace Wayfinder.Presentation
         /// <summary>Session → vehicle after load/extraction. Only tank size and cargo mass are wired so far (KI-025).</summary>
         void ApplySessionToVehicle()
         {
-            if (vehicle.spec != null) vehicle.spec.FuelCapacityLiters = _session.FuelCapacityLiters;
+            // Researched modules reach the physics rig through its own resolver (KI-025, D-030); the
+            // tank clamp follows the resolved capacity, so the spec is no longer widened at runtime.
+            _session.ConfigureResolver(vehicle.StatsResolver);
             vehicle.SetFuel(_session.FuelLiters);
             vehicle.Damage.EngineCondition = _session.Damage.EngineCondition;
             vehicle.Damage.SuspensionCondition = _session.Damage.SuspensionCondition;
@@ -224,6 +229,12 @@ namespace Wayfinder.Presentation
             _pauseButton.onClick.AddListener(() => SetPaused(!_paused));
             _rescueButton = PrototypeUi.Button(_drivePanel, "Rescue", new Vector2(.84f, .79f), new Vector2(.98f, .88f));
             _rescueButton.onClick.AddListener(OnRescue);
+            _suppliesButton = PrototypeUi.Button(_drivePanel, "Supplies", new Vector2(.02f, .56f), new Vector2(.16f, .64f));
+            _suppliesButton.onClick.AddListener(() =>
+            {
+                _armedSupply = _supplyMessage = string.Empty;
+                ShowSupplies();
+            });
 
             _interactButton = PrototypeUi.Button(_drivePanel, "HOLD\nINTERACT", new Vector2(.42f, .14f), new Vector2(.58f, .26f));
             _interactButton.navigation = new Navigation { mode = Navigation.Mode.None };
@@ -276,6 +287,77 @@ namespace Wayfinder.Presentation
         {
             if (_mapView != null) _mapView.Close();
             SetPaused(true);
+        }
+
+        // ------------------------------------------------------------------ field supplies (§5.5, §5.6, §10.3)
+
+        /// <summary>
+        /// Supplies overlay. While it is open the field controller is not ticked and LateUpdate holds
+        /// the vehicle, so "use while stopped" is reached by simply opening it. Rules and text come
+        /// from <see cref="CampaignSession"/> / <see cref="SuppliesModel"/>.
+        /// </summary>
+        void ShowSupplies()
+        {
+            if (!_session.Expedition.IsActive || _paused || _mapView != null) return;
+            float speed = vehicle.SpeedKph;
+            bool inWater = vehicle.WaterDepthMeters > .05f;
+            SuppliesModel.Build(_session, speed, inWater, _supplies);
+            var overlay = OpenOverlay("Supplies");
+            PrototypeUi.Label(overlay, speed > CampaignSession.SupplyMaxSpeedKph ? "Field supplies — stopping the vehicle… (Refresh)"
+                : "Field supplies", new Vector2(.1f, .85f), new Vector2(.9f, .95f), 24);
+
+            SupplyLine(overlay, _supplies.FuelCanLine, .72f);
+            var fuel = PrototypeUi.Button(overlay, _armedSupply == CampaignSession.FuelCanId ? "Confirm (some wasted)" : "Use fuel can",
+                new Vector2(.68f, .72f), new Vector2(.9f, .8f));
+            fuel.interactable = _supplies.FuelCanUsable;
+            fuel.onClick.AddListener(() =>
+            {
+                if (_supplies.FuelCanNeedsConfirmation && _armedSupply != CampaignSession.FuelCanId)
+                {
+                    _armedSupply = CampaignSession.FuelCanId; // §10.3: confirm before wasting part of a can
+                    ShowSupplies();
+                    return;
+                }
+                _armedSupply = string.Empty;
+                UseSupply(_session.UseFuelCan(acceptWaste: true));
+            });
+
+            SupplyLine(overlay, _supplies.RepairLine, .60f);
+            float x = .1f;
+            foreach (var row in _supplies.Subsystems)
+            {
+                var zone = row.Zone;
+                var repair = PrototypeUi.Button(overlay, $"{row.Name} {row.Condition}", new Vector2(x, .50f), new Vector2(x + .19f, .58f));
+                repair.interactable = row.CanRepair;
+                repair.onClick.AddListener(() => UseSupply(_session.UseRepairKit(zone, vehicle.SpeedKph, vehicle.WaterDepthMeters > .05f)));
+                x += .2f;
+            }
+
+            SupplyLine(overlay, _supplies.TirePatchLine, .38f);
+            var patch = PrototypeUi.Button(overlay, "Patch tire", new Vector2(.68f, .38f), new Vector2(.9f, .46f));
+            patch.interactable = _supplies.TirePatchUsable;
+            patch.onClick.AddListener(() => UseSupply(_session.UseTirePatch(vehicle.SpeedKph)));
+
+            PrototypeUi.Label(overlay, _supplyMessage, new Vector2(.1f, .30f), new Vector2(.9f, .37f), 16);
+            PrototypeUi.Button(overlay, "Refresh", new Vector2(.1f, .18f), new Vector2(.35f, .28f)).onClick.AddListener(ShowSupplies);
+            PrototypeUi.Button(overlay, "Back to driving", new Vector2(.65f, .18f), new Vector2(.9f, .28f)).onClick.AddListener(CloseOverlay);
+        }
+
+        static void SupplyLine(RectTransform overlay, string text, float y)
+        {
+            var label = PrototypeUi.Label(overlay, text, new Vector2(.1f, y), new Vector2(.66f, y + .08f), 18);
+            label.alignment = TextAnchor.MiddleLeft;
+        }
+
+        void UseSupply(CommandResult result)
+        {
+            _supplyMessage = result.Success ? "Done." : (string.IsNullOrEmpty(result.Detail) ? result.Reason.ToString() : result.Detail);
+            if (result.Success)
+            {
+                ApplySessionToVehicle(); // the session is authoritative: push fuel/conditions back to the rig
+                foreach (var notice in _session.DrainNotices()) _supplyMessage = notice.Text;
+            }
+            ShowSupplies();
         }
 
         // ------------------------------------------------------------------ map (§13.2 minimap, §13.4 map screen)
@@ -408,9 +490,10 @@ namespace Wayfinder.Presentation
             y -= .045f;
             foreach (var stack in model.Cargo)
             {
-                PrototypeUi.Label(overlay, $"{stack.Name} ×{stack.Quantity} ({stack.MassKg:0.#} kg)", new Vector2(.52f, y - .045f), new Vector2(.84f, y), 14);
+                PrototypeUi.Label(overlay, $"{stack.Name} ×{stack.Quantity} ({stack.MassKg:0.#} kg)", new Vector2(.52f, y - .045f), new Vector2(.74f, y), 14);
                 string item = stack.ItemId;
                 int qty = stack.Quantity;
+                SellButton(overlay, stack, fromCargo: true, y);
                 PrototypeUi.Button(overlay, "Unload", new Vector2(.85f, y - .045f), new Vector2(.98f, y - .005f))
                     .onClick.AddListener(() => Act(_session.UnloadCargo(item, qty)));
                 y -= .05f;
@@ -420,9 +503,10 @@ namespace Wayfinder.Presentation
             y -= .045f;
             foreach (var stack in model.Storage)
             {
-                PrototypeUi.Label(overlay, $"{stack.Name} ×{stack.Quantity}", new Vector2(.52f, y - .045f), new Vector2(.84f, y), 14);
+                PrototypeUi.Label(overlay, $"{stack.Name} ×{stack.Quantity}", new Vector2(.52f, y - .045f), new Vector2(.74f, y), 14);
                 string item = stack.ItemId;
                 int qty = stack.Quantity;
+                SellButton(overlay, stack, fromCargo: false, y);
                 PrototypeUi.Button(overlay, "Load", new Vector2(.85f, y - .045f), new Vector2(.98f, y - .005f))
                     .onClick.AddListener(() => Act(_session.LoadCargo(item, qty)));
                 y -= .05f;
@@ -434,6 +518,27 @@ namespace Wayfinder.Presentation
             PrototypeUi.Button(overlay, "Depart", new Vector2(.76f, .10f), new Vector2(.98f, .18f)).onClick.AddListener(OnDepart);
             PrototypeUi.Button(overlay, "Map (M)", new Vector2(.52f, .02f), new Vector2(.74f, .08f)).onClick.AddListener(OpenMap);
             PrototypeUi.Button(overlay, "Save & quit to title", new Vector2(.02f, .02f), new Vector2(.24f, .08f)).onClick.AddListener(GoToTitle);
+        }
+
+        /// <summary>§10.4 sell-back (40 %, rounded down): first tap arms, second tap sells one unit (critical save).</summary>
+        void SellButton(RectTransform overlay, GarageModel.StackRow stack, bool fromCargo, float y)
+        {
+            string key = (fromCargo ? "cargo:" : "storage:") + stack.ItemId;
+            string item = stack.ItemId;
+            var sell = PrototypeUi.Button(overlay, !stack.Sellable ? "—" : _armedSellKey == key ? "Confirm?" : $"Sell +{stack.SellPriceEach}",
+                new Vector2(.75f, y - .045f), new Vector2(.84f, y - .005f));
+            sell.interactable = stack.Sellable;
+            sell.onClick.AddListener(() =>
+            {
+                if (_armedSellKey != key)
+                {
+                    _armedSellKey = key;
+                    ShowGarage();
+                    return;
+                }
+                _armedSellKey = string.Empty;
+                Act(_session.SellItems(item, 1, fromCargo));
+            });
         }
 
         void Act(CommandResult result)

@@ -32,8 +32,8 @@ to the title; **Continue** resumes. Saves live in `Application.persistentDataPat
 
 ## Exploration map (Batch D, 15 Oct 2026)
 
-**VERIFIED (headless, no Unity):** `python3 Tools/Build/headless_cs.py all` → **130/130** EditMode
-tests, including 21 map tests. To regenerate the map evidence PNGs:
+**VERIFIED (headless, no Unity):** `python3 Tools/Build/headless_cs.py all` → **143/143** EditMode
+tests, including 21 map tests and 13 supplies/selling/research-wiring tests. To regenerate the map evidence PNGs:
 
 ```bash
 WAYFINDER_MAP_SNAPSHOT_DIR=/tmp/map python3 Tools/Build/headless_cs.py test   # after `compile`
@@ -52,6 +52,15 @@ python3 Tools/Validation/rgba_to_png.py /tmp/map                               #
 | Route to a marker (dashed straight-line estimate) / clear | Select it → **Route here** / **Clear route** | same |
 | Recentre on the vehicle | **Center on car** | **C** |
 | Filter layers | **Hubs / Sites / Tasks / Marks** toggles | same |
+
+**Field supplies and selling (same batch, UNVERIFIED in Unity; rules VERIFIED headless — 143/143):**
+- During a drive, tap **Supplies**. The vehicle is held while the panel is open.
+- **Use fuel can:** adds min(6 L, missing); needs ≥ 1 L of space; if part of the can would be wasted,
+  tap twice to confirm.
+- **Repair** a subsystem: +35, only when stopped and out of water.
+- **Patch tire:** only with a puncture (tires < 30); it lifts the 25 km/h limit.
+- In the garage, **Sell +N** then **Confirm?** sells one unit at 40 % (rounded down). Salvage bundles,
+  mission items and the camp kit Q03 still needs cannot be sold.
 
 The sheet covers the 1,024 m slice area at 2 m per pixel. Fog means "not explored yet"; contour lines
 mean "surveyed from a vista". Unopened caches never appear on the map (§7.6).

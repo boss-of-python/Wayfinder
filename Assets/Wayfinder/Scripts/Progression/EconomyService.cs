@@ -198,6 +198,14 @@ namespace Wayfinder.Progression
                     result = _inventory.Remove(sell.Source, sell.ItemId, sell.Quantity);
                     if (result.Success) result = _economy.Sell(sell.ItemId.Value, sell.Quantity);
                     break;
+                case UseItem use:
+                    // §5.6 "Field supplies: consume one item on successful use". The caller validated
+                    // the use conditions and applies the effect only after this commit succeeds.
+                    result = ItemCatalog.TryGet(use.ItemId.Value, out _) &&
+                             ItemCatalog.CategoryOf(use.ItemId.Value) == ItemCategory.Consumable
+                        ? _inventory.Remove(use.Source, use.ItemId, 1)
+                        : CommandResult.Fail(FailureReason.ItemNotUsableHere, $"'{use.ItemId.Value}' is not a field supply");
+                    break;
                 case RequestRecovery _:
                     // Recovery itself is always available (REC-01); the campaign session applies
                     // the rescue rules and persists them. Here it is an event-only marker.

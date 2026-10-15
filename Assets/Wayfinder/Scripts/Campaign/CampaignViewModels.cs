@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using Wayfinder.Core;
 using Wayfinder.Progression;
+using Wayfinder.Simulation;
 
 namespace Wayfinder.Campaign
 {
@@ -174,6 +175,10 @@ namespace Wayfinder.Campaign
             public int Quantity;
             public float MassKg;
             public bool Loadable;
+            /// <summary>One unit may be sold from this container now (§10.4 rules, <see cref="CampaignSession.CheckSell"/>).</summary>
+            public bool Sellable;
+            public int SellPriceEach;
+            public string SellBlockedReason = string.Empty;
         }
 
         public int Wallet, Escrow;
@@ -229,7 +234,20 @@ namespace Wayfinder.Campaign
 
             AddStacks(s, CampaignSession.Cargo, m.Cargo);
             AddStacks(s, CampaignSession.GarageStorage, m.Storage);
+            AddSellInfo(s, m.Cargo, fromCargo: true);
+            AddSellInfo(s, m.Storage, fromCargo: false);
             return m;
+        }
+
+        static void AddSellInfo(CampaignSession s, List<StackRow> rows, bool fromCargo)
+        {
+            foreach (var row in rows)
+            {
+                var check = s.CheckSell(row.ItemId, 1, fromCargo, out int price);
+                row.Sellable = check.Success;
+                row.SellPriceEach = check.Success ? price : 0;
+                row.SellBlockedReason = check.Success ? string.Empty : check.Detail ?? check.Reason.ToString();
+            }
         }
 
         static void AddStacks(CampaignSession s, InventoryId container, List<StackRow> into)
@@ -279,6 +297,76 @@ namespace Wayfinder.Campaign
             sb.AppendLine("Vehicle refuelled and repaired (free)");
             sb.Append($"Wallet: {summary.WalletAfter} Salvage · Next: {ObjectiveText.TrackedLine(session)}");
             return sb.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Field-supplies panel text (§5.5, §5.6, §10.3): counts in cargo and whether each supply can be
+    /// used right now, with the reason when not. Pure; built from the session plus live vehicle speed
+    /// and water state.
+    /// </summary>
+    public sealed class SuppliesModel
+    {
+        public sealed class SubsystemRow
+        {
+            public HitZone Zone;
+            public string Name = string.Empty;
+            public int Condition;
+            public bool CanRepair;
+        }
+
+        public int FuelCans, RepairKits, TirePatches;
+        public bool FuelCanUsable, FuelCanNeedsConfirmation, TirePatchUsable;
+        public float FuelCanLiters, FuelCanWasted;
+        public string FuelCanLine = string.Empty, RepairLine = string.Empty, TirePatchLine = string.Empty;
+        public readonly List<SubsystemRow> Subsystems = new List<SubsystemRow>();
+
+        static readonly HitZone[] Zones = { HitZone.Engine, HitZone.Suspension, HitZone.Tires, HitZone.Body };
+
+        public static SuppliesModel Build(CampaignSession s, float speedKph, bool inWater, SuppliesModel into = null)
+        {
+            var m = into ?? new SuppliesModel();
+            m.FuelCans = s.Inventory.QuantityOf(CampaignSession.Cargo, CampaignSession.FuelCanId);
+            m.RepairKits = s.Inventory.QuantityOf(CampaignSession.Cargo, CampaignSession.RepairKitId);
+            m.TirePatches = s.Inventory.QuantityOf(CampaignSession.Cargo, CampaignSession.TirePatchId);
+
+            var fuel = s.PreviewFuelCan();
+            m.FuelCanUsable = fuel.Usable;
+            m.FuelCanNeedsConfirmation = fuel.NeedsWasteConfirmation;
+            m.FuelCanLiters = fuel.LitersAdded;
+            m.FuelCanWasted = fuel.LitersWasted;
+            m.FuelCanLine = string.Format(CultureInfo.InvariantCulture, "Fuel can ×{0} — {1}", m.FuelCans,
+                !fuel.Usable ? fuel.Reason
+                : fuel.NeedsWasteConfirmation ? string.Format(CultureInfo.InvariantCulture, "+{0:0.0} L ({1:0.0} L wasted — tap twice)", fuel.LitersAdded, fuel.LitersWasted)
+                : string.Format(CultureInfo.InvariantCulture, "+{0:0.0} L", fuel.LitersAdded));
+
+            bool stopped = speedKph <= CampaignSession.SupplyMaxSpeedKph;
+            string repairBlock = !s.Expedition.IsActive ? "garage repairs are free"
+                : m.RepairKits <= 0 ? "none in cargo"
+                : !stopped ? "stop the vehicle to repair"
+                : inWater ? "get out of the water first"
+                : string.Empty;
+            m.Subsystems.Clear();
+            foreach (var zone in Zones)
+            {
+                int condition = s.Condition(zone);
+                m.Subsystems.Add(new SubsystemRow
+                {
+                    Zone = zone,
+                    Name = DisplayNames.Item(CampaignSession.SubsystemName(zone)),
+                    Condition = condition,
+                    CanRepair = repairBlock.Length == 0 && condition < 100
+                });
+            }
+            m.RepairLine = $"Repair kit ×{m.RepairKits} — " + (repairBlock.Length > 0 ? repairBlock : "+35 to one subsystem");
+
+            m.TirePatchUsable = s.Expedition.IsActive && m.TirePatches > 0 && stopped && s.Damage.HasPuncture;
+            m.TirePatchLine = $"Tire patch ×{m.TirePatches} — " + (!s.Expedition.IsActive ? "garage repairs are free"
+                : m.TirePatches <= 0 ? "none in cargo"
+                : !s.Damage.HasPuncture ? "no puncture"
+                : !stopped ? "stop the vehicle to patch"
+                : "patch the puncture (lifts the 25 km/h limit)");
+            return m;
         }
     }
 }

@@ -1,5 +1,9 @@
 # Wayfinder — Executed Evidence: headless C# compile + EditMode tests (2026-10-14)
 
+> **Update 2026-10-15 (Batch D continuation — supplies/selling/research wiring):** 7 assemblies / 60
+> files, 0 warnings, **143/143** EditMode tests, 13/13 mutation check; KI-032 found and fixed.
+> Artifacts: `Docs/evidence/supplies-and-stats-2026-10-15/`.
+>
 > **Update 2026-10-15 (Batch D — exploration map):** 7 assemblies / 57 files, 0 warnings,
 > **130/130** EditMode tests (21 new map tests), 29 Unity-dependent files parse-checked, 11/11 map
 > mutation check. Artifacts: `Docs/evidence/exploration-map-2026-10-15/`. Caveat found this batch:

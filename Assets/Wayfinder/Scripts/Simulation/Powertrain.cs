@@ -41,6 +41,17 @@ namespace Wayfinder.Simulation
         }
 
         /// <summary>Linear interpolation of the authored torque curve (§4.3).</summary>
+        /// <summary>
+        /// Researched torque (e.g. tier 10 Engine Tune ×1.10) scales the whole curve, so the garage's
+        /// peak-torque figure and the drive torque come from the same resolved stat (§11.2). Unset
+        /// stats (PeakTorqueNm = 0) leave the curve unchanged. Before 2026-10-15 the powertrain read
+        /// only the base curve (KI-032).
+        /// </summary>
+        public static float ResearchTorqueScale(VehicleSpec spec, EffectiveVehicleStats stats) =>
+            spec != null && stats != null && spec.PeakTorqueNm > 0f && stats.PeakTorqueNm > 0f
+                ? stats.PeakTorqueNm / spec.PeakTorqueNm
+                : 1f;
+
         public static float TorqueAtRpm(VehicleSpec spec, float rpm)
         {
             var curve = spec.TorqueCurve;
@@ -144,7 +155,7 @@ namespace Wayfinder.Simulation
                 return 0f;
             }
 
-            float engineTorque = TorqueAtRpm(spec, EngineRpm);
+            float engineTorque = TorqueAtRpm(spec, EngineRpm) * ResearchTorqueScale(spec, stats);
             float condition = stats.EngineConditionFactor;
             if (condition <= 0f)
                 return 0f; // condition 0 disables powered driving (§5.5)

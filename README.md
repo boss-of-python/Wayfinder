@@ -39,8 +39,8 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   no deadlocks and no arbitrage. See `Docs/EVIDENCE_M0.md`.
 - **Verified without Unity (headless C#):** the non-Unity assemblies (Core, pure Simulation
   math, World, Progression, Persistence) compile with a real Roslyn C# 9 compiler at warning level 4
-  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 130 EditMode NUnit tests
-  pass** (59 before the Batch C campaign layer, 109 before the Batch D map) (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
+  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 143 EditMode NUnit tests
+  pass** (59 before the Batch C campaign layer, 109 before Batch D) (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
   write-ups in `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/UNITY_HANDOFF.md`). Running them found and fixed a save-checksum bug that
   would have blocked every save (KI-013), a water-stall re-drain (KI-014) and an inventory stack bug
   (KI-015).
@@ -50,7 +50,7 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   Unity/Android/Xcode toolchain (`Docs/KNOWN_ISSUES.md` KI-001). Nothing here claims a build log,
   APK, IPA, screenshot or device measurement that does not exist.
 
-## Exploration map update (15 Oct 2026, Batch D)
+## Exploration map, field supplies and research wiring (15 Oct 2026, Batch D)
 
 The slice now has an **exploration map that starts blank and fills in as you explore** (§8.1, §13.2,
 §13.4):
@@ -69,6 +69,15 @@ to 68 % mapped (`Docs/evidence/exploration-map-2026-10-15/`).
 
 **Implemented, syntax-checked only:** the Unity minimap and map screen (KI-031). Map terrain still
 comes from the greybox slice (KI-029), and routes are straight-line estimates (KI-030).
+
+Also in this batch:
+- **Field supplies:** fuel can, repair kit and tire patch, with the blueprint's use conditions.
+- **Selling** at 40 % in the garage.
+- **Researched upgrades now reach the physics rig's stat resolver.**
+- Two upgrades that previously did nothing were fixed: Trail Tires I grip and Engine Tune torque
+  (KI-032).
+
+Headless total: **143/143** C# tests; 13/13 mutation check for these rules.
 
 ## Campaign composition update (15 Oct 2026, Batch C)
 

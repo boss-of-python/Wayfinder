@@ -57,7 +57,9 @@ namespace Wayfinder.Campaign
         ItemCrafted,
         QuestItemCollected,
         RescueLoss,
-        SaveFailed
+        SaveFailed,
+        SupplyUsed,
+        ItemSold
     }
 
     /// <summary>Committed-outcome notification for the HUD queue (§13.2). Never emitted for rolled-back work.</summary>

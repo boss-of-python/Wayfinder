@@ -96,6 +96,11 @@ namespace Wayfinder.Simulation
         public const float MaxDamagePerIncident = 35f;
         public const float DebounceSeconds = 0.4f;
         public const float WaterStallConditionDrop = 10f;
+        /// <summary>
+        /// Tires below this condition count as punctured: speed capped at 25 km/h until patched (§5.5).
+        /// v1 models the puncture as a condition band, so no extra persisted state is needed (D-029).
+        /// </summary>
+        public const int PunctureThreshold = 30;
 
         public int EngineCondition = 100;
         public int SuspensionCondition = 100;
@@ -171,6 +176,19 @@ namespace Wayfinder.Simulation
                 default:
                     return CommandResult.Fail(FailureReason.InvalidTarget);
             }
+            return CommandResult.Ok();
+        }
+
+        public bool HasPuncture => TiresCondition < PunctureThreshold;
+
+        /// <summary>
+        /// Tire patch "removes one puncture" (§10.3): lifts tires to the puncture threshold, which
+        /// removes the 25 km/h cap while the below-50 grip penalty stays until a garage repair.
+        /// </summary>
+        public CommandResult UseTirePatch()
+        {
+            if (!HasPuncture) return CommandResult.Fail(FailureReason.ItemNotUsableHere, "no puncture to patch");
+            TiresCondition = PunctureThreshold;
             return CommandResult.Ok();
         }
 

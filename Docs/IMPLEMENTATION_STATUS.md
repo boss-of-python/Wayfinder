@@ -6,7 +6,7 @@ Last updated: 2026-10-15. Status values: **Not started / In progress / Implement
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
 
-## Batch 2026-10-15-D — Exploration map (domain Verified headless; Unity UI syntax-checked)
+## Batch 2026-10-15-D — Exploration map + field supplies/selling + research → physics (domain Verified headless; Unity UI syntax-checked)
 
 Milestone **M2 Forest vertical slice**. Requirements: MAP-01 (§8.1), new **MAP-04** (§13.2 minimap, §13.4
 map screen, §7.6 no cache spoilers), UI-01, SAVE-01 (additive marker fields), §16.2 (2 Hz map reveal).
@@ -28,6 +28,18 @@ map screen, §7.6 no cache spoilers), UI-01, SAVE-01 (additive marker fields), �
   rescue keep every revealed cell and marker. PNG snapshots of a scripted exploration: 0 % → 68 % mapped.
 - **Open:** Unity compile/run of the map UI (KI-031), greybox-derived map terrain (KI-029), straight-line
   route estimates (KI-030). **M2 gate not passed.**
+
+**Continuation in the same batch** (ITEM-01, ECON-01, UPG-01; D-029, D-030):
+
+| Layer | Before | After | Evidence |
+|---|---|---|---|
+| `Campaign/CampaignSession.Supplies.cs`: fuel can (≥ 1 L rule, waste confirmation), repair kit (stopped, out of water, never wasted), tire patch (puncture band), selling (garage only, 40 % floor, critical save, mission camp kits kept), plus `TransactionService` `UseItem` and `SuppliesModel` / garage sell info | not exposed (KI-028) | **Verified (headless)** — 9 tests | `Docs/evidence/supplies-and-stats-2026-10-15/` |
+| `CampaignSession.ConfigureResolver`; `VehicleController.StatsResolver` + resolved tank clamp; driver configures the rig | research reached physics only as tank/cargo (KI-025) | **Verified (headless)** session side — 4 tests; rig side **syntax-checked**; KI-025 partially resolved | idem |
+| **KI-032 fixed:** Trail Tires I grip (`VehicleStatsResolver.GripFor`) and Engine Tune torque (`Powertrain.ResearchTorqueScale`) | no effect anywhere | **Verified (headless)** | idem |
+| Supplies overlay (HUD **Supplies** button) and garage **Sell +N → Confirm?** buttons in `VerticalSliceDriver` | — | **Implemented — syntax-checked** (+ scratch stub type-check) | idem |
+
+- **143/143** headless EditMode tests (130 → 143); 7 assemblies / 60 files, 0 warnings; 29 Unity files parse;
+  **13/13** supplies/stats mutation check.
 
 ## Batch 2026-10-15-C — M2 campaign composition (domain Verified headless; Unity glue syntax-checked)
 
