@@ -85,7 +85,8 @@ namespace Wayfinder.Simulation
             // Stationary direction guard: brake held below 0.3 m/s for 0.4 s selects reverse;
             // throttle requests forward only after the same stationary guard (§3.2).
             float absSpeedMs = Math.Abs(wheelSpeedMs);
-            if (absSpeedMs < ReverseStallGuardSpeedMs)
+            bool requestsDirectionChange = InReverse ? throttle > .05f : brake > .05f && throttle <= .01f;
+            if (absSpeedMs < ReverseStallGuardSpeedMs && requestsDirectionChange)
                 _stationaryTimer += deltaSeconds;
             else
                 _stationaryTimer = 0f;
@@ -95,9 +96,7 @@ namespace Wayfinder.Simulation
                 InReverse = true;
             else if (stationaryGuard && throttle > 0.05f)
                 InReverse = false;
-            // Never abruptly reverse engine torque at speed: state only changes under the guard.
-            if (absSpeedMs >= ReverseStallGuardSpeedMs)
-                InReverse = InReverse && brake > 0.05f && throttle <= 0.01f;
+            // Direction changes only under the stationary guard, not on pedal release at speed.
 
             reverseGearIndicated = InReverse;
 
@@ -137,7 +136,9 @@ namespace Wayfinder.Simulation
             EngineRpm = MathUtil.Clamp(EngineRpm, spec.IdleRpm, spec.LimiterRpm);
             _torqueBlend = MathUtil.Clamp01(_torqueBlend + deltaSeconds / TorqueTransitionSeconds);
 
-            if (InReverse || throttle <= 0.001f || brake > 0.9f)
+            float demand = InReverse ? brake : throttle;
+            bool opposingPedal = InReverse ? throttle > 0.01f : brake > 0.01f;
+            if (demand <= 0.001f || opposingPedal || handbrake)
             {
                 _lastCommandedTorque = 0f;
                 return 0f;
@@ -150,8 +151,8 @@ namespace Wayfinder.Simulation
 
             // totalWheelTorque = engineTorque × throttle × gearRatio × finalDrive × efficiency × condition
             float total = engineTorque
-                          * throttle
-                          * Math.Abs(ratio)
+                          * demand
+                          * ratio
                           * spec.FinalDrive
                           * spec.DrivetrainEfficiency
                           * condition
@@ -189,11 +190,13 @@ namespace Wayfinder.Simulation
                 return;
             }
 
+            float direction = Math.Sign(totalTorqueNm);
+            totalTorqueNm = Math.Abs(totalTorqueNm);
             float nominalShare = totalTorqueNm / groundedCount;
             if (diffLockEngaged)
             {
                 for (int i = 0; i < n; i++)
-                    wheelTorqueOut[i] = grounded[i] ? nominalShare : 0f;
+                    wheelTorqueOut[i] = grounded[i] ? direction * nominalShare : 0f;
                 return;
             }
 
@@ -220,7 +223,7 @@ namespace Wayfinder.Simulation
                 float share = slipWeightSum > 0f
                     ? totalTorqueNm * (weights[i] / slipWeightSum)
                     : 0f;
-                wheelTorqueOut[i] = grounded[i] ? Math.Min(share, cap) : 0f;
+                wheelTorqueOut[i] = grounded[i] ? direction * Math.Min(share, cap) : 0f;
             }
         }
 

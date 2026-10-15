@@ -1,0 +1,2 @@
+PASS: YAML parses; manual-only trigger, owner guard, dedicated runner, named environment, read-only token, pinned actions, environment-passed input and success-only APK upload.
+Static check only; no GitHub Actions or Unity run performed.

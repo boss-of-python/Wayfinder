@@ -1,0 +1,23 @@
+[headless-cs] syntax-check (Roslyn 3.9 parser, C# 9) of 21 Unity-dependent file(s) — not type-checked
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/BuildCommands.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/ContentImporter.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/ProjectSetup.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/SceneBuilder.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/WorldBaker.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Platform/BootstrapHost.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Platform/InputRouter.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Platform/LifecycleHandler.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Platform/PlatformServices.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/PresentationModels.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/PrototypeSafeArea.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/PrototypeUi.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/ProvingGroundDriver.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/TitleFlowHost.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/TouchHoldButton.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Simulation/ChaseCameraBehaviour.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Simulation/SurfaceLabel.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Simulation/VehicleController.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Simulation/WaterVolume.cs
+[headless-cs]     Assets/Wayfinder/Tests/Editor/ProjectSetupTests.cs
+[headless-cs]     Assets/Wayfinder/Tests/PlayMode/VehiclePlayModeTests.cs
+syntax-check: 21 file(s), 0 syntax error(s)

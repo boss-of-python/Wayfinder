@@ -1,7 +1,16 @@
 {
     "name": "Wayfinder.Presentation",
     "rootNamespace": "Wayfinder.Presentation",
-    "references": ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World", "Wayfinder.Progression", "Wayfinder.Persistence", "Wayfinder.Platform"],
+    "references": [
+        "Wayfinder.Core",
+        "Wayfinder.Simulation",
+        "Wayfinder.World",
+        "Wayfinder.Progression",
+        "Wayfinder.Persistence",
+        "Wayfinder.Platform",
+        "Unity.InputSystem",
+        "Unity.ugui"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

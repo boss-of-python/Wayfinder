@@ -159,7 +159,7 @@ ASSEMBLIES = [
      ["Newtonsoft.Json", "nunit.framework"]),
 ]
 # Assemblies whose every file needs UnityEngine/UnityEditor — syntax-checked only.
-UNITY_ONLY_DIRS = ["Scripts/Platform", "Scripts/Presentation", "Scripts/Editor", "Tests/PlayMode"]
+UNITY_ONLY_DIRS = ["Scripts/Platform", "Scripts/Presentation", "Scripts/Editor", "Tests/PlayMode", "Tests/Editor"]
 
 NUNITLITE_HOST_CS = r'''
 using System;

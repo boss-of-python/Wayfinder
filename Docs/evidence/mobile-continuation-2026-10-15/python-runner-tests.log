@@ -1,0 +1,42 @@
+test_build_command_has_method_and_no_secrets (test_unity_pipeline.UnityPipelineTests.test_build_command_has_method_and_no_secrets) ... ok
+test_bundle_and_apk_have_distinct_manifests (test_unity_pipeline.UnityPipelineTests.test_bundle_and_apk_have_distinct_manifests) ... ok
+test_complete_setup_outputs_are_accepted (test_unity_pipeline.UnityPipelineTests.test_complete_setup_outputs_are_accepted) ... Running setup; log: /tmp/tmpo7abumag/Logs/unity-pipeline/setup.log
+ok
+test_doctor_check_does_not_pin (test_unity_pipeline.UnityPipelineTests.test_doctor_check_does_not_pin) ... ok
+test_explicit_editor_found (test_unity_pipeline.UnityPipelineTests.test_explicit_editor_found) ... ok
+test_explicit_missing_editor_fails (test_unity_pipeline.UnityPipelineTests.test_explicit_missing_editor_fails) ... ok
+test_invalid_artifact_rejected (test_unity_pipeline.UnityPipelineTests.test_invalid_artifact_rejected) ... ok
+test_missing_and_invalid_manifest_fail (test_unity_pipeline.UnityPipelineTests.test_missing_and_invalid_manifest_fail) ... ok
+test_never_silently_overwrites_pin (test_unity_pipeline.UnityPipelineTests.test_never_silently_overwrites_pin) ... ok
+test_new_bundle_is_accepted (test_unity_pipeline.UnityPipelineTests.test_new_bundle_is_accepted) ... Editor pin missing; setup/smoke will pin the verified installed version.
+Pinned installed editor: 6000.3.2f1
+Running android-release; log: /tmp/tmpej48g5eb/Logs/unity-pipeline/android-release.log
+ok
+test_no_artifact_on_zero_exit_is_failure (test_unity_pipeline.UnityPipelineTests.test_no_artifact_on_zero_exit_is_failure) ... Build artifact: /tmp/tmpej48g5eb/Builds/Android/Wayfinder.aab
+Running android-dev; log: /tmp/tmp997bub6v/Logs/unity-pipeline/android-dev.log
+ok
+test_nonzero_exit_stops_pipeline (test_unity_pipeline.UnityPipelineTests.test_nonzero_exit_stops_pipeline) ... Running android-dev; log: /tmp/tmpo26e0h6t/Logs/unity-pipeline/android-dev.log
+ok
+test_reads_actual_editor_version (test_unity_pipeline.UnityPipelineTests.test_reads_actual_editor_version) ... ok
+test_rejects_other_editor_or_failed_version_query (test_unity_pipeline.UnityPipelineTests.test_rejects_other_editor_or_failed_version_query) ... ok
+test_result_gate_accepts_nonzero_pass (test_unity_pipeline.UnityPipelineTests.test_result_gate_accepts_nonzero_pass) ... ok
+test_result_gate_rejects_missing_empty_failed_and_corrupt (test_unity_pipeline.UnityPipelineTests.test_result_gate_rejects_missing_empty_failed_and_corrupt) ... ok
+test_setup_pins_without_invented_revision_hash (test_unity_pipeline.UnityPipelineTests.test_setup_pins_without_invented_revision_hash) ... ok
+test_setup_requires_fresh_completion_marker (test_unity_pipeline.UnityPipelineTests.test_setup_requires_fresh_completion_marker) ... Unity tests passed: 3 (result.xml)
+Pinned installed editor: 6000.3.2f1
+Running setup; log: /tmp/tmp7jpasajr/Logs/unity-pipeline/setup.log
+ok
+test_setup_requires_generated_outputs_and_package_lock (test_unity_pipeline.UnityPipelineTests.test_setup_requires_generated_outputs_and_package_lock) ... Running setup; log: /tmp/tmpm91xptxp/Logs/unity-pipeline/setup.log
+ok
+test_stale_artifact_on_zero_exit_is_failure (test_unity_pipeline.UnityPipelineTests.test_stale_artifact_on_zero_exit_is_failure) ... Running android-dev; log: /tmp/tmpnqyky2v9/Logs/unity-pipeline/android-dev.log
+ok
+test_stale_test_xml_cannot_report_pass (test_unity_pipeline.UnityPipelineTests.test_stale_test_xml_cannot_report_pass) ... Running EditMode; log: /tmp/tmptmq7a6w6/Logs/unity-pipeline/EditMode.log
+ok
+test_test_command_has_no_premature_quit (test_unity_pipeline.UnityPipelineTests.test_test_command_has_no_premature_quit) ... ok
+test_timeout_fails (test_unity_pipeline.UnityPipelineTests.test_timeout_fails) ... Running setup; log: /tmp/tmpfpq5znbk/Logs/unity-pipeline/setup.log
+ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 0.014s
+
+OK

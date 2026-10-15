@@ -50,6 +50,7 @@ namespace Wayfinder.Platform
         InputActionAsset _actions;
         InputActionMap _driving;
         bool _inputsSuppressed;
+        float _touchSteer, _touchThrottle, _touchBrake;
 
         [Header("Optional TextAsset (defaults to Resources/WayfinderControls)")]
         public TextAsset controlsJson;
@@ -75,7 +76,8 @@ namespace Wayfinder.Platform
 
         void OnDestroy()
         {
-            _actions?.Dispose();
+            _actions?.Disable();
+            if (_actions != null) Destroy(_actions);
             _actions = null;
         }
 
@@ -87,6 +89,7 @@ namespace Wayfinder.Platform
             if (_inputsSuppressed)
             {
                 Current = default; // explicit zero — never latch (QA case 15)
+                ClearTransientFlags();
                 return;
             }
 
@@ -98,6 +101,10 @@ namespace Wayfinder.Platform
             bool leftBtn = _driving.FindAction("SteerLeftButton").IsPressed();
             bool rightBtn = _driving.FindAction("SteerRightButton").IsPressed();
             float buttonTarget = (leftBtn ? -1f : 0f) + (rightBtn ? 1f : 0f);
+
+            if (Mathf.Abs(_touchSteer) > 0.001f) buttonTarget = _touchSteer;
+            throttle = Mathf.Max(throttle, _touchThrottle);
+            brake = Mathf.Max(brake, _touchBrake);
 
             var cmd = Current;
             if (Mathf.Abs(stickSteer) > 0.001f)
@@ -113,7 +120,7 @@ namespace Wayfinder.Platform
             }
 
             if (tiltSteeringEnabled)
-                cmd.Steer = ApplyTiltSteering(cmd.Steer);
+                cmd.Steer = ApplyTiltSteer(cmd.Steer);
 
             cmd.Throttle = Mathf.MoveTowards(cmd.Throttle, throttle, dt / Mathf.Max(0.01f, throttleRampSeconds));
             cmd.Brake = Mathf.MoveTowards(cmd.Brake, brake, dt / Mathf.Max(0.01f, brakeRampSeconds));
@@ -161,23 +168,28 @@ namespace Wayfinder.Platform
         public void SuppressInputs(bool suppressed)
         {
             _inputsSuppressed = suppressed;
-            if (suppressed) Current = default;
+            if (suppressed)
+            {
+                Current = default;
+                _touchSteer = _touchThrottle = _touchBrake = 0f;
+                InteractHeld = false;
+                WinchReel = 0f;
+                ClearTransientFlags();
+            }
         }
 
         /// <summary>Called by UI touch pedals (pointer-captured per control; camera drag never steals pedal touches, §3.2).</summary>
         public void SetTouchPedal(float throttle01, float brake01)
         {
-            var cmd = Current;
-            cmd.Throttle = Mathf.Clamp01(throttle01);
-            cmd.Brake = Mathf.Clamp01(brake01);
-            Current = cmd;
+            if (_inputsSuppressed) return;
+            _touchThrottle = Mathf.Clamp01(throttle01);
+            _touchBrake = Mathf.Clamp01(brake01);
         }
 
         public void SetTouchSteer(float steerMinus1To1)
         {
-            var cmd = Current;
-            cmd.Steer = Mathf.Clamp(steerMinus1To1, -1f, 1f);
-            Current = cmd;
+            if (_inputsSuppressed) return;
+            _touchSteer = Mathf.Clamp(steerMinus1To1, -1f, 1f);
         }
 
         public void ClearTransientFlags()

@@ -1,0 +1,2 @@
+ERROR: Unity is not installed/found. Install and activate Unity 6.3 LTS with Android Build Support, SDK/NDK and OpenJDK, then set UNITY_BIN.
+Exit code: 1

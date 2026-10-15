@@ -1,10 +1,43 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-14. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-15. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## Later 2026-10-15 continuation — mobile lifecycle and phone build route
+
+- **59/59 headless C# tests pass**, including four new pause/focus ordering and
+  duplicate-event regressions. **23/23** mocked Python runner tests pass. Latest
+  engine-source syntax check covers 21 files with no syntax errors.
+- **Implemented, not Unity-verified:** independent pause/focus adapter, authored
+  water-trigger depth/stall wiring, two more PlayMode tests (seven total), mobile
+  30 FPS default plus a 30/60 target toggle.
+- Prepared an owner-only, manual, dedicated self-hosted Windows-runner APK workflow.
+  YAML/security contracts were statically checked; no workflow/Unity build was run.
+- A Moto G45 can control a desktop and install an APK, but not run desktop Unity.
+  No paid machine, runner, editor license, APK or Play submission was provisioned.
+- Guide: [MOTO_G45_BUILD_AND_TEST.md](MOTO_G45_BUILD_AND_TEST.md). Evidence:
+  `Docs/evidence/mobile-continuation-2026-10-15/`.
+
+## Batch 2026-10-15 — Unity preparation and driving prototype
+
+- **Verified headlessly:** 55/55 C# domain tests pass (6 new steering/powertrain
+  regressions), zero compile warnings/errors, profile checks pass. Twenty-one
+  Unity-dependent sources parse successfully, **not type-checked by Unity**.
+- **Verified Python tooling:** 23/23 mocked runner contract tests; data/formula/
+  economy checks pass. No Unity test/build result is claimed.
+- **Implemented, Unity-unverified:** generated URP/quality/input setup; serializable
+  matching-filename MonoBehaviours; Bootstrap → Title → proving-ground UI; four-wheel
+  rig, touch input, pause/reset and camera bridge; explicit signed-AAB release path
+  and failing build gates; cross-platform setup/test/Android runner.
+- **Still blocked:** actual Unity/package resolution/compile, generated scenes and
+  `.meta` files, physical-device gates. Domain fixes do not close M0/M1/M2 gates.
+  Campaign UI/save wiring, scatter/streaming, production assets and M6/M7 remain
+  incomplete. Historical summaries below retain their original 14 October counts.
+- Evidence, commands and detailed limitations: **[UNITY_HANDOFF.md](UNITY_HANDOFF.md)**
+  and `Docs/evidence/unity-prep-2026-10-15/`.
 
 ## Batch 2026-10-14-B — headless C# compile + EditMode execution
 

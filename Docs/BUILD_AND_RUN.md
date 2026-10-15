@@ -4,6 +4,35 @@ Status legend used here: **VERIFIED** (ran in this repo/environment) vs **UNVERI
 
 ---
 
+## Phone-controlled build route
+
+For a Moto G45, see [MOTO_G45_BUILD_AND_TEST.md](MOTO_G45_BUILD_AND_TEST.md). You
+still need an installed/licensed Unity desktop (borrowed or cloud); the phone can
+control it and install its APK. The optional workflow is manual and self-hosted,
+not a GitHub-hosted editor or a phone-only compiler. The latest domain suite passes
+59/59 tests; earlier 55/49 counts below are historical snapshots.
+
+## Latest setup/build workflow (15 Oct 2026)
+
+Read **[UNITY_HANDOFF.md](UNITY_HANDOFF.md)** for the current source implementation,
+actual executed checks, prerequisites and Windows/macOS/Linux commands.
+
+```bash
+python3 Tools/Build/unity_pipeline.py smoke --unity "PATH_TO_INSTALLED_UNITY_EDITOR"
+```
+
+This attempts real-editor pinning → generated URP/quality/input/scenes → Unity
+EditMode tests → PlayMode tests → development APK, stopping on failures or stale
+outputs. It requires a locally installed/licensed Unity 6.3 LTS editor and Android
+modules. **It has not run successfully here: no Unity editor is installed.** The
+runner's 23 mocked contract tests are not evidence of Unity success. The current
+headless suite has **55 passing tests**; 49-test counts below describe the prior
+2026-10-14 batch.
+
+Android release source now explicitly emits `Builds/Android/Wayfinder.aab` and
+requires owner upload-key signing. No signed AAB exists yet. Generated scenes are
+an explicitly labeled driving prototype, not the planned campaign flow.
+
 ## 0. Environment reality check (read first)
 
 The machine that produced this repository state has **no Unity editor, no Android SDK, no Xcode** (only Python 3.11 and Node). Therefore:
@@ -45,8 +74,12 @@ git push
 ## 2. Run the game in the editor (**UNVERIFIED** until Unity is installed)
 
 1. Open scene `Assets/Wayfinder/Scenes/Bootstrap.unity`.
-2. Press Play. Flow: `Boot → Title → (New Expedition | Continue) → Garage → Driving`.
-3. Desktop development controls (§3.1): **WASD/arrows** drive, **mouse drag** camera, **Space** handbrake, **E** interact, **M** map, **R** recovery menu, **Esc** pause.
+2. Press Play. Implemented prototype flow: `Bootstrap → Title → Open proving ground → Driving`.
+   Campaign/New Expedition/Continue/Garage integration remains unfinished.
+3. Prototype controls: **WASD/arrows** drive, **mouse movement/right stick** camera,
+   **Space** handbrake, **Esc/start** pause; on-screen touch steering/pedals, reset and Title.
+   Hold brake while stationary to select reverse; throttle brakes in reverse.
+   Mission interaction/map/recovery-menu wiring is not part of this prototype.
 4. Touch controls render automatically in the Game view safe area (they are the primary target).
 
 ## 3. Run the automated tests (**UNVERIFIED** for C#; **VERIFIED** for Python)
@@ -55,10 +88,10 @@ C# (Unity Test Runner, after setup):
 ```bash
 # EditMode (pure domain + content + save + economy):
 Unity -batchmode -nographics -projectPath . \
-  -runTests -testPlatform EditMode -testResults Logs/editmode.xml -quit
-# PlayMode (vehicle grounding, hazards, recovery, streaming):
+  -runTests -testPlatform EditMode -testResults Logs/editmode.xml
+# PlayMode (vehicle grounding/driving/fuel, touch/pause/release):
 Unity -batchmode -projectPath . \
-  -runTests -testPlatform PlayMode -testResults Logs/playmode.xml -quit
+  -runTests -testPlatform PlayMode -testResults Logs/playmode.xml
 ```
 (Replace `Unity` with the exact editor binary path, e.g. `~/Unity/Hub/Editor/6000.3.xf1/Editor/Unity`.)
 
@@ -103,7 +136,8 @@ Unity -batchmode -quit -projectPath . \
 # Artifact: Builds/iOS/Xcode project — sign in Xcode with YOUR credentials (never commit them)
 ```
 
-Release variants: `BuildAndroidRelease` / `BuildIOSRelease` (see `Assets/Wayfinder/Scripts/Editor/BuildCommands.cs`).
+Release variants: `BuildAndroidRelease` (signed AAB, `Builds/Android/Wayfinder.aab`) /
+`BuildIOSRelease` (see `Assets/Wayfinder/Scripts/Editor/BuildCommands.cs` and `Docs/UNITY_HANDOFF.md`).
 Signing credentials stay outside the repository (§23.2). Store publication is owner-authorized and out of scope for any AI step.
 
 ## 5. Content & world bake (editor menu, after Setup Project)

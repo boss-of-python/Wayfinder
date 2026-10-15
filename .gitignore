@@ -57,3 +57,12 @@ Thumbs.db
 # Toolchain cache lives outside the repo ($HOME/.cache/wayfinder-headless-cs or
 # $WAYFINDER_HEADLESS_CS_HOME). Run outputs go to Logs/headless/ (ignored above);
 # curated copies are committed under Docs/evidence/.
+
+# ---- Owner signing secrets / local environment ----
+*.keystore
+*.jks
+*.p12
+.env
+.env.*
+!.env.example
+!.env.template

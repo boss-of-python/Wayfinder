@@ -1,0 +1,58 @@
+name: Android APK (phone-controlled, dedicated Unity PC)
+
+# Never run untrusted pull requests on a licensed self-hosted machine.
+on:
+  workflow_dispatch:
+    inputs:
+      unity_path:
+        description: 'Optional installed Unity editor executable path; blank uses runner UNITY_BIN/discovery'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wayfinder-dedicated-unity-pc
+  cancel-in-progress: false
+
+jobs:
+  android-smoke:
+    # This repository belongs to a personal account. Only that owner may start builds.
+    if: github.event_name == 'workflow_dispatch' && github.actor == github.repository_owner
+    runs-on: [self-hosted, Windows, X64, wayfinder-unity-android]
+    # Configure required reviewer/branch rules BEFORE connecting a runner.
+    environment: unity-android-build
+    timeout-minutes: 120
+    steps:
+      - name: Check out owner-selected source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          clean: true
+
+      - name: Set up, run Unity tests and build development APK
+        shell: powershell
+        env:
+          # Pass user input as an environment value, never interpolate it into a shell script.
+          WAYFINDER_SELECTED_UNITY: ${{ inputs.unity_path }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $arguments = @('Tools/Build/unity_pipeline.py', 'smoke')
+          if (-not [string]::IsNullOrWhiteSpace($env:WAYFINDER_SELECTED_UNITY)) {
+            $arguments += @('--unity', $env:WAYFINDER_SELECTED_UNITY)
+          }
+          python @arguments
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Upload installable development APK
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Wayfinder-dev-APK
+          path: Builds/Android/Wayfinder-dev.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      # Unity logs are deliberately not uploaded automatically: inspect/redact them
+      # on the dedicated machine first. This job never signs a production AAB or publishes.

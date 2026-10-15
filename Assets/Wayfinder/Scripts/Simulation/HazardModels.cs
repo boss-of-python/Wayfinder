@@ -247,21 +247,19 @@ namespace Wayfinder.Simulation
             float max = SteerAngleLimitDegrees(speedKph);
             float baseAngle = steerCommand * max;
 
+            if (Math.Abs(steerCommand) < 1e-6f)
+            {
+                innerDegrees = outerDegrees = 0f;
+                return;
+            }
             // Wheel-radius-neutral approximation; arcade blend keeps both wheels closer to base.
             double tanSteer = Math.Tan(Math.Abs(baseAngle) * Math.PI / 180.0);
-            float turnRadius = (float)(wheelbaseM / Math.Max(0.1, tanSteer)) * Math.Sign(baseAngle == 0 ? 1 : baseAngle);
+            float turnRadius = (float)(wheelbaseM / Math.Max(1e-6, tanSteer)) * Math.Sign(baseAngle == 0 ? 1 : baseAngle);
             float inner = (float)(Math.Atan(wheelbaseM / Math.Max(0.5f, Math.Abs(turnRadius) - trackM / 2f)) * 180.0 / Math.PI) * Math.Sign(turnRadius);
             float outer = (float)(Math.Atan(wheelbaseM / (Math.Abs(turnRadius) + trackM / 2f)) * 180.0 / Math.PI) * Math.Sign(turnRadius);
 
             innerDegrees = MathUtil.Lerp(baseAngle, inner, AckermannBlend);
             outerDegrees = MathUtil.Lerp(baseAngle, outer, AckermannBlend);
-            if (steerCommand < 0)
-            {
-                // Swap: turning left, inner is the left wheel.
-                float tmp = innerDegrees;
-                innerDegrees = outerDegrees;
-                outerDegrees = tmp;
-            }
         }
 
         /// <summary>Button steering eased ramp (0→full in 0.30 s, return in 0.18 s, §3.2).</summary>

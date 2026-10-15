@@ -8,6 +8,57 @@ namespace Wayfinder.Tests
     public class CoreDomainTests
     {
         [Test]
+        public void MobileLifecycle_FocusCannotResumePausedApplication()
+        {
+            var gate = new MobileLifecycleGate();
+            Assert.IsTrue(gate.SetApplicationPaused(true));
+            Assert.IsFalse(gate.SetFocus(false));
+            Assert.IsFalse(gate.SetFocus(true));
+            Assert.IsTrue(gate.IsSuspended);
+            Assert.IsTrue(gate.SetApplicationPaused(false));
+            Assert.IsFalse(gate.IsSuspended);
+        }
+
+        [Test]
+        public void MobileLifecycle_UnpauseCannotResumeUnfocusedApplication()
+        {
+            var gate = new MobileLifecycleGate();
+            Assert.IsTrue(gate.SetFocus(false));
+            Assert.IsFalse(gate.SetApplicationPaused(true));
+            Assert.IsFalse(gate.SetApplicationPaused(false));
+            Assert.IsTrue(gate.IsSuspended);
+            Assert.IsTrue(gate.SetFocus(true));
+            Assert.IsFalse(gate.IsSuspended);
+        }
+
+        [Test]
+        public void MobileLifecycle_DuplicateCallbacksDoNotRepeatTransitions()
+        {
+            var gate = new MobileLifecycleGate();
+            Assert.IsFalse(gate.SetFocus(true));
+            Assert.IsFalse(gate.SetApplicationPaused(false));
+            Assert.IsTrue(gate.SetFocus(false));
+            Assert.IsFalse(gate.SetFocus(false));
+            Assert.IsTrue(gate.SetFocus(true));
+            Assert.IsFalse(gate.SetFocus(true));
+        }
+
+        [Test]
+        public void MobileLifecycle_BothCallbackOrdersRequireBothSignals()
+        {
+            foreach (bool focusFirst in new[] { true, false })
+            {
+                var gate = new MobileLifecycleGate();
+                if (focusFirst) { gate.SetFocus(false); gate.SetApplicationPaused(true); }
+                else { gate.SetApplicationPaused(true); gate.SetFocus(false); }
+                Assert.IsTrue(gate.IsSuspended);
+                if (focusFirst) { gate.SetApplicationPaused(false); Assert.IsTrue(gate.IsSuspended); gate.SetFocus(true); }
+                else { gate.SetFocus(true); Assert.IsTrue(gate.IsSuspended); gate.SetApplicationPaused(false); }
+                Assert.IsFalse(gate.IsSuspended);
+            }
+        }
+
+        [Test]
         public void StableHash_IsDeterministicAndOrdinal()
         {
             Assert.AreEqual(StableHash.Hash32("cache.forest.017"), StableHash.Hash32("cache.forest.017"));

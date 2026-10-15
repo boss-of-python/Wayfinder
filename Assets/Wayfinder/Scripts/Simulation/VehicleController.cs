@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Wayfinder.Core;
 
@@ -7,7 +8,7 @@ namespace Wayfinder.Simulation
     /// <summary>
     /// Rigidbody + four WheelCollider vehicle controller (§4.1, Appendix D physics outline).
     /// Owns actuation only — no UI, no permanent save writes (§16.1).
-    /// All per-tick work is allocation-free.
+    /// Wheel buffers are reused; the stat resolver still allocates and needs M6 profiling.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public sealed class VehicleController : MonoBehaviour
@@ -29,6 +30,10 @@ namespace Wayfinder.Simulation
         public TireSet tireSet = TireSet.AllTerrain;
 
         Rigidbody _rb;
+        Collider _hull;
+        float _groundHeightY;
+        readonly Dictionary<Collider, WaterVolume> _waterContacts = new Dictionary<Collider, WaterVolume>();
+        public float WaterDepthMeters { get; private set; }
         readonly Powertrain _powertrain = new Powertrain();
         readonly DamageModel _damage = new DamageModel();
         readonly MudSinkModel _mud = new MudSinkModel();
@@ -64,6 +69,7 @@ namespace Wayfinder.Simulation
         void Awake()
         {
             _rb = GetComponent<Rigidbody>();
+            _hull = GetComponent<Collider>();
             if (spec == null) spec = VehicleSpec.ScoutS1();
             _fuelLiters = spec.FuelCapacityLiters;
             _powertrain.Reset(spec);
@@ -85,6 +91,7 @@ namespace Wayfinder.Simulation
             _throttleCommand = 0f;
             _brakeCommand = 1f;
             _steerCommand = 0f;
+            _handbrake = true; // a parking hold must never become powered reverse
         }
 
         public void SetCargoMass(float kg) => _cargoMassKg = Math.Max(0f, kg);
@@ -130,14 +137,19 @@ namespace Wayfinder.Simulation
                     spec.WheelRadiusM,
                     LongitudinalSpeedMs());
             }
-            _powertrain.SplitAwdTorque(totalDriveTorque, _grounded, _slip, _wheelTorque, _powertrain.DiffLockEngaged);
+            Powertrain.SplitAwdTorque(totalDriveTorque, _grounded, _slip, _wheelTorque, _powertrain.DiffLockEngaged);
 
+            // Engine-off, disabled and empty-tank vehicles may brake/coast, never propel.
+            if (!_engineOn || _fuelLiters <= 0f || _damage.EngineDisabled)
+                Array.Clear(_wheelTorque, 0, _wheelTorque.Length);
+            _rb.mass = spec.DryMassKg + _fuelLiters * VehicleSpec.FuelDensityKgPerLiter + _cargoMassKg;
             ApplyWheelForces(stats, reverseIndicated);
 
             // Hazards and fuel (simulation delta only).
             _mud.Step(_throttleCommand, LongitudinalSpeedMs(), CurrentMudDepthM(), dt);
             float intakeHeight = stats.SafeWadingDepthM;
-            if (_water.Step(CurrentWaterDepthM(), intakeHeight, dt, out bool stallEvent) && stallEvent)
+            WaterDepthMeters = CurrentWaterDepthM();
+            if (_water.Step(WaterDepthMeters, intakeHeight, dt, out bool stallEvent) && stallEvent)
                 ApplyWaterStall();
 
             _damage.Tick(dt);
@@ -147,7 +159,8 @@ namespace Wayfinder.Simulation
             float load = FuelModel.EstimateLoad(
                 _powertrain.LastCommandedTorque / Math.Max(1f, spec.PeakTorqueNm * spec.FinalDrive),
                 CurrentTerrainSlopeRadians(), 0.035f);
-            float drain = FuelModel.LitersPerSecond(_throttleCommand, load, slipSeverity, _engineOn)
+            float driveDemand = _powertrain.InReverse ? _brakeCommand : _throttleCommand;
+            float drain = FuelModel.LitersPerSecond(driveDemand, load, slipSeverity, _engineOn)
                           * stats.PoweredFuelDrainFactor
                           * (1f + _mud.SinkFraction);
             _fuelLiters = FuelModel.Integrate(_fuelLiters, stats.FuelCapacityLiters, drain, dt);
@@ -157,20 +170,21 @@ namespace Wayfinder.Simulation
 
         void ApplyWheelForces(EffectiveVehicleStats stats, bool reverseIndicated)
         {
-            float maxSteer = SteeringModel.SteerAngleLimitDegrees(SpeedKph);
             SteeringModel.AckermannAngles(_steerCommand, SpeedKph, spec.WheelbaseM, spec.TrackM,
                 out float inner, out float outer);
             bool turningLeft = _steerCommand < 0f;
 
+            // The brake pedal powers reverse after the stationary guard; throttle brakes in R.
+            float serviceBrake = reverseIndicated ? _throttleCommand : _brakeCommand;
             // Per-wheel: steer (front), motor torque, brake torque scaled by surface grip.
-            SetWheelDrive(wheelFrontLeft, _wheelTorque[0], _brakeCommand, stats,
+            SetWheelDrive(wheelFrontLeft, _wheelTorque[0], serviceBrake, stats,
                 turningLeft ? inner : outer);
-            SetWheelDrive(wheelFrontRight, _wheelTorque[1], _brakeCommand, stats,
+            SetWheelDrive(wheelFrontRight, _wheelTorque[1], serviceBrake, stats,
                 turningLeft ? outer : inner);
-            SetWheelDrive(wheelRearLeft, _wheelTorque[2], _brakeCommand, stats, 0f);
-            SetWheelDrive(wheelRearRight, _wheelTorque[3], _brakeCommand, stats, 0f);
+            SetWheelDrive(wheelRearLeft, _wheelTorque[2], serviceBrake, stats, 0f);
+            SetWheelDrive(wheelRearRight, _wheelTorque[3], serviceBrake, stats, 0f);
 
-            if (_handbrake)
+            if (_handbrake && wheelRearLeft != null && wheelRearRight != null)
             {
                 wheelRearLeft.brakeTorque = spec.BrakeTorqueRearNmPerWheel * 1.5f;
                 wheelRearRight.brakeTorque = spec.BrakeTorqueRearNmPerWheel * 1.5f;
@@ -219,7 +233,10 @@ namespace Wayfinder.Simulation
         static float SuspensionCompression(WheelCollider wheel)
         {
             if (!wheel.GetGroundHit(out WheelHit hit)) return 0f;
-            return Mathf.Clamp01(1f - hit.distance / wheel.suspensionDistance) * wheel.suspensionDistance;
+            // WheelHit has a contact point, not a distance property. Measure in wheel space.
+            float travel = Mathf.Max(0.001f, wheel.suspensionDistance);
+            float extension = -wheel.transform.InverseTransformPoint(hit.point).y - wheel.radius;
+            return travel - Mathf.Clamp(extension, 0f, travel);
         }
 
         EffectiveVehicleStats ResolveStats()
@@ -234,10 +251,22 @@ namespace Wayfinder.Simulation
 
         void SampleGrounded()
         {
-            _grounded[0] = wheelFrontLeft != null && wheelFrontLeft.isGrounded;
-            _grounded[1] = wheelFrontRight != null && wheelFrontRight.isGrounded;
-            _grounded[2] = wheelRearLeft != null && wheelRearLeft.isGrounded;
-            _grounded[3] = wheelRearRight != null && wheelRearRight.isGrounded;
+            float groundSum = 0f;
+            int groundedCount = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                var wheel = GetWheel(i);
+                _grounded[i] = false;
+                _surfaces[i] = SurfaceType.PackedDirt;
+                if (wheel == null || !wheel.GetGroundHit(out WheelHit hit)) continue;
+                _grounded[i] = true;
+                groundSum += hit.point.y;
+                groundedCount++;
+                if (hit.collider != null && hit.collider.TryGetComponent<SurfaceLabel>(out var label))
+                    _surfaces[i] = label.surface;
+            }
+            _groundHeightY = groundedCount > 0 ? groundSum / groundedCount
+                : transform.position.y - spec.WheelRadiusM - spec.SuspensionTravelM * .5f;
         }
 
         WheelCollider GetWheel(int i) => i switch
@@ -269,10 +298,35 @@ namespace Wayfinder.Simulation
 
         float LongitudinalSpeedMs() => Vector3.Dot(_rb.linearVelocity, transform.forward);
 
-        // --- Hazard probes. In M1/M2 these read authored hazard volumes and terrain alphamaps
-        // via SurfaceService; the defaults keep the vehicle fully functional on flat ground. ---
+        // Mud depth and full water-force integration still require authored depth/terrain data.
         float CurrentMudDepthM() => SurfaceTable.IsMud(_surfaces[0]) ? 0.10f : 0f;
-        float CurrentWaterDepthM() => 0f;
+
+        void OnTriggerEnter(Collider other)
+        {
+            if (other.TryGetComponent<WaterVolume>(out var volume)) _waterContacts[other] = volume;
+        }
+
+        void OnTriggerExit(Collider other) => _waterContacts.Remove(other);
+
+        void OnDisable()
+        {
+            _waterContacts.Clear();
+            WaterDepthMeters = 0f;
+            ZeroInputsAndHold();
+        }
+
+        float CurrentWaterDepthM()
+        {
+            float depth = 0f;
+            foreach (var contact in _waterContacts)
+            {
+                if (contact.Key == null || !contact.Key.enabled || contact.Value == null || !contact.Value.isActiveAndEnabled) continue;
+                // Reject stale contacts after reset/teleport, even before the next trigger exit.
+                if (_hull != null && !contact.Key.bounds.Intersects(_hull.bounds)) continue;
+                depth = Mathf.Max(depth, contact.Value.surfaceHeightY - _groundHeightY);
+            }
+            return Mathf.Max(0f, depth);
+        }
         float CurrentBodyRollDegrees() => Vector3.SignedAngle(transform.up, Vector3.up, transform.forward);
         float CurrentTerrainSlopeDegrees() => Vector3.Angle(transform.forward,
             Vector3.ProjectOnPlane(transform.forward, Vector3.up)) ;
@@ -280,7 +334,7 @@ namespace Wayfinder.Simulation
 
         void UpdateState()
         {
-            if (_damage.EngineDisabled || _fuelLiters <= 0f && !_engineOn)
+            if (_damage.EngineDisabled || _fuelLiters <= 0f)
                 State = VehicleState.Disabled;
             else if (_engineOn == false && SpeedMetersPerSecond < 0.2f)
                 State = VehicleState.Stalled;

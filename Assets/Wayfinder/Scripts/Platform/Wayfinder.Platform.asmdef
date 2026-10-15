@@ -1,7 +1,12 @@
 {
     "name": "Wayfinder.Platform",
     "rootNamespace": "Wayfinder.Platform",
-    "references": ["Wayfinder.Core", "Wayfinder.Persistence", "Wayfinder.Progression"],
+    "references": [
+        "Wayfinder.Core",
+        "Wayfinder.Persistence",
+        "Wayfinder.Progression",
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
