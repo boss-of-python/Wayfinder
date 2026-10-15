@@ -10,7 +10,7 @@
         "Wayfinder.Campaign",
         "Wayfinder.Platform",
         "Unity.InputSystem",
-        "Unity.ugui"
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
