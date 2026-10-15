@@ -22,3 +22,36 @@ Statuses: Open / Mitigated / Resolved.
 | KI-015 | Major (found + fixed) | `InventoryService.Add` could leave one stack above `MaxStack`, under-counting slots | Capacity math then disagreed with `CanAdd`, so a "full" inventory could still accept items. Found by `Research_CapacityModuleRemovalBlockedWhenOver_QA9` (expected 2 slots for 20 scrap @ MaxStack 10) | Inventory, QA case 3/9 | **Resolved** 2026-10-14 — all-or-nothing `PlacementPlan` (fill partial stacks, then open new slots, split at `MaxStack`); `ProgressionTests` 14/14 pass. |
 | KI-016 | Minor | Headless harness ≠ Unity build | `headless_cs.py` uses Roslyn 3.9 + NUnit 3.13.3 + Newtonsoft 13.0.3 built from source and a .NET Standard 2.1 reference assembly; Unity 6000.3.x ships its own Roslyn, UTF embeds NUnit 3.5 and `com.unity.nuget.newtonsoft-json` 3.2.1. The common API surface is used deliberately, but Unity's own compile/test run remains the gate evidence | Evidence interpretation | Info — see `Docs/EVIDENCE_CS_HEADLESS.md` §5; Unity results, when produced, supersede headless ones. |
 | KI-017 | Major | `REQUIREMENT_MAP` previously listed `World/RoadGraph.cs`, `World/ScatterPlacer.cs` and `World/WorldStreamer.cs` as implemented — **they do not exist** | Found while cross-checking the map against the headless compile report (which lists every compiled file). What exists: `RouteGraph`/`RouteValidator`/`CapabilityBands` (route constraints), river/road carve *hooks* in `NoiseField`, and `ChunkStateMachine` (state transitions only, no MonoBehaviour streamer) | GEN-03, ARCH-03, PERF-01 (M3) | Open — map corrected 2026-10-14 (GEN-03 → IP, ARCH-03 streamer → missing). Implement `ScatterPlacer` (§7.6 rules) and a `WorldStreamer` host around `ChunkStateMachine` in the M3 batch; QA case 12 depends on it. |
+
+## 15 October 2026 source-level update (not Unity gate closure)
+
+The setup/prototype/build batch in [UNITY_HANDOFF.md](UNITY_HANDOFF.md) partially
+mitigates KI-003/004/006: input/test assembly references and known API-use errors
+are corrected, setup now generates URP/quality/input/scenes, a four-wheel prototype
+is wired, and Android release source explicitly requests a signed AAB. These
+engine-facing changes are **syntax-checked only**. KI-001/002/005 and all actual
+Unity/device gates remain open. The pure-domain suite now passes 55/55 tests;
+runner unit tests pass 23/23 using mocked subprocesses, not Unity.
+
+Source defects corrected in this batch: wrong tilt method, read-only quality-name
+assignment, input-asset disposal, nonexistent WheelHit distance, static AWD method
+called through an instance, missing wheel rig, touch state overwritten by Update,
+engine-off/empty-tank propulsion, zero-steer phantom turn, left Ackermann swap,
+no reverse propulsion and incorrect negative AWD caps. Six new pure C# regression
+tests execute the steering/reverse/AWD/handbrake fixes. Added Unity editor/physics
+regressions have not executed. Runtime water-depth and several hazard probes remain
+placeholders; a generated obstacle is not proof of implemented hazard gameplay.
+
+## Later same-day mobile continuation
+
+Android callback overlap is now handled by a pure `MobileLifecycleGate` with four
+executed regressions; total domain suite is 59/59. A focus gain cannot undo an
+application pause. Authored water triggers now feed depth/stall checks, but full
+water forces and mud depth remain incomplete. Seven PlayMode tests are written,
+not executed. Mobile starts with a 30 FPS target and an optional 60 FPS target;
+no Moto G45 frame-rate/thermal measurement exists.
+
+The Unity installation/package/network blocker remains **open**. A manual
+self-hosted Windows build workflow and Moto G45 instructions are prepared, not
+operationally verified. The public repository needs a dedicated secured runner;
+no everyday personal machine should be exposed to untrusted branch/PR code.

@@ -5,6 +5,7 @@ using UnityEngine;
 using Wayfinder.Platform;
 using Wayfinder.Core;
 using Wayfinder.Simulation;
+using Wayfinder.Presentation;
 
 namespace Wayfinder.Editor
 {
@@ -24,6 +25,7 @@ namespace Wayfinder.Editor
             BuildTitle();
             BuildPhysicsTestGround();
             BuildVerticalSlice();
+            EditorSceneManager.OpenScene($"{ScenesDir}/Bootstrap.unity");
             EditorBuildSettings.scenes = new[]
             {
                 new EditorBuildSettingsScene($"{ScenesDir}/Bootstrap.unity", true),
@@ -84,10 +86,12 @@ namespace Wayfinder.Editor
         {
             NewScene("PhysicsTestGround");
             var root = new GameObject("TestGround");
+            Box(root.transform, "TestAreaGround", new Vector3(240f, 1f, 340f), new Vector3(50f, -.6f, 150f),
+                new Color(.30f, .38f, .26f));
 
             // Flat asphalt braking lane 300 m.
             Box(root.transform, "BrakingLane", new Vector3(12f, 0.1f, 300f), new Vector3(0f, 0f, 150f),
-                new Color(0.25f, 0.25f, 0.27f));
+                new Color(0.25f, 0.25f, 0.27f)).AddComponent<SurfaceLabel>().surface = SurfaceType.IntactAsphalt;
 
             // Ramps 10/20/30/35°.
             float[] rampAngles = { 10f, 20f, 30f, 35f };
@@ -131,8 +135,10 @@ namespace Wayfinder.Editor
 
             // Water channel (water volume; depth poles beside it).
             var water = Box(root.transform, "WaterChannel", new Vector3(8f, 1.2f, 24f),
-                new Vector3(80f, -0.4f, 60f), new Color(0.15f, 0.3f, 0.45f, 0.6f));
-            water.AddComponent<WaterVolume>();
+                new Vector3(80f, 0.2f, 60f), new Color(0.15f, 0.3f, 0.45f, 0.6f));
+            var volume = water.AddComponent<WaterVolume>();
+            volume.surfaceHeightY = .8f;
+            water.GetComponent<Collider>().isTrigger = true;
             for (int i = 0; i < 3; i++)
             {
                 Box(root.transform, $"DepthPole{i}", new Vector3(0.1f, 1.2f, 0.1f),
@@ -145,15 +151,14 @@ namespace Wayfinder.Editor
             Box(root.transform, "JumpLanding", new Vector3(14f, 0.1f, 20f), new Vector3(100f, 0f, 95f),
                 new Color(0.32f, 0.3f, 0.28f));
 
-            // Vehicle spawn (Scout S1 rig placeholder — M1 replaces mesh, keeps systems).
-            var vehicle = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            vehicle.name = "ScoutS1_Spawn";
-            vehicle.transform.SetParent(root.transform);
-            vehicle.transform.position = new Vector3(0f, 1.2f, 0f);
-            vehicle.transform.localScale = new Vector3(1.8f, 1.2f, 4.2f);
-            var rb = vehicle.AddComponent<Rigidbody>();
-            rb.mass = 1350f;
-            vehicle.AddComponent<VehicleController>();
+            var vehicle = CreateScoutRig(root.transform, new Vector3(0f, 1f, 10f));
+            var router = vehicle.gameObject.AddComponent<InputRouter>();
+            var camera = Camera.main.gameObject.AddComponent<ChaseCameraBehaviour>();
+            camera.target = vehicle.transform;
+            var driver = new GameObject("Proving Ground Driver").AddComponent<ProvingGroundDriver>();
+            driver.vehicle = vehicle;
+            driver.input = router;
+            driver.chaseCamera = camera;
 
             Save("PhysicsTestGround");
         }
@@ -172,6 +177,83 @@ namespace Wayfinder.Editor
             Save("VerticalSlice");
         }
 
+        public static VehicleController CreateScoutRig(Transform parent, Vector3 position)
+        {
+            var go = new GameObject("Scout S1 Greybox");
+            go.transform.SetParent(parent, false);
+            go.transform.position = position;
+            go.layer = 2; // Ignore Raycast: the chase camera must not collide with its own rig.
+            var body = go.AddComponent<Rigidbody>();
+            var spec = VehicleSpec.ScoutS1();
+            body.mass = spec.DryMassKg + spec.FuelCapacityLiters * VehicleSpec.FuelDensityKgPerLiter;
+            body.centerOfMass = new Vector3(0f, .1f, 0f);
+            body.interpolation = RigidbodyInterpolation.Interpolate;
+            body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            var hull = go.AddComponent<BoxCollider>();
+            hull.center = new Vector3(0f, .30f, 0f);
+            hull.size = new Vector3(1.7f, .7f, 3.9f);
+            var mesh = Box(go.transform, "Body Greybox", hull.size, position + hull.center, new Color(.66f, .43f, .22f));
+            Object.DestroyImmediate(mesh.GetComponent<Collider>());
+            mesh.layer = 2;
+            var controller = go.AddComponent<VehicleController>();
+            controller.spec = spec;
+            var wheels = new WheelCollider[4];
+            var visuals = new Transform[4];
+            for (int i = 0; i < 4; i++)
+            {
+                bool front = i < 2;
+                var wheelGo = new GameObject(new[] { "Front Left", "Front Right", "Rear Left", "Rear Right" }[i]);
+                wheelGo.transform.SetParent(go.transform, false);
+                wheelGo.layer = 2;
+                wheelGo.transform.localPosition = new Vector3((i % 2 == 0 ? -1f : 1f) * spec.TrackM * .5f,
+                    0f, (front ? 1f : -1f) * spec.WheelbaseM * .5f);
+                var wheel = wheelGo.AddComponent<WheelCollider>();
+                wheel.radius = spec.WheelRadiusM;
+                wheel.mass = 20f;
+                wheel.suspensionDistance = spec.SuspensionTravelM;
+                wheel.suspensionSpring = new JointSpring
+                {
+                    spring = front ? spec.SpringRateFrontNm : spec.SpringRateRearNm,
+                    damper = front ? spec.DamperFrontNsm : spec.DamperRearNsm,
+                    targetPosition = .5f
+                };
+                wheel.sprungMass = body.mass * (front ? spec.FrontAxleLoadFraction : 1f - spec.FrontAxleLoadFraction) * .5f;
+                wheels[i] = wheel;
+                var pivot = new GameObject(wheelGo.name + " Visual").transform;
+                pivot.SetParent(go.transform, false);
+                pivot.localPosition = wheelGo.transform.localPosition;
+                var tire = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                tire.name = "Tire Greybox";
+                tire.layer = 2;
+                tire.transform.SetParent(pivot, false);
+                tire.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+                tire.transform.localScale = new Vector3(spec.WheelRadiusM * 2f, .13f, spec.WheelRadiusM * 2f);
+                Object.DestroyImmediate(tire.GetComponent<Collider>());
+                tire.GetComponent<Renderer>().sharedMaterial = Material(new Color(.10f, .11f, .12f));
+                visuals[i] = pivot;
+            }
+            controller.wheelFrontLeft = wheels[0]; controller.wheelFrontRight = wheels[1];
+            controller.wheelRearLeft = wheels[2]; controller.wheelRearRight = wheels[3];
+            controller.wheelVisualFrontLeft = visuals[0]; controller.wheelVisualFrontRight = visuals[1];
+            controller.wheelVisualRearLeft = visuals[2]; controller.wheelVisualRearRight = visuals[3];
+            return controller;
+        }
+
+        static Material Material(Color color)
+        {
+            const string dir = "Assets/Wayfinder/Art/Generated/Greybox";
+            Directory.CreateDirectory(dir);
+            if (!UnityEditor.AssetDatabase.IsValidFolder(dir)) UnityEditor.AssetDatabase.Refresh();
+            string path = $"{dir}/Color_{ColorUtility.ToHtmlStringRGBA(color)}.mat";
+            var material = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null) return material;
+            var shader = Shader.Find("Universal Render Pipeline/Simple Lit");
+            if (shader == null) throw new System.InvalidOperationException("URP Simple Lit shader missing; resolve URP packages first.");
+            material = new Material(shader) { color = color };
+            UnityEditor.AssetDatabase.CreateAsset(material, path);
+            return material;
+        }
+
         static GameObject Box(Transform parent, string name, Vector3 scale, Vector3 position, Color color)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -179,14 +261,7 @@ namespace Wayfinder.Editor
             go.transform.SetParent(parent);
             go.transform.localScale = scale;
             go.transform.position = position;
-            var renderer = go.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                var shader = Shader.Find("Universal Render Pipeline/Simple Lit");
-                if (shader == null) shader = Shader.Find("Standard");
-                var mat = new Material(shader) { color = color };
-                renderer.sharedMaterial = mat;
-            }
+            go.GetComponent<Renderer>().sharedMaterial = Material(color);
             return go;
         }
     }

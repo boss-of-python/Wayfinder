@@ -84,7 +84,7 @@ namespace Wayfinder.Simulation
             Vector3 castDir = (desiredPosition - castOrigin).normalized;
             float castDist = Vector3.Distance(castOrigin, desiredPosition);
             if (Physics.SphereCast(castOrigin, obstructionRadius, castDir, out RaycastHit hit, castDist,
-                    ~0, QueryTriggerInteraction.Ignore))
+                    Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
             {
                 desiredDistance = Mathf.Max(1.2f, hit.distance - obstructionRadius);
                 _currentDistance = desiredDistance; // immediate shorten

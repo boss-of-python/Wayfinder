@@ -38,7 +38,7 @@ def main():
     os.makedirs(PROJECT_SETTINGS, exist_ok=True)
     with open(VERSION_TXT, "w", encoding="utf-8") as f:
         f.write(f"m_EditorVersion: {version}\n")
-        f.write(f"m_EditorVersionWithRevision: {version}\n")
+        # Unity writes the actual revision hash on first open; never fabricate it.
     print(f"Wrote {os.path.relpath(VERSION_TXT, ROOT)}: {version}")
 
     manifest = os.path.join(ROOT, "Packages", "manifest.json")

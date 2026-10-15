@@ -1,14 +1,27 @@
 {
     "name": "Wayfinder.Tests.PlayMode",
     "rootNamespace": "Wayfinder.Tests",
-    "references": ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World", "Wayfinder.Progression", "Wayfinder.Persistence", "Wayfinder.Platform", "Wayfinder.Presentation"],
+    "references": [
+        "Wayfinder.Core",
+        "Wayfinder.Simulation",
+        "Wayfinder.World",
+        "Wayfinder.Progression",
+        "Wayfinder.Persistence",
+        "Wayfinder.Platform",
+        "Wayfinder.Presentation",
+        "UnityEngine.TestRunner"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
-    "precompiledReferences": ["nunit.framework.dll"],
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
     "autoReferenced": false,
-    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
     "versionDefines": [],
     "noEngineReferences": false
 }

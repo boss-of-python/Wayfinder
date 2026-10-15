@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Wayfinder build helper. Requires a Unity 6.3 LTS editor (see Docs/BUILD_AND_RUN.md).
-# Usage: Tools/Build/build.sh [android-dev|android-release|ios-dev|ios-release|test-editmode|test-playmode|validate]
+# Usage: Tools/Build/build.sh [doctor|setup|smoke|android-dev|android-release|ios-dev|ios-release|test-editmode|test-playmode|validate]
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
@@ -21,19 +21,23 @@ case "$cmd" in
     python3 Tools/Validation/formula_checks.py
     python3 Tools/Balance/economy_sim.py
     ;;
+  doctor|setup|smoke|android-dev|android-release)
+    args=(); [[ -n "$UNITY_BIN" ]] && args+=(--unity "$UNITY_BIN")
+    python3 Tools/Build/unity_pipeline.py "$cmd" "${args[@]}"
+    ;;
   test-editmode|test-playmode)
+    # Tests control editor exit; never pass -quit alongside -runTests.
     if [[ -z "$UNITY_BIN" ]]; then echo "ERROR: set UNITY_BIN to the Unity editor executable"; exit 1; fi
     platform="EditMode"; [[ "$cmd" == "test-playmode" ]] && platform="PlayMode"
     mkdir -p Logs
-    "$UNITY_BIN" -batchmode -nographics -projectPath . \
-      -runTests -testPlatform "$platform" -testResults "Logs/${platform}.xml" -logFile "Logs/${platform}.log" -quit
-    echo "Results: Logs/${platform}.xml"
+    rm -f "Logs/${platform}.xml"
+    "$UNITY_BIN" -batchmode -projectPath . \
+      -runTests -testPlatform "$platform" -testResults "Logs/${platform}.xml" -logFile "Logs/${platform}.log"
+    python3 -c 'import sys; sys.path.insert(0, "Tools/Build"); from unity_pipeline import verify_tests; from pathlib import Path; verify_tests(Path(sys.argv[1]))' "Logs/${platform}.xml"
     ;;
-  android-dev|android-release|ios-dev|ios-release)
+  ios-dev|ios-release)
     if [[ -z "$UNITY_BIN" ]]; then echo "ERROR: set UNITY_BIN to the Unity editor executable"; exit 1; fi
-    method="Wayfinder.Editor.BuildCommands.BuildAndroidDev"
-    [[ "$cmd" == "android-release" ]] && method="Wayfinder.Editor.BuildCommands.BuildAndroidRelease"
-    [[ "$cmd" == "ios-dev" ]] && method="Wayfinder.Editor.BuildCommands.BuildIOSDev"
+    method="Wayfinder.Editor.BuildCommands.BuildIOSDev"
     [[ "$cmd" == "ios-release" ]] && method="Wayfinder.Editor.BuildCommands.BuildIOSRelease"
     mkdir -p Logs
     "$UNITY_BIN" -batchmode -quit -projectPath . \

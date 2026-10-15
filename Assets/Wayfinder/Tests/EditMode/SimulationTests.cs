@@ -11,6 +11,79 @@ namespace Wayfinder.Tests
     public class SimulationTests
     {
         [Test]
+        public void Powertrain_ReverseProducesNegativeTorqueOnlyAfterStationaryGuard()
+        {
+            var spec = VehicleSpec.ScoutS1();
+            var powertrain = new Powertrain();
+            powertrain.Reset(spec);
+            var stats = new EffectiveVehicleStats();
+            powertrain.Step(spec, stats, 0f, 0f, 0f, false, false, 5f, out _);
+            // Merely idling while stationary must not pre-pay the continued-pedal guard.
+            float torque = powertrain.Step(spec, stats, 0f, 0f, 1f, false, false, .1f, out bool reverse);
+            Assert.IsFalse(reverse);
+            Assert.AreEqual(0f, torque);
+            for (int i = 0; i < 5; i++)
+                torque = powertrain.Step(spec, stats, 0f, 0f, 1f, false, false, .1f, out reverse);
+            Assert.IsTrue(reverse);
+            Assert.Less(torque, 0f);
+        }
+
+        [Test]
+        public void Powertrain_PedalsCannotChangeDirectionAtSpeed()
+        {
+            var spec = VehicleSpec.ScoutS1();
+            var stats = new EffectiveVehicleStats();
+            var powertrain = new Powertrain();
+            powertrain.Reset(spec);
+            powertrain.Step(spec, stats, 10f, 0f, 1f, false, false, 1f, out bool reverse);
+            Assert.IsFalse(reverse);
+            powertrain.Step(spec, stats, 0f, 0f, 1f, false, false, .5f, out reverse);
+            Assert.IsTrue(reverse);
+            float torque = powertrain.Step(spec, stats, -3f, 1f, 0f, false, false, 1f, out reverse);
+            Assert.IsTrue(reverse, "throttle brakes reverse motion until stationary");
+            Assert.AreEqual(0f, torque);
+        }
+
+        [Test]
+        public void Powertrain_HandbrakeCutsDriveTorque()
+        {
+            var spec = VehicleSpec.ScoutS1();
+            var powertrain = new Powertrain();
+            powertrain.Reset(spec);
+            Assert.AreEqual(0f, powertrain.Step(spec, new EffectiveVehicleStats(), 0f, 1f, 0f, true, false, .1f, out _));
+        }
+
+        [Test]
+        public void Powertrain_NegativeAwdTorqueRetainsSignAndIgnoresAirborneWheel()
+        {
+            var output = new float[4];
+            Powertrain.SplitAwdTorque(-900f, new[] { true, true, true, false }, new float[4], output, false);
+            Assert.AreEqual(-300f, output[0], 1e-4f);
+            Assert.AreEqual(-300f, output[1], 1e-4f);
+            Assert.AreEqual(-300f, output[2], 1e-4f);
+            Assert.AreEqual(0f, output[3]);
+        }
+
+        [Test]
+        public void Steering_ZeroCommandHasNoPhantomTurn()
+        {
+            SteeringModel.AckermannAngles(0f, 0f, 2.65f, 1.58f, out float inner, out float outer);
+            Assert.AreEqual(0f, inner);
+            Assert.AreEqual(0f, outer);
+        }
+
+        [Test]
+        public void Steering_InnerMagnitudeExceedsOuterInBothDirections()
+        {
+            SteeringModel.AckermannAngles(.5f, 10f, 2.65f, 1.58f, out float rightInner, out float rightOuter);
+            SteeringModel.AckermannAngles(-.5f, 10f, 2.65f, 1.58f, out float leftInner, out float leftOuter);
+            Assert.Greater(System.Math.Abs(rightInner), System.Math.Abs(rightOuter));
+            Assert.Greater(System.Math.Abs(leftInner), System.Math.Abs(leftOuter));
+            Assert.AreEqual(-rightInner, leftInner, 1e-6);
+            Assert.AreEqual(-rightOuter, leftOuter, 1e-6);
+        }
+
+        [Test]
         public void FuelModel_MatchesBlueprintExample()
         {
             float rate = FuelModel.LitersPerSecond(0.45f, 0.50f, 0.20f, true);

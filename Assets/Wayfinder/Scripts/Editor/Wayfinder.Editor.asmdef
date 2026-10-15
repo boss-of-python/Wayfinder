@@ -1,8 +1,19 @@
 {
     "name": "Wayfinder.Editor",
     "rootNamespace": "Wayfinder.Editor",
-    "references": ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World", "Wayfinder.Progression", "Wayfinder.Persistence", "Wayfinder.Platform", "Wayfinder.Presentation"],
-    "includePlatforms": ["Editor"],
+    "references": [
+        "Wayfinder.Core",
+        "Wayfinder.Simulation",
+        "Wayfinder.World",
+        "Wayfinder.Progression",
+        "Wayfinder.Persistence",
+        "Wayfinder.Platform",
+        "Wayfinder.Presentation",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

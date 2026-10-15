@@ -69,45 +69,6 @@ namespace Wayfinder.Platform
         }
     }
 
-    /// <summary>
-    /// Mobile lifecycle (§19.1): on focus loss stop input, pause simulation, snapshot critical
-    /// state, request bounded save. On resume show tap-to-resume. Never depend on a final quit
-    /// callback. Handles process kill during saves via the atomic save protocol.
-    /// </summary>
-    public sealed class LifecycleHandler : MonoBehaviour
-    {
-        public event Action OnSuspendRequested;
-        public event Action OnResumeRequested;
-
-        public bool IsSuspended { get; private set; }
-
-        void OnApplicationPause(bool paused)
-        {
-            if (paused) Suspend();
-            else Resume();
-        }
-
-        void OnApplicationFocus(bool hasFocus)
-        {
-            if (!hasFocus) Suspend();
-            else Resume();
-        }
-
-        void Suspend()
-        {
-            if (IsSuspended) return;
-            IsSuspended = true;
-            OnSuspendRequested?.Invoke();
-        }
-
-        void Resume()
-        {
-            if (!IsSuspended) return;
-            IsSuspended = false;
-            OnResumeRequested?.Invoke(); // UI shows tap-to-resume overlay (§19.1)
-        }
-    }
-
     /// <summary>Quality tiers (§18.5). Dynamic quality must never change physics or collectible visibility.</summary>
     public enum QualityTier
     {
