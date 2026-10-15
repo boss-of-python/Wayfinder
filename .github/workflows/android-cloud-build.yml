@@ -95,7 +95,9 @@ jobs:
         continue-on-error: true
         run: bash Tools/Build/report_unity_failure.sh
 
-      - name: Upload Unity logs (for offline diagnosis)
+      # packages-lock.json is what Unity really resolved (KI-002): download it from this
+      # artefact and commit it, so the next build resolves the identical package set.
+      - name: Upload Unity logs and the resolved package lock (for offline diagnosis)
         if: always()
         continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -104,6 +106,7 @@ jobs:
           path: |
             Builds/Logs/
             Logs/
+            Packages/packages-lock.json
           if-no-files-found: ignore
           retention-days: 7
 

@@ -44,11 +44,53 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   write-ups in `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/UNITY_HANDOFF.md`). Running them found and fixed a save-checksum bug that
   would have blocked every save (KI-013), a water-stall re-drain (KI-014) and an inventory stack bug
   (KI-015).
-- **Not yet verified:** Unity's own compile of the engine-facing code (`Platform`, `Presentation`,
-  `Editor`, `VehicleController`, `ChaseCamera`, PlayMode tests — parse-checked only), PlayMode
-  physics, device builds, touch play, thermal performance — the authoring environment had no
-  Unity/Android/Xcode toolchain (`Docs/KNOWN_ISSUES.md` KI-001). Nothing here claims a build log,
-  APK, IPA, screenshot or device measurement that does not exist.
+- **Verified by a real Unity editor (15 Oct 2026):** Unity **6000.3.26f1** (`de8167e7440c`) on a
+  GitHub-hosted runner activated a Personal license from the repository secrets, resolved every
+  package pin and **compiled all six engine-free Wayfinder assemblies** — so `VehicleController`
+  and `ChaseCameraBehaviour` are now Unity-compiled, not parse-checked. Evidence:
+  `Docs/evidence/cloud-build-2026-10-15/`.
+- **Not yet verified:** the four Input System-dependent assemblies (`Platform`, `Presentation`,
+  `Editor`, PlayMode/EditMode test assemblies — KI-034), scene generation, PlayMode physics,
+  device builds, touch play, thermal performance. **No APK exists yet** (KI-006). Nothing here
+  claims a build log, APK, IPA, screenshot or device measurement that does not exist.
+
+## One dispatch away from a testable APK (15 Oct 2026, Batch F)
+
+The free cloud build route had been run **five times and failed every time** with Unity's
+undescriptive `Build failed with exit code 1`. The owner-supplied log of run 38754979851 shows
+one cause — and it is **not** Wayfinder code:
+
+```
+Library/PackageCache/com.unity.inputsystem@920b46832575/InputSystem/Editor/
+InputSystemPluginControl.cs(47,25): error CS0117: 'BuildTarget' does not contain a
+definition for 'ReservedCFE'
+```
+
+`com.unity.inputsystem` **1.12.0** uses an enum member Unity 6000.3 removed; upstream drops it
+from **1.13.1** on. Repinned to **1.20.1** (D-031), the newest 1.x and the first built for the
+Unity 6 stream.
+
+That run is also this repository's **first real Unity evidence**, so it retired two long-standing
+blockers: `ProjectSettings/ProjectVersion.txt` now commits the verified pin
+`6000.3.26f1 (de8167e7440c)` read from the editor's own banner (D-032), and the license/image/
+package-resolution assumptions behind KI-002/KI-006 are proven rather than hoped for.
+
+Because Unity's exit code says nothing, the workflow now **self-reports**: step 8 converts the
+surviving `Editor.log` into check-run annotations (compile errors with file/line/column, the
+batchmode abort reason, exceptions, package-resolution failures, warnings in `Assets/Wayfinder`,
+which assemblies Unity compiled, the APK size), readable with
+`gh api repos/boss-of-python/Wayfinder/check-runs/<job-id>/annotations` — no log download needed
+(D-033, 33 tests + 9/9 mutation check).
+
+**What is needed next, and only this:** the owner dispatches **Actions → "Android APK (free cloud
+build)" → Run workflow**, choosing branch `arena/700fea1a-wayfinder`. The agent cannot: its token
+gets `403 Resource not accessible by integration` on the dispatch endpoint (KI-035). A failing
+attempt costs ~7 minutes; a successful one uploads `Wayfinder-dev-APK` (installable, unsigned,
+development build) plus `Unity-logs` containing the `Packages/packages-lock.json` to commit.
+Until that run happens, **no APK exists** and the Input System fix is reasoned, not executed
+(KI-036). The next risk is KI-034: the four Input System-dependent assemblies have never been
+compiled by Unity, so the first real compile may surface API drift — which the annotations will
+now name precisely.
 
 ## Exploration map, field supplies and research wiring (15 Oct 2026, Batch D)
 

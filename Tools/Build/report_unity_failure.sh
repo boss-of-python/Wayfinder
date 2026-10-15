@@ -47,6 +47,9 @@ fi
 
 say "Logs inspected:$logs"
 
+# Every Library/PackageCache path Unity mentioned, i.e. the packages it really unpacked.
+resolved_paths="$(grep -hoE 'Library/PackageCache/[A-Za-z0-9.@+-]+' $logs 2>/dev/null | sort -u)"
+
 # Strip the "2026-10-15T14:56:44.9611349Z " prefix GitHub Actions adds when it echoes a log.
 detimestamp() { sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]+Z //'; }
 
@@ -97,7 +100,35 @@ if [ -n "$aborted" ]; then
   echo "::error title=Unity aborted::$aborted"
 fi
 
-# ---- 3. editor exceptions (a buildMethod that throws, e.g. Setup Project) -----------------
+# ---- 3. package resolution (an unpinnable version fails here, before any compile) ---------
+resolution="$(grep -hoiE '(cannot perform upm operation|unable to find package|package [^ ]+ cannot be found|no matching version|cannot find package|failed to resolve packages|package has invalid dependencies)[:]?.*' $logs 2>/dev/null \
+  | detimestamp | sort -u | head -10)"
+if [ -n "$resolution" ]; then
+  say "- Package resolution failures:"
+  say '```'
+  printf '%s\n' "$resolution" >>"$summary"
+  say '```'
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    echo "::error title=Unity package resolution::$line"
+  done <<EOF
+$resolution
+EOF
+fi
+
+# Which pinned packages Unity actually unpacked, so a silent downgrade is visible.
+manifest="$workspace/Packages/manifest.json"
+if [ -f "$manifest" ] && [ -n "$resolved_paths" ]; then
+  say "- Pinned packages seen in Library/PackageCache:"
+  for package in $(grep -oE '"com\.unity\.[a-z0-9.-]+"' "$manifest" | tr -d '"' | sort -u); do
+    escaped="$(printf '%s' "$package" | sed 's/\./\\./g')"
+    if printf '%s\n' "$resolved_paths" | grep -qE "PackageCache/${escaped}(@|$|[[:space:]/])"; then
+      say "  - $package"
+    fi
+  done
+fi
+
+# ---- 4. editor exceptions (a buildMethod that throws, e.g. Setup Project) -----------------
 exceptions="$(grep -hoE '(BuildFailedException|UnityException|InvalidOperationException|NullReferenceException|ArgumentException|MissingMethodException|TypeLoadException|IOException|UnauthorizedAccessException): .*' $logs 2>/dev/null \
   | detimestamp | sort -u | head -10)"
 if [ -n "$exceptions" ]; then
@@ -112,7 +143,7 @@ $exceptions
 EOF
 fi
 
-# ---- 4. warnings in our own code (this repository holds itself to zero, D-014) ------------
+# ---- 5. warnings in our own code (this repository holds itself to zero, D-014) ------------
 warning_lines="$(grep -hoE 'Assets/Wayfinder[^ ]*\([0-9]+,[0-9]+\): warning CS[0-9]+: .*' $logs 2>/dev/null | detimestamp | sort -u)"
 warning_count="$(printf '%s\n' "$warning_lines" | grep -c . || true)"
 say "- Compiler warnings in Assets/Wayfinder (unique): **$warning_count**"
@@ -128,7 +159,7 @@ $warning_lines
 EOF
 fi
 
-# ---- 5. what Unity actually compiled (proves which assemblies are Unity-verified) ---------
+# ---- 6. what Unity actually compiled (proves which assemblies are Unity-verified) ---------
 compiled="$(grep -hoE 'Csc Library/Bee/artifacts/[^ ]*/Wayfinder\.[A-Za-z.]+\.dll' $logs 2>/dev/null \
   | sed -E 's#.*/(Wayfinder\.[A-Za-z.]+)\.dll#\1#' | sort -u)"
 if [ -n "$compiled" ]; then
@@ -142,7 +173,7 @@ $compiled
 EOF
 fi
 
-# ---- 6. did the APK appear? --------------------------------------------------------------
+# ---- 7. did the APK appear? --------------------------------------------------------------
 for apk in "$workspace/Builds/Android/Wayfinder-dev.apk" "$workspace"/Builds/Android/*.apk "$workspace"/Builds/Android/*.aab; do
   if [ -f "$apk" ]; then
     size="$(stat -c %s "$apk" 2>/dev/null || stat -f %z "$apk" 2>/dev/null || echo '?')"

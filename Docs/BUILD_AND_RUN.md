@@ -14,12 +14,24 @@ not a GitHub-hosted editor or a phone-only compiler. The latest domain suite pas
 
 ## Free cloud build route (GameCI, GitHub-hosted runner)
 
-**UNVERIFIED — never executed here.** `.github/workflows/android-cloud-build.yml` builds a
-development APK on GitHub's own machines; no local Unity install, no self-hosted runner
-and no machine of yours has to compile anything.
+**EXECUTED — five owner dispatches on 2026-10-15, all failed for one reason, now fixed; the fix
+itself has not been run yet (KI-036).** `.github/workflows/android-cloud-build.yml` builds a
+development APK on GitHub's own machines; no local Unity install, no self-hosted runner and no
+machine of yours has to compile anything.
 
 Run it: **Actions tab → "Android APK (free cloud build)" → Run workflow** (manual only —
-`workflow_dispatch`, never on `pull_request`).
+`workflow_dispatch`, never on `pull_request`). You can pick the branch; the agent cannot
+dispatch it, because its token has no `actions: write` (KI-035).
+
+What the five runs proved (`Docs/evidence/cloud-build-2026-10-15/`, run 38754979851):
+
+| Proven by a real run | Detail |
+|---|---|
+| License | The repository secrets activate a **Unity Personal license** — no paid seat, no manual `.ulf` |
+| Image | `unityci/editor` for **6000.3.26f1** + Android (image version 3) exists, pulls and starts |
+| Packages | Every `Packages/manifest.json` pin resolved from the real registry |
+| Compile | Unity compiled **all six engine-free Wayfinder assemblies**, one warning (fixed) |
+| Failure | `com.unity.inputsystem@1.12.0` → `error CS0117: 'BuildTarget' does not contain a definition for 'ReservedCFE'` — Unity 6000.3 removed that enum member. Repinned to **1.20.1** (D-031) |
 
 What it does, in order:
 
@@ -27,26 +39,51 @@ What it does, in order:
 |---|---|---|
 | 1 | `jlumbroso/free-disk-space` | frees disk for the ~9 GB Unity Android image |
 | 2 | `actions/checkout` (`persist-credentials: false`) | source at the selected ref |
-| 3 | `python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"` | writes `ProjectSettings/ProjectVersion.txt` for `6000.3.26f1`; **nothing is committed** |
-| 4 | `actions/cache` | reuses the `Library` import cache between runs |
-| 5 | GameCI `unity-builder` → `Wayfinder.Editor.ProjectSetup.Setup` | generates scenes, URP asset, quality tiers, player settings, campaign `Resources/Content` |
-| 6 | GameCI `unity-builder` → `Wayfinder.Editor.BuildCommands.BuildAndroidDev` | `Builds/Android/Wayfinder-dev.apk` (unsigned development build) |
-| 7 | `actions/upload-artifact` | `Wayfinder-dev-APK`, 7-day retention |
+| 3 | `bash Tools/Build/check_unity_secrets.sh` | names a missing `UNITY_*` secret in seconds, before the image pull; never prints a value |
+| 4 | `python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"` | **verifies** the committed `ProjectSettings/ProjectVersion.txt` still matches (idempotent, D-032); nothing is committed |
+| 5 | `actions/cache` | reuses the `Library` import cache between runs |
+| 6 | GameCI `unity-builder` → `Wayfinder.Editor.ProjectSetup.Setup` | generates scenes, URP asset, quality tiers, player settings, campaign `Resources/Content` |
+| 7 | GameCI `unity-builder` → `Wayfinder.Editor.BuildCommands.BuildAndroidDev` | `Builds/Android/Wayfinder-dev.apk` (unsigned development build) |
+| 8 | `bash Tools/Build/report_unity_failure.sh` (`if: always()`) | turns the real cause into **check-run annotations** |
+| 9 | `actions/upload-artifact` ×2 | `Wayfinder-dev-APK` and `Unity-logs` (Editor.log + **`Packages/packages-lock.json`**), 7-day retention |
 
 Before the first run the repository owner must add these repository secrets
 (**Settings → Secrets and variables → Actions**): `UNITY_LICENSE`, `UNITY_EMAIL`,
-`UNITY_PASSWORD` (a Unity Personal license, activated for `6000.3.26f1`).
+`UNITY_PASSWORD` (a Unity Personal license, activated for `6000.3.26f1`) — **already done; they
+activated successfully on 2026-10-15.**
+
+### Reading a failure without opening the log
+
+Unity aborts batchmode with exit code 1 for many reasons, and the raw log host is not reachable
+from every environment. Step 8 therefore publishes the cause as annotations:
+
+```bash
+# job id from: gh run view <run-id>
+gh api repos/boss-of-python/Wayfinder/check-runs/<job-id>/annotations \
+  --jq '.[] | "\(.annotation_level) \(.path):\(.start_line) \(.message)"'
+```
+
+You get up to ten `error CS` annotations with file/line/column, the batchmode abort reason,
+editor exceptions, package-resolution failures, warnings in `Assets/Wayfinder`, which Wayfinder
+assemblies Unity compiled, and the APK size. The step always exits 0 and is
+`continue-on-error: true`, so it can never change the build's verdict. 33 tests plus a 9/9
+mutation check cover it (`python3 Tools/Build/test_build_diagnostics.py`).
 
 Limits to know up front:
 
 - The repo is **public**, so the standard `ubuntu-latest` runner is free; the 180-minute
-  timeout can be exceeded by the first image pull plus an IL2CPP Android build.
+  timeout can be exceeded by the first image pull plus an IL2CPP Android build. A failing run
+  costs about 7 minutes.
 - `unity-builder` v6 ignores its `unityVersion` input and reads the version from the
-  checked-out `ProjectSettings/ProjectVersion.txt` — that is why step 3 exists and must
-  run before the Unity steps.
+  checked-out `ProjectSettings/ProjectVersion.txt` — that file is now committed and step 4 only
+  verifies it.
 - The result is a **development, unsigned** APK for on-device smoke testing only. It is
   never a store artifact; release AAB signing stays on the owner's machine (§4 below).
 - All actions are pinned to full commit SHAs and the job has `contents: read` only.
+
+After a successful run: download `Packages/packages-lock.json` from the `Unity-logs` artifact
+and commit it (closes KI-002), then install the APK on the Moto G45
+([MOTO_G45_BUILD_AND_TEST.md](MOTO_G45_BUILD_AND_TEST.md)).
 
 This route does **not** replace the dedicated self-hosted runner
 (`android-phone-build.yml`, §"Phone-controlled build route"): use that one when the build

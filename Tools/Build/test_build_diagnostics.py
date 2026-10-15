@@ -163,6 +163,29 @@ class ReportUnityFailureTests(unittest.TestCase):
         self.assertEqual(1, len(inspected))
         self.assertEqual(1, inspected[0].count("Editor.log"))
 
+    def test_unresolvable_package_version_is_reported(self):
+        # The most likely failure after a pin change: the registry has no such version.
+        self.write_log("Cannot perform upm operation: unable to find package "
+                       "com.unity.inputsystem@1.20.1 [https://packages.unity.com]\n")
+        result = run(REPORT, self.root, self.env)
+        self.assertIn("::error title=Unity package resolution::Cannot perform upm operation: "
+                      "unable to find package com.unity.inputsystem@1.20.1", result.stdout)
+        self.assertIn("Package resolution failures:", self.summary.read_text())
+
+    def test_resolved_packages_are_listed_against_the_manifest(self):
+        (self.root / "Packages").mkdir(parents=True, exist_ok=True)
+        (self.root / "Packages/manifest.json").write_text(
+            '{"dependencies": {"com.unity.inputsystem": "1.20.1", '
+            '"com.unity.modules.ai": "1.0.0", "com.unity.absent": "9.9.9"}}')
+        self.write_log("Loading Library/PackageCache/com.unity.inputsystem@920b46832575/x.cs\n"
+                       "Loading Library/PackageCache/com.unity.modules.ai/y.cs\n")
+        run(REPORT, self.root, self.env)
+        summary = self.summary.read_text()
+        self.assertIn("Pinned packages seen in Library/PackageCache:", summary)
+        self.assertIn("  - com.unity.inputsystem", summary)
+        self.assertIn("  - com.unity.modules.ai", summary)
+        self.assertNotIn("com.unity.absent", summary)
+
     def test_never_exits_nonzero_even_with_a_broken_log_path(self):
         result = run(REPORT, self.root, self.env, logs=[self.root / "does-not-exist.log"])
         self.assertEqual(0, result.returncode)
@@ -222,7 +245,7 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         self.assertIn("bash Tools/Build/report_unity_failure.sh", step)
 
     def test_log_upload_step_also_always_runs_and_cannot_change_the_verdict(self):
-        step = self.step_block("Upload Unity logs (for offline diagnosis)")
+        step = self.step_block("Upload Unity logs and the resolved package lock (for offline diagnosis)")
         self.assertIn("if: always()", step)
         self.assertIn("continue-on-error: true", step)
 
@@ -252,6 +275,10 @@ class CloudBuildWorkflowTests(unittest.TestCase):
                     "game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45",
                     "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9"]:
             self.assertIn(pin, self.text)
+
+    def test_resolved_package_lock_is_uploaded_so_it_can_be_committed(self):
+        step = self.step_block("Upload Unity logs and the resolved package lock (for offline diagnosis)")
+        self.assertIn("Packages/packages-lock.json", step)
 
     def test_apk_upload_still_fails_closed(self):
         index = self.text.index("- name: Upload the APK")

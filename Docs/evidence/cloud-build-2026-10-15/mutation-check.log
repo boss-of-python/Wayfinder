@@ -1,0 +1,14 @@
+# python3 Docs/evidence/cloud-build-2026-10-15/mutation_check.py
+# 2026-10-15T16:40:50Z
+M1: caught - stop stripping the GitHub Actions timestamp prefix from reported paths
+M2: caught - raise the annotation cap from 10 to 50
+M3: caught - count warnings from anywhere under Assets/, not just Assets/Wayfinder
+M4: caught - print the license secret value
+M5: caught - revert the Input System pin to the version that cannot compile on 6000.3.26f1
+M6: caught - let the diagnostics step run only on failure() instead of always()
+M7: caught - stop passing UNITY_PASSWORD to the secret checker
+M8: caught - stop detecting package-resolution failures (an unpinnable version)
+M9: caught - stop cross-checking resolved packages against Packages/manifest.json
+
+9/9 mutations caught.
+Files restored; suite green again.
