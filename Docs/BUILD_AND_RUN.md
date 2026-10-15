@@ -12,6 +12,46 @@ control it and install its APK. The optional workflow is manual and self-hosted,
 not a GitHub-hosted editor or a phone-only compiler. The latest domain suite passes
 109/109 tests (Batch C); earlier 59/55/49 counts below are historical snapshots.
 
+## Free cloud build route (GameCI, GitHub-hosted runner)
+
+**UNVERIFIED — never executed here.** `.github/workflows/android-cloud-build.yml` builds a
+development APK on GitHub's own machines; no local Unity install, no self-hosted runner
+and no machine of yours has to compile anything.
+
+Run it: **Actions tab → "Android APK (free cloud build)" → Run workflow** (manual only —
+`workflow_dispatch`, never on `pull_request`).
+
+What it does, in order:
+
+| Step | Action | Result |
+|---|---|---|
+| 1 | `jlumbroso/free-disk-space` | frees disk for the ~9 GB Unity Android image |
+| 2 | `actions/checkout` (`persist-credentials: false`) | source at the selected ref |
+| 3 | `python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"` | writes `ProjectSettings/ProjectVersion.txt` for `6000.3.26f1`; **nothing is committed** |
+| 4 | `actions/cache` | reuses the `Library` import cache between runs |
+| 5 | GameCI `unity-builder` → `Wayfinder.Editor.ProjectSetup.Setup` | generates scenes, URP asset, quality tiers, player settings, campaign `Resources/Content` |
+| 6 | GameCI `unity-builder` → `Wayfinder.Editor.BuildCommands.BuildAndroidDev` | `Builds/Android/Wayfinder-dev.apk` (unsigned development build) |
+| 7 | `actions/upload-artifact` | `Wayfinder-dev-APK`, 7-day retention |
+
+Before the first run the repository owner must add these repository secrets
+(**Settings → Secrets and variables → Actions**): `UNITY_LICENSE`, `UNITY_EMAIL`,
+`UNITY_PASSWORD` (a Unity Personal license, activated for `6000.3.26f1`).
+
+Limits to know up front:
+
+- The repo is **public**, so the standard `ubuntu-latest` runner is free; the 180-minute
+  timeout can be exceeded by the first image pull plus an IL2CPP Android build.
+- `unity-builder` v6 ignores its `unityVersion` input and reads the version from the
+  checked-out `ProjectSettings/ProjectVersion.txt` — that is why step 3 exists and must
+  run before the Unity steps.
+- The result is a **development, unsigned** APK for on-device smoke testing only. It is
+  never a store artifact; release AAB signing stays on the owner's machine (§4 below).
+- All actions are pinned to full commit SHAs and the job has `contents: read` only.
+
+This route does **not** replace the dedicated self-hosted runner
+(`android-phone-build.yml`, §"Phone-controlled build route"): use that one when the build
+must come from a machine you control.
+
 ## Campaign slice (Batch C, 15 Oct 2026)
 
 **VERIFIED (headless, no Unity):** `python3 Tools/Build/headless_cs.py all` → 7 assemblies
