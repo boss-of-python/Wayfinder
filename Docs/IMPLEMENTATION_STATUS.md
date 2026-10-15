@@ -6,6 +6,25 @@ Last updated: 2026-10-15. Status values: **Not started / In progress / Implement
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
 
+## Batch 2026-10-15-E — Free cloud build route (Implemented; never executed)
+
+Requirements touched: **BUILD-01** (narrowed, not closed), KI-006, new KI-033. No game
+code, no content and no C# changed.
+
+| Item | Before | After | Evidence |
+|---|---|---|---|
+| `.github/workflows/android-cloud-build.yml` — GameCI development APK on a GitHub-hosted `ubuntu-latest` runner (manual `workflow_dispatch` only) | no cloud route; only a self-hosted Windows runner workflow | **Implemented — statically validated, never run** (KI-033) | PR #5; YAML parsed, all five action SHAs confirmed upstream, every `with:` key confirmed as a declared input, both `buildMethod` targets and the artifact path confirmed in the C# source |
+| Owner prerequisites | — | repository secrets `UNITY_LICENSE`, `UNITY_EMAIL`, `UNITY_PASSWORD` must be created by the owner before the first run | documented in `Docs/BUILD_AND_RUN.md` |
+
+- **Verified here:** workflow structure, SHA pinning, action input names, expression
+  contexts, `pin_toolchain.py --editor-version 6000.3.26f1` (runs clean),
+  `ProjectSetup.Setup` / `BuildCommands.BuildAndroidDev` exist as public static methods,
+  artifact path == `BuildCommands.AndroidDevPath`.
+- **Not verified:** no Unity, no Docker image pull, no license secrets in this environment
+  — **no build log, no APK, no device result may be claimed** (KI-033, KI-006 open).
+- **M0 gate:** still **Blocked** (KI-001/002/005/006). This batch only gives the owner a
+  cheaper route to a development APK.
+
 ## Batch 2026-10-15-D — Exploration map + field supplies/selling + research → physics (domain Verified headless; Unity UI syntax-checked)
 
 Milestone **M2 Forest vertical slice**. Requirements: MAP-01 (§8.1), new **MAP-04** (§13.2 minimap, §13.4
