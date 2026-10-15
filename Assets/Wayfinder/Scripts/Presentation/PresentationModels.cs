@@ -78,19 +78,19 @@ namespace Wayfinder.Presentation
         }
 
         /// <summary>Warning priority ordering (§13.2). Lower value = higher priority.</summary>
-        public static int WarningPriority(GameEvent.WarningKind kind) => kind switch
+                public static int WarningPriority(WarningRaised.WarningKind kind) => kind switch
         {
-            GameEvent.WarningKind.RolloverRisk => 0,
-            GameEvent.WarningKind.DeepWaterAhead => 1,
-            GameEvent.WarningKind.IntakeLimitNear => 2,
-            GameEvent.WarningKind.EngineStalled => 3,
-            GameEvent.WarningKind.FuelReturnRangeInsufficient => 4,
-            GameEvent.WarningKind.FuelFifteenPercent => 5,
-            GameEvent.WarningKind.FuelThirtyPercent => 6,
-            GameEvent.WarningKind.SubsystemDamaged => 7,
-            GameEvent.WarningKind.CargoFull => 8,
-            GameEvent.WarningKind.CargoNearFull => 9,
-            GameEvent.WarningKind.ObjectiveUpdated => 10,
+            WarningRaised.WarningKind.RolloverRisk => 0,
+            WarningRaised.WarningKind.DeepWaterAhead => 1,
+            WarningRaised.WarningKind.IntakeLimitNear => 2,
+            WarningRaised.WarningKind.EngineStalled => 3,
+            WarningRaised.WarningKind.FuelReturnRangeInsufficient => 4,
+            WarningRaised.WarningKind.FuelFifteenPercent => 5,
+            WarningRaised.WarningKind.FuelThirtyPercent => 6,
+            WarningRaised.WarningKind.SubsystemDamaged => 7,
+            WarningRaised.WarningKind.CargoFull => 8,
+            WarningRaised.WarningKind.CargoNearFull => 9,
+            WarningRaised.WarningKind.ObjectiveUpdated => 10,
             _ => 11
         };
     }
