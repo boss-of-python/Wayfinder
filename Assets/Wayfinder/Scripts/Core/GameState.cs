@@ -117,13 +117,25 @@ namespace Wayfinder.Core
         public float DayTimeSeconds { get; private set; }
         public bool Paused { get; set; }
 
-        public const float DayLengthSeconds = 1200f; // tuning value: full day cycle
+        /// <summary>Day cycle target: 48 real minutes (§7.7). Was 1200 s (20 min) before KI-024.</summary>
+        public const float DayLengthSeconds = 2880f;
 
         public void Advance(float deltaSeconds)
         {
             if (Paused || deltaSeconds <= 0f) return;
             ElapsedSimulationSeconds += deltaSeconds;
             DayTimeSeconds = (DayTimeSeconds + deltaSeconds) % DayLengthSeconds;
+        }
+
+        /// <summary>Restores persisted clock values (time of day wraps into one cycle).</summary>
+        public void Restore(double elapsedSimulationSeconds, float dayTimeSeconds)
+        {
+            ElapsedSimulationSeconds = double.IsNaN(elapsedSimulationSeconds) || double.IsInfinity(elapsedSimulationSeconds)
+                ? 0d
+                : Math.Max(0d, elapsedSimulationSeconds);
+            if (float.IsNaN(dayTimeSeconds) || float.IsInfinity(dayTimeSeconds)) dayTimeSeconds = 0f;
+            float wrapped = dayTimeSeconds % DayLengthSeconds;
+            DayTimeSeconds = wrapped < 0f ? wrapped + DayLengthSeconds : wrapped;
         }
 
         public DayNightPhase Phase

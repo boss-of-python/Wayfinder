@@ -1,0 +1,15 @@
+[CAUGHT] Fuel-can waste used without confirmation (§10.3): 1/143 test(s) fail -> FuelCan_AddsUpToSixLitres_NeedsOneLitreMissing_ConfirmsWaste_ConsumesExactlyOne_S10_3
+[CAUGHT] Fuel can usable with < 1 L missing (§10.3): 1/143 test(s) fail -> FuelCan_AddsUpToSixLitres_NeedsOneLitreMissing_ConfirmsWaste_ConsumesExactlyOne_S10_3
+[CAUGHT] Repair kit usable while moving (§5.5): 1/143 test(s) fail -> RepairKit_RestoresThirtyFiveToOneSubsystem_OnlyStoppedAndOutOfWater_NeverWasted_S5_5
+[CAUGHT] Repair kit wasted on a subsystem at 100: 1/143 test(s) fail -> RepairKit_RestoresThirtyFiveToOneSubsystem_OnlyStoppedAndOutOfWater_NeverWasted_S5_5
+[CAUGHT] Field supplies consume nothing: 4/143 test(s) fail -> FieldSupplies_AreIdempotentTransactions_AndPersistByteIdentically, FuelCan_AddsUpToSixLitres_NeedsOneLitreMissing_ConfirmsWaste_ConsumesExactlyOne_S10_3, RepairKit_RestoresThirtyFiveToOneSubsystem_OnlyStoppedAndOutOfWater_NeverWasted_S5_5, TirePatch_RemovesThePuncture_OnlyWhenPunctured_GripPenaltyRemains_S5_5
+[CAUGHT] Tire patch fully repairs the tires: 1/143 test(s) fail -> TirePatch_RemovesThePuncture_OnlyWhenPunctured_GripPenaltyRemains_S5_5
+[CAUGHT] Sell price rounded up instead of down (§10.4): 2/143 test(s) fail -> Economy_SellPriceIsFortyPercentFloored, Selling_AtTheGarage_FortyPercentRoundedDown_NoArbitrage_S10_4
+[CAUGHT] Selling skips the critical verified save (D-020): 1/143 test(s) fail -> Selling_IsACriticalSave_RolledBackOnWriteFailure_AndKeepsMissionCampKits_D020
+[CAUGHT] Mission camp kits sellable: 1/143 test(s) fail -> Selling_IsACriticalSave_RolledBackOnWriteFailure_AndKeepsMissionCampKits_D020
+[CAUGHT] Resolver configuration double-applies research (QA 8): 1/143 test(s) fail -> ConfigureResolver_BringsResearchedModulesToTheRigResolver_ExactlyOnce_QA8
+[CAUGHT] KI-032 Trail Tires I never composed (old behaviour): 2/143 test(s) fail -> ConfigureResolver_BringsResearchedModulesToTheRigResolver_ExactlyOnce_QA8, TrailTiresI_AddsTenPercentOnDirtAndGravel_AllTerrainSetOnly_KI032
+[CAUGHT] KI-032 Engine Tune never reaches the powertrain (old behaviour): 1/143 test(s) fail -> EngineTune_ScalesTheTorqueThePowertrainDelivers_KI032
+[CAUGHT] Trail Tires bonus granted on specialized tire sets too: 1/143 test(s) fail -> TrailTiresI_AddsTenPercentOnDirtAndGravel_AllTerrainSetOnly_KI032
+MUTATION CHECK: ALL CAUGHT
+EXIT=0

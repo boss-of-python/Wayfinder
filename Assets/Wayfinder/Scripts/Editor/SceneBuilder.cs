@@ -2,6 +2,7 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using Wayfinder.Campaign;
 using Wayfinder.Platform;
 using Wayfinder.Core;
 using Wayfinder.Simulation;
@@ -163,18 +164,108 @@ namespace Wayfinder.Editor
             Save("PhysicsTestGround");
         }
 
-        /// <summary>Vertical slice greybox (§21.3): 1024 m forest test area placeholder ground.</summary>
+        /// <summary>
+        /// Vertical slice greybox (§21.3) generated from Content/vertical_slice.json and the canonical
+        /// catalog, in WORLD coordinates so content positions map 1:1: 1024 m ground, home garage and
+        /// arrival pad, six landmark markers, twelve caches, two camp sockets, the creek gauge, ford
+        /// checkpoints over shallow water, relay mast, fuse site, mud and a hill. The Scout starts at the
+        /// garage spawn with the slice driver wired. Markers are visual only — interaction is
+        /// distance-based in Wayfinder.Campaign, so decorative markers carry no colliders.
+        /// </summary>
         static void BuildVerticalSlice()
         {
             NewScene("VerticalSlice");
-            var root = new GameObject("VerticalSliceGreybox");
-            Box(root.transform, "Ground", new Vector3(1024f, 1f, 1024f), new Vector3(512f, -0.5f, 512f),
-                new Color(0.30f, 0.38f, 0.26f));
+            var content = CampaignContent.FromDirectory("Assets/Wayfinder/Content");
+            var slice = content.Slice;
+            var root = new GameObject("VerticalSliceGreybox").transform;
+            float half = slice.AreaSizeMeters * .5f;
+            Box(root, "Ground", new Vector3(slice.AreaSizeMeters, 1f, slice.AreaSizeMeters),
+                new Vector3(slice.AreaMinX + half, -.5f, slice.AreaMinZ + half), new Color(.30f, .38f, .26f));
 
-            var garage = Box(root.transform, "GarageHome", new Vector3(12f, 5f, 10f),
-                new Vector3(1024f + 0f, 2.5f, 2304f - 2304f + 512f), new Color(0.5f, 0.45f, 0.4f));
-            garage.name = "Garage.Home";
+            var garage = content.Garages[slice.GarageId].Position;
+            Box(root, "Garage.Home", new Vector3(12f, 5f, 10f), new Vector3(garage.X, 2.5f, garage.Z), new Color(.5f, .45f, .4f));
+            Marker(root, "Garage Arrival Pad", new Vector3(slice.ArrivalRadiusMeters * 2f, .04f, slice.ArrivalRadiusMeters * 2f),
+                slice.ArrivalCenter, .02f, new Color(.55f, .55f, .30f));
+
+            foreach (var l in slice.Landmarks)
+            {
+                var p = content.Landmarks[l.Id].Position;
+                // Solid marker; VerticalSliceDriver's line-of-sight test treats "Landmark …" hits as visible.
+                Box(root, "Landmark " + l.Id, new Vector3(3f, 12f, 3f), new Vector3(p.X, 6f, p.Z),
+                    l.Vista ? new Color(.85f, .75f, .35f) : new Color(.75f, .55f, .35f));
+            }
+            foreach (var id in slice.CacheIds)
+                Marker(root, "Cache " + id, new Vector3(1.2f, .8f, 1.2f), content.Caches[id].Position, .4f, new Color(.25f, .55f, .75f));
+            foreach (var camp in slice.CampSockets)
+            {
+                Marker(root, "Camp Socket " + camp.Id, new Vector3(6f, .05f, 6f), camp.Position, .03f, new Color(.45f, .30f, .20f));
+                Marker(root, "Camp Post " + camp.Id, new Vector3(.3f, 2.5f, .3f), camp.Position, 1.25f, new Color(.85f, .45f, .20f));
+            }
+            foreach (var site in slice.InspectTargets)
+                Marker(root, "Inspect " + site.Id, new Vector3(.3f, 3f, .3f), site.Position, 1.5f, Color.yellow);
+            foreach (var site in slice.QuestItemSites)
+                Marker(root, "Mission Item " + site.Id, new Vector3(.8f, .6f, .8f), site.Position, .3f, new Color(.95f, .85f, .2f));
+            foreach (var relay in slice.Relays)
+                Box(root, "Relay " + relay.Id, new Vector3(1f, 18f, 1f), new Vector3(relay.Position.X, 9f, relay.Position.Z),
+                    new Color(.6f, .6f, .65f));
+            foreach (var route in slice.CheckpointRoutes)
+                for (int i = 0; i < route.Checkpoints.Count; i++)
+                {
+                    var cp = route.Checkpoints[i];
+                    foreach (float side in new[] { -route.RadiusMeters, route.RadiusMeters })
+                        Marker(root, $"Checkpoint {route.Id}[{i}]", new Vector3(.25f, 2f, .25f),
+                            new WorldPoint(cp.X + side, 0f, cp.Z), 1f, new Color(.95f, .55f, .15f));
+                }
+
+            foreach (var feature in slice.GreyboxFeatures)
+            {
+                var c = feature.Center;
+                var size = feature.Size;
+                switch (feature.Kind)
+                {
+                    case "water":
+                        var water = Box(root, "Ford Water", new Vector3(size.X, size.Y, size.Z), new Vector3(c.X, size.Y * .5f, c.Z),
+                            new Color(.15f, .3f, .45f, .6f));
+                        water.AddComponent<WaterVolume>().surfaceHeightY = size.Y;
+                        water.GetComponent<Collider>().isTrigger = true;
+                        break;
+                    case "mud":
+                        Box(root, "Mud Patch", new Vector3(size.X, size.Y, size.Z), new Vector3(c.X, .02f, c.Z),
+                            new Color(.25f, .18f, .12f)).AddComponent<SurfaceLabel>().surface = SurfaceType.DeepMud;
+                        break;
+                    case "hill":
+                        float rise = size.Y, run = size.Z * .35f;
+                        float angle = Mathf.Atan2(rise, run) * Mathf.Rad2Deg, slope = Mathf.Sqrt(rise * rise + run * run);
+                        var hillColor = new Color(.40f, .45f, .30f);
+                        Box(root, "Hill Up", new Vector3(size.X, .5f, slope), new Vector3(c.X, rise * .5f - .25f, c.Z - size.Z * .5f + run * .5f),
+                            hillColor).transform.rotation = Quaternion.Euler(-angle, 0f, 0f);
+                        Box(root, "Hill Top", new Vector3(size.X, rise, size.Z - 2f * run), new Vector3(c.X, rise * .5f, c.Z), hillColor);
+                        Box(root, "Hill Down", new Vector3(size.X, .5f, slope), new Vector3(c.X, rise * .5f - .25f, c.Z + size.Z * .5f - run * .5f),
+                            hillColor).transform.rotation = Quaternion.Euler(angle, 0f, 0f);
+                        break;
+                }
+            }
+
+            var spawn = slice.GarageSpawn;
+            var vehicle = CreateScoutRig(root, new Vector3(spawn.Position.X, spawn.Position.Y + .4f, spawn.Position.Z));
+            vehicle.transform.rotation = Quaternion.Euler(0f, spawn.YawDegrees, 0f);
+            var router = vehicle.gameObject.AddComponent<InputRouter>();
+            Camera.main.farClipPlane = 1500f;
+            var camera = Camera.main.gameObject.AddComponent<ChaseCameraBehaviour>();
+            camera.target = vehicle.transform;
+            var driver = new GameObject("Vertical Slice Driver").AddComponent<VerticalSliceDriver>();
+            driver.vehicle = vehicle;
+            driver.input = router;
+            driver.chaseCamera = camera;
             Save("VerticalSlice");
+        }
+
+        /// <summary>Visual-only marker (no collider) standing on the ground at <paramref name="p"/>.</summary>
+        static GameObject Marker(Transform parent, string name, Vector3 scale, WorldPoint p, float centerY, Color color)
+        {
+            var go = Box(parent, name, scale, new Vector3(p.X, centerY, p.Z), color);
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            return go;
         }
 
         public static VehicleController CreateScoutRig(Transform parent, Vector3 position)

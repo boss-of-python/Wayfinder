@@ -10,7 +10,60 @@ For a Moto G45, see [MOTO_G45_BUILD_AND_TEST.md](MOTO_G45_BUILD_AND_TEST.md). Yo
 still need an installed/licensed Unity desktop (borrowed or cloud); the phone can
 control it and install its APK. The optional workflow is manual and self-hosted,
 not a GitHub-hosted editor or a phone-only compiler. The latest domain suite passes
-59/59 tests; earlier 55/49 counts below are historical snapshots.
+109/109 tests (Batch C); earlier 59/55/49 counts below are historical snapshots.
+
+## Campaign slice (Batch C, 15 Oct 2026)
+
+**VERIFIED (headless, no Unity):** `python3 Tools/Build/headless_cs.py all` → 7 assemblies
+compile with 0 warnings, **109/109** EditMode tests pass (campaign loop, interruption at every
+save step, rescue, camps, autosave, Q01–Q04 slice ledger). `python3 Tools/Validation/validate_content.py`
+now also validates `Assets/Wayfinder/Content/vertical_slice.json`.
+
+**UNVERIFIED (needs Unity):** after `Tools → Wayfinder → Setup Project` (which now also copies the
+campaign JSON into `Assets/Wayfinder/Resources/Content/` — generated, git-ignored — and builds the
+VerticalSlice scene in world coordinates), press Play in `Bootstrap` → Title → choose a slot →
+**New** (a second tap confirms replacing an occupied slot) → the garage panel opens: accept
+missions, research, load cargo, **Depart**. Drive with WASD/arrows or the on-screen pedals; hold
+**E/Interact** (or the on-screen HOLD INTERACT button) at caches, camp sockets, the gauge, the fuse
+site and the relay; stop near landmarks below 15 km/h for 2 s to discover them; stop inside the
+garage arrival pad (< 1 m/s for 2 s) to bank and see the summary. **Pause → Save & quit** returns
+to the title; **Continue** resumes. Saves live in `Application.persistentDataPath/saves/slot-N/`.
+`Tools → Wayfinder → Refresh Campaign Content` re-copies the JSON after content edits.
+
+## Exploration map (Batch D, 15 Oct 2026)
+
+**VERIFIED (headless, no Unity):** `python3 Tools/Build/headless_cs.py all` → **143/143** EditMode
+tests, including 21 map tests and 13 supplies/selling/research-wiring tests. To regenerate the map evidence PNGs:
+
+```bash
+WAYFINDER_MAP_SNAPSHOT_DIR=/tmp/map python3 Tools/Build/headless_cs.py test   # after `compile`
+python3 Tools/Validation/rgba_to_png.py /tmp/map                               # raw RGBA → PNG (stdlib only)
+```
+
+**UNVERIFIED (needs Unity) — map controls in the VerticalSlice:**
+
+| Action | Touch | Desktop / controller |
+|---|---|---|
+| Open the full map (pauses the drive) | Tap the minimap (HUD right edge) | **M** / gamepad **Select**; garage: **Map (M)** button |
+| Close | **Close (M)** button | **M** or **Esc** / gamepad Select or East |
+| Pan / zoom | Drag; pinch | Arrow keys; mouse wheel or **+ / −** |
+| Select a marker (details, distance, bearing) | Tap | Click |
+| Place a custom marker (max 10) | Long-press 0.6 s → **Place** | **Mark centre** button → **Place** |
+| Route to a marker (dashed straight-line estimate) / clear | Select it → **Route here** / **Clear route** | same |
+| Recentre on the vehicle | **Center on car** | **C** |
+| Filter layers | **Hubs / Sites / Tasks / Marks** toggles | same |
+
+**Field supplies and selling (same batch, UNVERIFIED in Unity; rules VERIFIED headless — 143/143):**
+- During a drive, tap **Supplies**. The vehicle is held while the panel is open.
+- **Use fuel can:** adds min(6 L, missing); needs ≥ 1 L of space; if part of the can would be wasted,
+  tap twice to confirm.
+- **Repair** a subsystem: +35, only when stopped and out of water.
+- **Patch tire:** only with a puncture (tires < 30); it lifts the 25 km/h limit.
+- In the garage, **Sell +N** then **Confirm?** sells one unit at 40 % (rounded down). Salvage bundles,
+  mission items and the camp kit Q03 still needs cannot be sold.
+
+The sheet covers the 1,024 m slice area at 2 m per pixel. Fog means "not explored yet"; contour lines
+mean "surveyed from a vista". Unopened caches never appear on the map (§7.6).
 
 ## Latest setup/build workflow (15 Oct 2026)
 

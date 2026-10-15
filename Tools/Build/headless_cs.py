@@ -21,7 +21,7 @@ files.pythonhosted.org. This script assembles a *real* C# 9 toolchain from those
                                      against exactly the API profile Unity 6 targets
 
 It then compiles the assemblies that have **no UnityEngine dependency** (Core, World,
-Progression, Persistence and the pure part of Simulation) exactly as their .asmdef graph
+Progression, Persistence, Campaign and the pure part of Simulation) exactly as their .asmdef graph
 declares, compiles the EditMode test assembly against them, and runs it with NUnitLite,
 writing a standard NUnit3 XML result.
 
@@ -154,8 +154,12 @@ ASSEMBLIES = [
     ("Wayfinder.Progression", "Scripts/Progression", ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World"], []),
     ("Wayfinder.Persistence", "Scripts/Persistence",
      ["Wayfinder.Core", "Wayfinder.Progression", "Wayfinder.Simulation", "Wayfinder.World"], ["Newtonsoft.Json"]),
-    ("Wayfinder.Tests.EditMode", "Tests/EditMode",
+    ("Wayfinder.Campaign", "Scripts/Campaign",
      ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World", "Wayfinder.Progression", "Wayfinder.Persistence"],
+     ["Newtonsoft.Json"]),
+    ("Wayfinder.Tests.EditMode", "Tests/EditMode",
+     ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World", "Wayfinder.Progression", "Wayfinder.Persistence",
+      "Wayfinder.Campaign"],
      ["Newtonsoft.Json", "nunit.framework"]),
 ]
 # Assemblies whose every file needs UnityEngine/UnityEditor — syntax-checked only.

@@ -1,5 +1,20 @@
 # Wayfinder — Executed Evidence: headless C# compile + EditMode tests (2026-10-14)
 
+> **Update 2026-10-15 (Batch D continuation — supplies/selling/research wiring):** 7 assemblies / 60
+> files, 0 warnings, **143/143** EditMode tests, 13/13 mutation check; KI-032 found and fixed.
+> Artifacts: `Docs/evidence/supplies-and-stats-2026-10-15/`.
+>
+> **Update 2026-10-15 (Batch D — exploration map):** 7 assemblies / 57 files, 0 warnings,
+> **130/130** EditMode tests (21 new map tests), 29 Unity-dependent files parse-checked, 11/11 map
+> mutation check. Artifacts: `Docs/evidence/exploration-map-2026-10-15/`. Caveat found this batch:
+> `headless_cs.py test` runs the *last compiled* assemblies, so run `compile` first (or `all`).
+>
+> **Update 2026-10-15 (Batch C):** the harness now also compiles the new engine-free
+> `Wayfinder.Campaign` assembly (11 files) and profile-checks it against .NET Standard 2.1.
+> Current result: 7 assemblies / 47 files, 0 warnings, **109/109** EditMode tests, 24
+> Unity-dependent files parse-checked. Artifacts: `Docs/evidence/campaign-session-2026-10-15/`
+> (includes an 8-case mutation check). The sections below describe the original 14 Oct run.
+
 This file records what `Tools/Build/headless_cs.py` actually did in the authoring environment, with
 the raw artifacts committed next to it under `Docs/evidence/headless-cs/`. Nothing here is a Unity
 result; see §5 for exactly what this evidence does **not** prove.

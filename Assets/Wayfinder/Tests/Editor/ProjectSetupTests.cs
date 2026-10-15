@@ -65,5 +65,48 @@ namespace Wayfinder.Tests
             }
             finally { EditorSceneManager.RestoreSceneManagerSetup(previous); }
         }
+
+        [Test]
+        public void CampaignContentIsCopiedToResourcesVerbatim()
+        {
+            foreach (var name in Wayfinder.Campaign.CampaignContent.RequiredFiles)
+            {
+                var asset = Resources.Load<TextAsset>(ProjectSetup.CampaignContentResourcesDir.Substring(
+                    "Assets/Wayfinder/Resources/".Length) + "/" + Path.GetFileNameWithoutExtension(name));
+                Assert.IsNotNull(asset, name + " missing from Resources — run Setup Project");
+                Assert.AreEqual(File.ReadAllText(ProjectSetup.CanonicalContentDir + "/" + name), asset.text, name + " is stale");
+            }
+        }
+
+        [Test]
+        public void GeneratedVerticalSliceHasDriverAtTheGarageSpawn()
+        {
+            var previous = EditorSceneManager.GetSceneManagerSetup();
+            try
+            {
+                EditorSceneManager.OpenScene(SceneBuilder.ScenesDir + "/VerticalSlice.unity");
+                var driver = Object.FindFirstObjectByType<VerticalSliceDriver>();
+                Assert.IsNotNull(driver);
+                Assert.IsNotNull(driver.vehicle);
+                Assert.IsNotNull(driver.input);
+                Assert.IsNotNull(driver.chaseCamera);
+                Assert.AreEqual(driver.vehicle.transform, driver.chaseCamera.target);
+                var slice = Wayfinder.Campaign.CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir).Slice;
+                var p = driver.vehicle.transform.position;
+                Assert.Less(Vector2.Distance(new Vector2(p.x, p.z), new Vector2(slice.GarageSpawn.Position.X, slice.GarageSpawn.Position.Z)), 1f,
+                    "scene is built in world coordinates from vertical_slice.json");
+                Assert.AreEqual(slice.CacheIds.Count, CountNamed("Cache "), "one marker per slice cache");
+                Assert.AreEqual(slice.Landmarks.Count, CountNamed("Landmark "), "one marker per slice landmark");
+            }
+            finally { EditorSceneManager.RestoreSceneManagerSetup(previous); }
+        }
+
+        static int CountNamed(string prefix)
+        {
+            int n = 0;
+            foreach (var t in Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+                if (t.name.StartsWith(prefix)) n++;
+            return n;
+        }
     }
 }

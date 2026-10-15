@@ -5,6 +5,8 @@
         "Wayfinder.Core",
         "Wayfinder.Persistence",
         "Wayfinder.Progression",
+        "Wayfinder.Simulation",
+        "Wayfinder.Campaign",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],

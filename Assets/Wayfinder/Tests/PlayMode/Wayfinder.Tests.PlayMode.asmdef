@@ -7,6 +7,7 @@
         "Wayfinder.World",
         "Wayfinder.Progression",
         "Wayfinder.Persistence",
+        "Wayfinder.Campaign",
         "Wayfinder.Platform",
         "Wayfinder.Presentation",
         "UnityEngine.TestRunner"

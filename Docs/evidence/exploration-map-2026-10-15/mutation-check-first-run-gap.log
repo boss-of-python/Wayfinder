@@ -1,0 +1,13 @@
+[CAUGHT] Session reveal ignores terrain line-of-sight (§8.1): 2/129 test(s) fail -> RevealCadence_IsTwoHertzWhileMoving_AndIdleWhenParked_S16_2, SessionReveal_UsesTheTerrainSource_RidgesHideCellsForDriveAndVista_S8_1
+[CAUGHT] Vista survey ignores occlusion (pre-batch behaviour): 1/129 test(s) fail -> Discovery_RevealVisibleAround_KeepsCellsBehindRidgesFogged_SurveyFollowsReveal_S8_1
+[CAUGHT] Unopened caches drawn on the map (§7.6 spoiler): 2/129 test(s) fail -> NewGame_MapStartsBlank_OnlyYouTheHomeGarageAndTheQ01SearchArea_S8_1, SpoilerRules_UnopenedCachesNeverShown_LandmarksUnnamedUntilDiscovered_S7_6
+[CAUGHT] Undiscovered landmarks show their names: 1/129 test(s) fail -> SpoilerRules_UnopenedCachesNeverShown_LandmarksUnnamedUntilDiscovered_S7_6
+[CAUGHT] Search circle centred exactly on the hidden landmark: 1/129 test(s) fail -> ObjectiveMarkers_SearchAreaContainsTarget_SitesPinnedWhilePending_TrackedMatchesHud_S13_4
+[CAUGHT] Revealed neighbours not redrawn (stale soft edges): 3/129 test(s) fail -> Driving_FillsTheMapInLive_RedrawingOnlyChangedCells_S8_1_S16_2, IncrementalAndBudgetedRefresh_MatchAFullRedraw_ByteForByte_EvenWhenCellsRollBack, ScriptedExploration_FillsTheSheetStageByStage_AndSurvivesReload_Evidence
+[SURVIVED] Survey-only changes never redrawn (no contours): no test failed
+[CAUGHT] Reveal cadence back to 1 Hz (§16.2 says 2 Hz): 1/129 test(s) fail -> RevealCadence_IsTwoHertzWhileMoving_AndIdleWhenParked_S16_2
+[CAUGHT] Custom markers not written to the save: 1/129 test(s) fail -> Markers_PersistThroughSaveAndLoad_AndRescueKeepsEveryRevealedCell_S8_1_D021
+[CAUGHT] Ten-marker limit not enforced (§13.4): 1/129 test(s) fail -> MapMarkers_TenMarkerLimit_StableNeverReusedIds_RouteTarget_S13_4
+[CAUGHT] Marker ids reused after removal: 2/129 test(s) fail -> MapMarkers_TenMarkerLimit_StableNeverReusedIds_RouteTarget_S13_4, Markers_PersistThroughSaveAndLoad_AndRescueKeepsEveryRevealedCell_S8_1_D021
+MUTATION CHECK: GAPS FOUND
+EXIT=1

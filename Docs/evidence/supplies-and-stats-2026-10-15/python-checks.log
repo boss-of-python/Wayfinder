@@ -1,0 +1,12 @@
+## validate_content
+validate_content: 0 error(s), 0 warning(s)
+CONTENT VALIDATION PASSED
+## formula_checks
+FORMULA CHECKS PASSED
+## runner unittests
+
+OK
+## rgba_to_png self-test
+rgba_to_png self-test: OK
+## git diff --check
+clean

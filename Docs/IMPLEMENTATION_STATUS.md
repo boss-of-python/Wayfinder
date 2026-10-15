@@ -6,6 +6,62 @@ Last updated: 2026-10-15. Status values: **Not started / In progress / Implement
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
 
+## Batch 2026-10-15-D — Exploration map + field supplies/selling + research → physics (domain Verified headless; Unity UI syntax-checked)
+
+Milestone **M2 Forest vertical slice**. Requirements: MAP-01 (§8.1), new **MAP-04** (§13.2 minimap, §13.4
+map screen, §7.6 no cache spoilers), UI-01, SAVE-01 (additive marker fields), §16.2 (2 Hz map reveal).
+
+| Layer | Before | After | Evidence |
+|---|---|---|---|
+| `Campaign/Map/` (5 new files, engine-free): `ExplorationMap` (blank sheet → live fog-of-war raster, incremental redraw), `MapRaster`/palette/rasterizer, `MapMarkerRules` (spoiler policy, D-026), `MapViewport` + `MapGestureRecognizer`, `MapScreenModel`, `SliceMapTerrain` | — | **Verified (headless)** — 21 new tests | `Docs/evidence/exploration-map-2026-10-15/` |
+| `World/TerrainLineOfSight` + `DiscoveryService.RevealVisibleAround` (§8.1 ridge occlusion for drive + vista; surveyed flags now obey it, D-028) | no line of sight in the campaign path | **Verified (headless)** | idem |
+| `Progression/MapMarkerService` + `CampaignSession.Map` (≤ 10 custom markers, stable ids, route target) + `WorldStateDto.customMarkers` (additive, D-027) | — | **Verified (headless)** — byte-identical save/load, rescue keeps markers + cells | idem |
+| `SliceFieldController` reveal cadence 1 Hz → **2 Hz** (§16.2) | 1 Hz | **Verified (headless)** | idem |
+| `Presentation/MapTextureBinding`, `MapGlyphs`, `MinimapView`, `MapOverlayView`; `VerticalSliceDriver` (minimap on the HUD, M key, garage Map button, MapPaused freeze); `Tests/PlayMode/MapPlayModeTests` (2) | — | **Implemented — syntax-checked only** (+ scratch stub type-check vs real assemblies, not Unity) | `scratch-unity-stub-typecheck/` |
+
+- **130/130** headless EditMode tests (109 → 130); 7 assemblies / 57 files, **0 warnings**; .NET Standard 2.1
+  profile OK; 29 Unity-dependent files parse. **11/11** map mutation check (the first run exposed one
+  coverage gap, now closed by a dedicated test).
+- **Executable now (headless):** new game → the map is a blank sheet (only you, home garage, Q01 search
+  circle) → driving reveals cells live at 2 Hz (soft fog edges, hillshade, ford/mud/pad) → vistas survey
+  384 m with contours → markers follow spoiler rules → place/route/remove custom markers → save/load and
+  rescue keep every revealed cell and marker. PNG snapshots of a scripted exploration: 0 % → 68 % mapped.
+- **Open:** Unity compile/run of the map UI (KI-031), greybox-derived map terrain (KI-029), straight-line
+  route estimates (KI-030). **M2 gate not passed.**
+
+**Continuation in the same batch** (ITEM-01, ECON-01, UPG-01; D-029, D-030):
+
+| Layer | Before | After | Evidence |
+|---|---|---|---|
+| `Campaign/CampaignSession.Supplies.cs`: fuel can (≥ 1 L rule, waste confirmation), repair kit (stopped, out of water, never wasted), tire patch (puncture band), selling (garage only, 40 % floor, critical save, mission camp kits kept), plus `TransactionService` `UseItem` and `SuppliesModel` / garage sell info | not exposed (KI-028) | **Verified (headless)** — 9 tests | `Docs/evidence/supplies-and-stats-2026-10-15/` |
+| `CampaignSession.ConfigureResolver`; `VehicleController.StatsResolver` + resolved tank clamp; driver configures the rig | research reached physics only as tank/cargo (KI-025) | **Verified (headless)** session side — 4 tests; rig side **syntax-checked**; KI-025 partially resolved | idem |
+| **KI-032 fixed:** Trail Tires I grip (`VehicleStatsResolver.GripFor`) and Engine Tune torque (`Powertrain.ResearchTorqueScale`) | no effect anywhere | **Verified (headless)** | idem |
+| Supplies overlay (HUD **Supplies** button) and garage **Sell +N → Confirm?** buttons in `VerticalSliceDriver` | — | **Implemented — syntax-checked** (+ scratch stub type-check) | idem |
+
+- **143/143** headless EditMode tests (130 → 143); 7 assemblies / 60 files, 0 warnings; 29 Unity files parse;
+  **13/13** supplies/stats mutation check.
+
+## Batch 2026-10-15-C — M2 campaign composition (domain Verified headless; Unity glue syntax-checked)
+
+Milestone **M2 Forest vertical slice**; requirements FLOW-01/03, REC-01, MAP-02, QUEST-01/03,
+ITEM-01/02, UPG-01, ECON-01, CAMP-01/02, UI-01, ARCH-01, SAVE-01, MOBILE-01, §21.3 (SLICE-21.3).
+
+| Layer | Before | After | Evidence |
+|---|---|---|---|
+| `Wayfinder.Campaign` (new, 11 files, engine-free) — per-slot `CampaignSession` composition root, snapshot mapper, autosave policy, field trackers, `SliceFieldController`, HUD/garage/summary view models, content loader | — | **Verified (headless)** — 34 tests | `Docs/evidence/campaign-session-2026-10-15/` |
+| Progression/Core/Persistence defect fixes KI-018 … KI-024 | defects | **Verified (headless)** — 16 regression tests; 8/8 mutation check | idem (`mutation-check.log`) |
+| `Content/vertical_slice.json` + `validate_content.py` slice check | — | **Verified** — validator passes, 5/5 negative controls rejected | idem |
+| `CampaignHost`, Title save slots, `VerticalSliceDriver`, world-coordinate VerticalSlice scene builder, Resources content copy, 2 PlayMode + 2 editor tests | prototype only | **Implemented — syntax-checked only** (+ scratch stub type-check, not Unity) | `headless-console.log`, `scratch-unity-stub-typecheck/` |
+
+- **109/109** headless EditMode tests (59 → 109), 7 assemblies / 47 files, **0 warnings**, 6 runtime
+  assemblies pass the .NET Standard 2.1 profile; 24 Unity-dependent files parse.
+- **Executable now (headless):** new game → depart → collect → discover → return → bank → research →
+  reload (byte-identical); banking interrupted after each of six persistence steps resolves to old or new
+  complete state; full Q01–Q04 slice playthrough affords tiers 1–6 + a second camp with an exact ledger.
+- **Open:** Unity compile/run of the glue (KI-026), partial stat → physics wiring (KI-025), compact
+  placeholder placements/flat slice ground (KI-027), simplified storage/modules/hub travel (KI-028).
+  **M2 gate not passed** — it requires a playable 30-minute slice and interruption tests on a device.
+
 ## Later 2026-10-15 continuation — mobile lifecycle and phone build route
 
 - **59/59 headless C# tests pass**, including four new pause/focus ordering and
@@ -61,7 +117,7 @@ Two incorrect test expectations were corrected against the blueprint (torque 212
 |---|---|---|---|
 | **M0 Foundation** | Unity project layout, URP/package pins, asmdefs, Bootstrap/Title/PhysicsTestGround/VerticalSlice scene builders, app state flow, input actions, test assemblies, build scripts, docs | **Implemented — domain layer Verified (headless); gate Blocked on toolchain** | Android/iOS smoke builds require owner toolchain (KI-001/002/006). Core/World/Progression/Persistence compile + 49/49 EditMode tests pass headlessly; Unity-only files parse-checked. |
 | **M1 Vehicle proving ground** | Scout S1 spec, WheelCollider controller, powertrain, steering/assists, camera, surfaces, suspension, fuel/damage/water/mud, winch, reset, PhysicsTestGround rig | **Math Verified (headless); WheelCollider/camera Implemented (unverified)** | Powertrain/fuel/damage/water/mud/recovery math executed (14 tests). Needs Unity physics demonstration on device (KI-009). |
-| **M2 Forest vertical slice** | Inventory/wallet/transactions, garage/camp, missions Q01–Q04 definitions, mapping/discovery, research tiers 1–6 data, save/atomic banking, recovery, touch UI models, weather example | **Services Verified (headless) + data Verified; UI/wiring Implemented (unverified)** | Inventory/economy/transactions/missions/research/discovery/save executed (22 tests; KI-013 fixed). Needs playable 30-minute slice + interruption tests on device. |
+| **M2 Forest vertical slice** | Inventory/wallet/transactions, garage/camp, missions Q01–Q04, mapping/discovery, research tiers 1–6, save/atomic banking, recovery, campaign session + slice manifest, touch UI | **Campaign composition Verified (headless) — 109/109; Unity glue Implemented (syntax-checked only)** | Domain loop, interruption-at-every-step, rescue, camp atomicity, autosave and full Q01–Q04 slice ledger executed headlessly (Batch C). Gate still needs the playable 30-minute slice + interruption tests **on device** (KI-001/026/027). |
 | **M3 World pipeline** | Deterministic hash/PRNG, noise heightfield, 24×24 chunk bake, seam checks, route graph/validator, chunk state machine | **In progress; hash/PRNG/bitset Verified (headless) + seam/hash Verified (Python mirror)** — scatter placer and streamer host **not yet implemented** (KI-017, corrected from earlier "Implemented") | Needs scatter placer + streamer, then in-editor bake + full-mainland traversal. |
 | **M4 Full campaign systems** | All 20 missions, 30 contracts + 5 templates, 20 research tiers, 4 vehicles, item/recipe catalog, camps/garages, relic ledger, finale Q20 | **Implemented; services Verified (headless) + content Verified** | Needs greybox full-campaign playthrough. |
 | **M5 Content & assets** | Final art/audio, five visual regions, vehicle art, UI polish, icons, lore, sound | **Not started** (placeholders tracked in ASSET_MANIFEST.csv) | Hero assets must not be placeholders at this gate. |
@@ -91,10 +147,11 @@ FINISH-01 (Implemented definitions; credits flow coded).
 | Content counts/IDs/gates/recipes/PROD-01 | `python3 Tools/Validation/validate_content.py` | PASSED (0 errors) |
 | Formulas & invariants (35 checks) | `python3 Tools/Validation/formula_checks.py` | PASSED |
 | Economy pacing/deadlock/arbitrage | `python3 Tools/Balance/economy_sim.py` | PASSED (no deadlocks) |
-| C# compile (Roslyn 3.9, C# 9, `-warn:4`) of Core/Simulation(pure)/World/Progression/Persistence/Tests.EditMode | `python3 Tools/Build/headless_cs.py compile` | OK — 31 files, 0 errors, 0 warnings; 2 Unity files excluded |
-| C# EditMode NUnit suites (headless, NUnitLite 3.13.3) | `python3 Tools/Build/headless_cs.py test` | **49 / 49 passed** (`Docs/evidence/headless-cs/EditMode.headless.xml`) |
-| .NET Standard 2.1 API-profile check | `python3 Tools/Build/headless_cs.py profile` | OK — 5 runtime assemblies |
-| C# 9 parse check of 12 Unity-dependent files | `python3 Tools/Build/headless_cs.py syntax` | OK — 0 syntax errors (not type-checked) |
+| C# compile (Roslyn 3.9, C# 9, `-warn:4`) of Core/Simulation(pure)/World/Progression/Persistence/Campaign/Tests.EditMode | `python3 Tools/Build/headless_cs.py compile` | OK — 47 files, 0 errors, 0 warnings; 4 Unity files excluded (Batch C) |
+| C# EditMode NUnit suites (headless, NUnitLite 3.13.3) | `python3 Tools/Build/headless_cs.py test` | **109 / 109 passed** (`Docs/evidence/campaign-session-2026-10-15/EditMode.headless.xml`; earlier 49/55/59 snapshots in older folders) |
+| .NET Standard 2.1 API-profile check | `python3 Tools/Build/headless_cs.py profile` | OK — 6 runtime assemblies |
+| C# 9 parse check of 24 Unity-dependent files | `python3 Tools/Build/headless_cs.py syntax` | OK — 0 syntax errors (not type-checked) |
+| Mutation check of Batch C fixes/safeguards | `python3 Docs/evidence/campaign-session-2026-10-15/mutation_check.py` | 8 / 8 mutations caught |
 | C# NUnit suites **in Unity** | Unity Test Runner / `Tools/Build/build.sh test-editmode` | **Not run** (KI-001) |
 | Android/iOS smoke builds | `Tools/Build/build.sh android-dev` / `ios-dev` | **Not run** (KI-006) |
 
@@ -103,15 +160,15 @@ FINISH-01 (Implemented definitions; credits flow coded).
 | # | Case | Coverage |
 |---|---|---|
 | 1 | Landmark reward granted once | C# test **passed (headless)** + ledger mirror |
-| 2 | Already-collected cache yields nothing | C# transaction replay test **passed (headless)** |
-| 3 | Insufficient cargo blocks pickup without consuming | C# inventory test **passed (headless)** (KI-015 fixed) |
-| 4 | Banking interruption → old or new state, never mixed | C# save protocol test **passed (headless)** (KI-013 fixed) |
+| 2 | Already-collected cache yields nothing | C# transaction replay + campaign reload/preview tests **passed (headless)** (authored contents, KI-020) |
+| 3 | Insufficient cargo blocks pickup without consuming | C# inventory + campaign full-cargo + field-prompt tests **passed (headless)** (KI-015/019/020 fixed) |
+| 4 | Banking interruption → old or new state, never mixed | C# save protocol test + **campaign banking interrupted after each of 6 persistence steps** + failed-write rollback **passed (headless)** |
 | 5 | Backup after corruption preserves latest valid | C# backup rotation test **passed (headless)** |
-| 6 | Zero-resource rescue/playability | C# **passed (headless)** + Python deadlock scan |
+| 6 | Zero-resource rescue/playability | C# rules + campaign rescue/zero-supply recovery **passed (headless)** + Python deadlock scan |
 | 7 | Tier costs & prerequisites canonical | C# **passed (headless)** + Python (both PASSED) |
 | 8 | Tire sets never double-dip research bonus | C# resolver test **passed (headless)** |
 | 9 | Capacity-module removal blocked over capacity | C# test **passed (headless)** |
-| 10 | Camp establishment atomic | C# test **passed (headless)** |
+| 10 | Camp establishment atomic | C# transaction + campaign test (atomic with its save) **passed (headless)** (KI-021 fixed) |
 | 11 | Fuel/condition bounds; frame-rate-independent integration | C# tests **passed (headless)** + Python bounds |
 | 12 | Chunk boundary handle leaks | Streaming state machine coded; PlayMode test pending (Unity) |
 | 13 | 100 landmark / 200 cache unique & reachable | IDs unique PASSED; reachability at M3 bake |
@@ -125,9 +182,9 @@ FINISH-01 (Implemented definitions; credits flow coded).
 
 ## Next dependency-ordered batch
 
-1. **Owner**: install Unity 6.3 LTS + Android module; run `Tools/Build/pin_toolchain.py`; open project; `Tools → Wayfinder → Setup Project`; commit generated scenes/meta/lock (resolves KI-002/004/005).
-2. Fix any UnityEngine API drift surfaced by the first editor open in the 12 parse-checked-only files; record here. (Domain-layer drift is already fixed — D-014 evidence.)
-3. Run EditMode tests **in Unity** → attach XML to `Docs/evidence/` (expected to match the headless 49/49); run `build.sh android-dev` for the M0 smoke build (resolves KI-006 → M0 gate evidence).
-4. M1 calibration batch: WheelCollider friction tuning against PhysicsTestGround obstacles (§20.3 handling targets), camera collision polish, touch pedal ergonomics on device.
-5. M2 slice batch: wire services into scene flow (garage UI, HUD, pickup interactions, **water-recovery → `VehicleController.RestartAfterWaterRecovery()`**, pass `MissionService.Global.IsCompletedCode` into `ResearchService`), autosave debounce, interruption tests on device.
-6. Keep `python3 Tools/Build/headless_cs.py all` green on every batch (it is the fastest real compile+test signal available without Unity); extend `WAYFINDER_HEADLESS` seams only where a file is otherwise pure.
+1. **Owner**: install Unity 6.3 LTS + Android module; run `Tools/Build/pin_toolchain.py`; open project; `Tools → Wayfinder → Setup Project` (now also copies campaign content to `Resources/Content` and builds the world-coordinate VerticalSlice); commit generated scenes/meta/lock (KI-002/004/005).
+2. Fix any UnityEngine API drift in the 24 parse-checked files — first the new campaign glue (KI-026); run EditMode tests **in Unity** (expect 109/109) and the 9 PlayMode tests; play Title → New → VerticalSlice and attach logs/screens to `Docs/evidence/`.
+3. M2 follow-ups that are dependency-ready without Unity: `VehicleController.ApplyEffectiveStats` seam so researched grip/suspension/torque reach physics (KI-025); camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028); expose repair-kit/tire-patch use and selling in the session.
+4. M3 batch: `ScatterPlacer` (§7.6) + pure `WorldStreamer` planner with handle-leak tests (KI-017, QA case 12); slice terrain bake so the 1,024 m area has real relief (KI-027).
+5. Device: Moto G45 slice playtest (30 minutes, interruption/kill tests, 30 FPS budget) to close the M2 gate.
+6. Keep `python3 Tools/Build/headless_cs.py all` green on every batch.

@@ -3,6 +3,8 @@
     "rootNamespace": "Wayfinder.Tests",
     "references": [
         "Wayfinder.Core",
+        "Wayfinder.Campaign",
+        "Wayfinder.Progression",
         "Wayfinder.Editor",
         "Wayfinder.Platform",
         "Wayfinder.Presentation",

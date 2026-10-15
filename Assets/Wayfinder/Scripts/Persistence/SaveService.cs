@@ -117,8 +117,28 @@ namespace Wayfinder.Persistence
     /// 6. on boot choose highest valid complete revision; temp files are not trusted
     /// 7. newer incompatible schema opens read-only recovery, never silent overwrite
     /// </summary>
+    /// <summary>Persistence checkpoints inside <see cref="SaveService.Save"/> (§12.4 steps 4–5).</summary>
+    public enum SaveStep
+    {
+        Begin,
+        TempWritten,
+        TempVerified,
+        Backup2Rotated,
+        Backup1Rotated,
+        CurrentReplaced
+    }
+
     public sealed class SaveService
     {
+        /// <summary>
+        /// Test seam: invoked after each persistence step. Throwing from it simulates the process
+        /// dying at that point, so tests can prove every interruption leaves either the old or the
+        /// new complete save on disk (QA case 4). Null in production.
+        /// </summary>
+        public Action<SaveStep> StepHook { get; set; }
+
+        void Step(SaveStep step) => StepHook?.Invoke(step);
+
         public const int CurrentSchemaVersion = 1;
         public const string CurrentFileName = "current.json";
         public const string Backup1FileName = "backup1.json";
@@ -175,6 +195,7 @@ namespace Wayfinder.Persistence
                 envelope.payloadChecksum = CanonicalJson.Sha256Hex(canonical);
                 string envelopeJson = JsonConvert.SerializeObject(envelope, SaveJson.WriteSettings);
 
+                Step(SaveStep.Begin);
                 string tempPath = PathFor(slot, TempFileName);
                 using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
                 using (var writer = new StreamWriter(stream, Encoding.UTF8))
@@ -183,6 +204,7 @@ namespace Wayfinder.Persistence
                     writer.Flush();
                     stream.Flush(true);
                 }
+                Step(SaveStep.TempWritten);
 
                 // 4. Verify the temp file parses and checksums match BEFORE touching current.
                 var (verified, detail) = VerifyFile(tempPath);
@@ -191,6 +213,7 @@ namespace Wayfinder.Persistence
                     TryDelete(tempPath);
                     return new SaveResult(SaveResultStatus.FailedVerify, revision, detail);
                 }
+                Step(SaveStep.TempVerified);
 
                 // 5. Rotate backups and replace current.
                 string current = PathFor(slot, CurrentFileName);
@@ -198,10 +221,13 @@ namespace Wayfinder.Persistence
                 string backup2 = PathFor(slot, Backup2FileName);
                 if (File.Exists(backup1))
                     File.Copy(backup1, backup2, overwrite: true);
+                Step(SaveStep.Backup2Rotated);
                 if (File.Exists(current))
                     File.Copy(current, backup1, overwrite: true);
+                Step(SaveStep.Backup1Rotated);
 
                 _atomicReplace(tempPath, current, backup1);
+                Step(SaveStep.CurrentReplaced);
                 return new SaveResult(SaveResultStatus.Saved, revision);
             }
             catch (IOException ex)

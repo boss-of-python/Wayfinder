@@ -18,9 +18,24 @@ namespace Wayfinder.Progression
         public int PurchasePriceSalvage;
     }
 
+    /// <summary>
+    /// How cargo is settled at a hub (§2.3 "loose cargo is converted or stored", §10.3, §12.4).
+    /// Currency banks, crafting materials move to hub storage, consumables stay loaded as the
+    /// loadout, mission objects stay with their mission, protected-ledger objects never move.
+    /// </summary>
+    public enum ItemCategory
+    {
+        Currency,
+        Material,
+        Consumable,
+        MissionObject,
+        ProtectedLedger
+    }
+
     public static class ItemCatalog
     {
         public const string SalvageBundle = "salvage_bundle";
+        public const string CampKit = "camp_kit";
 
         static readonly Dictionary<string, ItemDefinition> Items = new Dictionary<string, ItemDefinition>(StringComparer.Ordinal)
         {
@@ -61,6 +76,31 @@ namespace Wayfinder.Progression
         }
 
         public static bool TryGet(string id, out ItemDefinition def) => Items.TryGetValue(id, out def);
+
+        /// <summary>Settlement category (see <see cref="ItemCategory"/>). Unknown ids throw.</summary>
+        public static ItemCategory CategoryOf(string id)
+        {
+            var def = Get(id);
+            if (def.ProtectedLedger) return ItemCategory.ProtectedLedger;
+            switch (id)
+            {
+                case SalvageBundle:
+                    return ItemCategory.Currency;
+                case "scrap_metal":
+                case "polymer":
+                case "electronics":
+                case "alloy":
+                    return ItemCategory.Material;
+                case "fuel_can":
+                case "repair_kit":
+                case "tire_patch":
+                case "recovery_boards":
+                case CampKit:
+                    return ItemCategory.Consumable;
+                default:
+                    return ItemCategory.MissionObject; // survey samples, supply cases, quest.* cargo
+            }
+        }
 
         /// <summary>Sell price: 40% of purchase price, rounded down (§10.4).</summary>
         public static int SellPrice(string id)
@@ -228,11 +268,19 @@ namespace Wayfinder.Progression
             return CommandResult.Ok();
         }
 
+        /// <summary>
+        /// Removes exactly <paramref name="quantity"/> units or nothing. The previous version
+        /// removed what it found and then reported "insufficient quantity", so a failed
+        /// remove/transfer silently destroyed items (KI-019).
+        /// </summary>
         public CommandResult Remove(InventoryId target, ContentId itemId, int quantity)
         {
             if (quantity <= 0) return CommandResult.Fail(FailureReason.InvalidTarget);
             if (!_stacks.TryGetValue(target, out var list))
                 return CommandResult.Fail(FailureReason.ItemNotFound);
+            int available = QuantityOf(target, itemId.Value);
+            if (available < quantity)
+                return CommandResult.Fail(FailureReason.ItemNotFound, $"insufficient quantity: have {available}, need {quantity}");
 
             int remaining = quantity;
             for (int i = 0; i < list.Count && remaining > 0; i++)
@@ -244,21 +292,89 @@ namespace Wayfinder.Progression
                 if (s.Quantity - take <= 0) list.RemoveAt(i--);
                 else list[i] = new ItemStack(s.ItemId, s.Quantity - take, s.MissionInstanceId);
             }
-            return remaining == 0 ? CommandResult.Ok() : CommandResult.Fail(FailureReason.ItemNotFound, "insufficient quantity");
+            return CommandResult.Ok();
         }
 
-        /// <summary>Validated transfer (Appendix D IInventoryService.Transfer). Atomic per stack.</summary>
+        /// <summary>
+        /// Validated transfer (Appendix D IInventoryService.Transfer). All-or-nothing: on failure
+        /// both containers are restored exactly (re-adding could re-split stacks differently).
+        /// </summary>
         public CommandResult Transfer(InventoryId from, InventoryId to, ItemStack stack)
         {
+            var checkpoint = Checkpoint();
             var remove = Remove(from, stack.ItemId, stack.Quantity);
             if (!remove.Success) return remove;
             var add = Add(to, stack);
             if (!add.Success)
             {
-                // Roll back — no items may vanish on a failed transfer.
-                Add(from, stack);
+                Rollback(checkpoint); // no items may vanish on a failed transfer
                 return add;
             }
+            return CommandResult.Ok();
+        }
+
+        /// <summary>
+        /// Adds several stacks atomically (a cache can hold Salvage plus materials). Either every
+        /// stack is placed or the container is left exactly as it was (QA case 3).
+        /// </summary>
+        public CommandResult AddAll(InventoryId target, IReadOnlyList<ItemStack> stacks)
+        {
+            if (stacks == null || stacks.Count == 0) return CommandResult.Ok();
+            var checkpoint = Checkpoint();
+            for (int i = 0; i < stacks.Count; i++)
+            {
+                var result = Add(target, stacks[i]);
+                if (!result.Success)
+                {
+                    Rollback(checkpoint);
+                    return result;
+                }
+            }
+            return CommandResult.Ok();
+        }
+
+        /// <summary>Opaque copy of every container's stacks plus the protected ledger.</summary>
+        public sealed class InventoryCheckpoint
+        {
+            internal readonly Dictionary<InventoryId, List<ItemStack>> Stacks = new Dictionary<InventoryId, List<ItemStack>>();
+            internal readonly List<string> Ledger = new List<string>();
+        }
+
+        /// <summary>Captures state so a multi-step transaction can roll back exactly.</summary>
+        public InventoryCheckpoint Checkpoint()
+        {
+            var checkpoint = new InventoryCheckpoint();
+            foreach (var kv in _stacks)
+                checkpoint.Stacks[kv.Key] = new List<ItemStack>(kv.Value);
+            checkpoint.Ledger.AddRange(_protectedLedger);
+            return checkpoint;
+        }
+
+        /// <summary>Restores stacks and ledger captured by <see cref="Checkpoint"/>. Capacities are untouched.</summary>
+        public void Rollback(InventoryCheckpoint checkpoint)
+        {
+            if (checkpoint == null) throw new ArgumentNullException(nameof(checkpoint));
+            _stacks.Clear();
+            foreach (var kv in checkpoint.Stacks)
+                _stacks[kv.Key] = new List<ItemStack>(kv.Value);
+            _protectedLedger.Clear();
+            _protectedLedger.AddRange(checkpoint.Ledger);
+        }
+
+        /// <summary>Configured (slots, massKg) for a container; (0, 0) when unknown.</summary>
+        public (int slots, float massKg) CapacityOf(InventoryId id) =>
+            _capacity.TryGetValue(id, out var cap) ? cap : (0, 0f);
+
+        public bool HasContainer(InventoryId id) => _capacity.ContainsKey(id);
+
+        /// <summary>Protected-ledger objects in acquisition order (saved as protectedLedgerItemIds).</summary>
+        public IReadOnlyList<string> ProtectedLedgerItems => _protectedLedger;
+
+        /// <summary>Consumes one protected-ledger object (e.g. the Q04 relay fuse at the relay).</summary>
+        public CommandResult RemoveProtected(string itemId)
+        {
+            if (!_protectedLedger.Remove(itemId))
+                return CommandResult.Fail(FailureReason.ItemNotFound, $"{itemId} not in protected ledger");
             return CommandResult.Ok();
         }
 

@@ -1,0 +1,5 @@
+real glue vs real Wayfinder assemblies + stubs: exit 0, 0 error(s), 0 warning(s)
+control A — Pose alias removed from the driver (expect CS0104): caught — error CS0104: 'Pose' is an ambiguous reference between 'UnityEngine.Pose' and 'Wayfinder.Campaign.Pose'
+control B — misnamed ExplorationMap member in the map screen (expect CS1061): caught — error CS1061: 'ExplorationMap' does not contain a definition for 'Bitmap' and no accessible extension method 'Bitmap' accepting a first argument of type 'ExplorationMap' could be found (are you missing a using directive or an assembly reference?)
+control C — misnamed MapViewport member in the minimap (expect CS1061): caught — error CS1061: 'MapViewport' does not contain a definition for 'UvOf' and no accessible extension method 'UvOf' accepting a first argument of type 'MapViewport' could be found (are you missing a using directive or an assembly reference?)
+STUB TYPE-CHECK: PASS (scratch; not Unity evidence)

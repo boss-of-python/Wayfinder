@@ -1,0 +1,21 @@
+vertical slice: income without mapping 3436 vs spend 3130 (margin 306); materials {'polymer': 4, 'scrap_metal': 4, 'electronics': 2}
+[ACCEPTED — as expected] control: unmodified manifest: 0 error(s)
+vertical slice: income without mapping 3178 vs spend 3130 (margin 48); materials {'polymer': 4, 'scrap_metal': 3, 'electronics': 1}
+[REJECTED — as expected] 11 caches: 2 error(s)
+    slice: expected 12 distinct caches, found 11
+    slice: second camp kit needs 4 scrap_metal, caches give 3
+vertical slice: income without mapping 3538 vs spend 3130 (margin 408); materials {'polymer': 6, 'scrap_metal': 4, 'electronics': 2}
+[REJECTED — as expected] cache inside the garage yard: 1 error(s)
+    slice: cache.forest.027 sits inside the garage yard (< 60 m from the arrival centre)
+vertical slice: income without mapping 3436 vs spend 3130 (margin 306); materials {'polymer': 4, 'scrap_metal': 4, 'electronics': 2}
+[REJECTED — as expected] Q04 relay site missing: 1 error(s)
+    slice: Q04 objective ActivateRelay relay.forest has no reachable site
+vertical slice: income without mapping 3436 vs spend 3130 (margin 306); materials {'polymer': 4, 'scrap_metal': 4, 'electronics': 2}
+[REJECTED — as expected] camp socket outside the area: 1 error(s)
+    slice: camp.forest.a at (3000, 2520) lies outside the 1024 m area
+vertical slice: income without mapping 2873 vs spend 3130 (margin -257); materials {}
+[REJECTED — as expected] all-small caches (economy/material dead-end): 4 error(s)
+    slice economy dead-end: income 2873 < tiers 1–6 + camp kit 3130
+    slice: second camp kit needs 4 scrap_metal, caches give 0
+    slice: second camp kit needs 2 polymer, caches give 0
+    slice: second camp kit needs 1 electronics, caches give 0

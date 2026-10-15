@@ -95,8 +95,16 @@ namespace Wayfinder.Simulation
         }
 
         public void SetCargoMass(float kg) => _cargoMassKg = Math.Max(0f, kg);
-        public void RefuelFully() => _fuelLiters = spec.FuelCapacityLiters;
-        public void SetFuel(float liters) => _fuelLiters = MathUtil.Clamp(liters, 0f, spec.FuelCapacityLiters);
+        /// <summary>
+        /// This rig's stat resolver. The campaign configures it with the researched modules
+        /// (<c>CampaignSession.ConfigureResolver</c>), so every resolved stat used below — torque,
+        /// grip, wading depth, fuel drain, tank size — includes research (KI-025, D-030).
+        /// </summary>
+        public VehicleStatsResolver StatsResolver => _resolver;
+        /// <summary>Tank capacity after research (not the base spec), used for every fuel clamp.</summary>
+        public float FuelCapacityLiters => spec == null ? 0f : ResolveStats().FuelCapacityLiters;
+        public void RefuelFully() => _fuelLiters = FuelCapacityLiters;
+        public void SetFuel(float liters) => _fuelLiters = MathUtil.Clamp(liters, 0f, FuelCapacityLiters);
         public void SetSurfaceAtWheel(int index, SurfaceType surface) => _surfaces[index] = surface;
         public void SetEngineOn(bool on) => _engineOn = on;
         /// <summary>
@@ -245,7 +253,7 @@ namespace Wayfinder.Simulation
                 spec, _fuelLiters, _cargoMassKg, tireSet, SurfaceType.PackedDirt, false,
                 _damage.EngineCondition, _damage.SuspensionCondition, _damage.TiresCondition,
                 true, true, true);
-            stats.PunctureActive = _damage.TiresCondition < 30;
+            stats.PunctureActive = _damage.HasPuncture;
             return stats;
         }
 

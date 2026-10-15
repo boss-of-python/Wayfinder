@@ -66,3 +66,8 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.template
+
+# ---- Generated runtime copies of the campaign catalog (Tools → Wayfinder → Setup Project) ----
+# Canonical source: Assets/Wayfinder/Content/*.json
+/Assets/Wayfinder/Resources/Content/
+/Assets/Wayfinder/Resources/Content.meta
