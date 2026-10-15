@@ -16,6 +16,16 @@ namespace Wayfinder.Progression
             "garage.home", "garage.canyon", "garage.city", "garage.wetlands", "garage.highlands"
         };
 
+        /// <summary>Two camp sockets per biome (§12.2, Content/camps.json).</summary>
+        public static readonly string[] CampIds =
+        {
+            "camp.forest.a", "camp.forest.b", "camp.canyon.a", "camp.canyon.b", "camp.city.a",
+            "camp.city.b", "camp.wetlands.a", "camp.wetlands.b", "camp.highlands.a", "camp.highlands.b"
+        };
+
+        public static bool IsKnownCamp(string campId) => Array.IndexOf(CampIds, campId) >= 0;
+        public static bool IsKnownGarage(string garageId) => Array.IndexOf(GarageIds, garageId) >= 0;
+
         readonly HashSet<string> _unlockedGarages = new HashSet<string>(StringComparer.Ordinal) { "garage.home" };
         readonly HashSet<string> _activatedCamps = new HashSet<string>(StringComparer.Ordinal);
         readonly HashSet<string> _infrastructureFlags = new HashSet<string>(StringComparer.Ordinal);
@@ -63,7 +73,10 @@ namespace Wayfinder.Progression
         /// <summary>Camp establishment state — atomicity enforced by TransactionService (QA case 10).</summary>
         public bool IsCampActivated(string campId) => _activatedCamps.Contains(campId);
 
-        public void ActivateCamp(string campId) => _activatedCamps.Add(campId);
+        /// <summary>Returns false when the camp was already active. Use the EstablishCamp transaction in gameplay.</summary>
+        public bool ActivateCamp(string campId) => _activatedCamps.Add(campId);
+
+        public bool IsGarageUnlocked(string garageId) => _unlockedGarages.Contains(garageId);
 
         /// <summary>Infrastructure unlocks (bridges/causeways) come from story materials — never currency (§6.3).</summary>
         public void UnlockInfrastructure(string flag) => _infrastructureFlags.Add(flag);
@@ -92,22 +105,15 @@ namespace Wayfinder.Progression
 
         public bool CanEstablish(bool hasCampKit, bool socketOccupied) => hasCampKit && !socketOccupied;
 
-        /// <summary>Deposit banks salvage_bundle units and stores materials (§12.4 note).</summary>
-        public CommandResult Deposit(InventoryService inventory, InventoryId cargoSource, InventoryId campStorage,
-            EconomyService economy)
-        {
-            var transferMaterials = inventory.Transfer(cargoSource, campStorage,
-                new ItemStack(new ContentId("scrap_metal"), inventory.QuantityOf(cargoSource, "scrap_metal")));
-            // Material transfer is best-effort per item; salvage banking is the critical path.
-            int salvageUnits = inventory.QuantityOf(cargoSource, ItemCatalog.SalvageBundle);
-            if (salvageUnits > 0)
-            {
-                var remove = inventory.Remove(cargoSource, new ContentId(ItemCatalog.SalvageBundle), salvageUnits);
-                if (!remove.Success) return remove;
-                economy.Grant(salvageUnits);
-            }
-            return CommandResult.Ok();
-        }
+        /// <summary>
+        /// Deposit (§12.2/§12.4 note): banks salvage_bundle units and escrow, and moves crafting
+        /// materials into camp storage as far as its 500 kg allows. The previous version moved only
+        /// scrap metal and ignored the transfer result (KI-021). Gameplay routes deposits through a
+        /// BankCargo transaction (idempotent); this helper shares the exact same settlement code.
+        /// </summary>
+        public CargoSettlement.Outcome Deposit(InventoryService inventory, InventoryId cargoSource, InventoryId campStorage,
+            EconomyService economy) =>
+            CargoSettlement.Settle(inventory, economy, cargoSource, campStorage);
     }
 
     /// <summary>

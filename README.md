@@ -28,7 +28,7 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   100 landmarks · 200 caches · 20 main missions (Q01–Q20) · 30 optional contracts + 5 job
   templates · 4 vehicles · 20 research tiers (Σ 32,200 Salvage) · 10 camps · 5 garages ·
   25 relics · 11 surfaces · crafting recipes · quality tiers.
-- The **game systems** are implemented in C#: vehicle physics (WheelCollider, powertrain,
+- The **game systems** are implemented in C# and composed by a per-slot campaign session: vehicle physics (WheelCollider, powertrain,
   surfaces, fuel, damage, water/mud, winch, recovery), world pipeline (deterministic hash/PRNG,
   heightfield, chunk seams, route graph, streaming state machine), progression (inventory,
   economy ledger, idempotent transactions, missions, discovery/map, research), atomic
@@ -39,8 +39,8 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   no deadlocks and no arbitrage. See `Docs/EVIDENCE_M0.md`.
 - **Verified without Unity (headless C#):** the non-Unity assemblies (Core, pure Simulation
   math, World, Progression, Persistence) compile with a real Roslyn C# 9 compiler at warning level 4
-  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 59 EditMode NUnit tests
-  pass** (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
+  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 109 EditMode NUnit tests
+  pass** (59 before the Batch C campaign layer) (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
   write-ups in `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/UNITY_HANDOFF.md`). Running them found and fixed a save-checksum bug that
   would have blocked every save (KI-013), a water-stall re-drain (KI-014) and an inventory stack bug
   (KI-015).
@@ -49,6 +49,21 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   physics, device builds, touch play, thermal performance — the authoring environment had no
   Unity/Android/Xcode toolchain (`Docs/KNOWN_ISSUES.md` KI-001). Nothing here claims a build log,
   APK, IPA, screenshot or device measurement that does not exist.
+
+## Campaign composition update (15 Oct 2026, Batch C)
+
+The progression services are now composed into a per-save-slot **`CampaignSession`**
+(new engine-free `Wayfinder.Campaign` assembly): new game → depart → collect → discover →
+return → bank → research, full rescue, camp establishment/deposit, autosave and
+suspend saves, all driven through atomic, idempotent transactions with verified saves.
+The §21.3 forest slice is defined in `Content/vertical_slice.json` (6 landmarks, 12 caches,
+Q01–Q04, 2 camp sockets, tiers 1–6). **Verified headlessly:** 109/109 C# tests (including
+banking interrupted after every persistence step and a full Q01–Q04 slice playthrough with an
+exact Salvage ledger); seven domain defects found while composing were fixed (KI-018…KI-024)
+and an 8-case mutation check shows the tests catch them. **Implemented, syntax-checked only:**
+three save slots on the Title screen, the `VerticalSliceDriver` HUD/garage/summary, and a
+world-coordinate VerticalSlice greybox scene. Evidence: `Docs/evidence/campaign-session-2026-10-15/`.
+The M2 gate (a playable 30-minute slice on a device) is **not** passed yet.
 
 ## Unity / Android implementation update (15 Oct 2026)
 
@@ -86,8 +101,9 @@ unverified), mobile 30 FPS target with a 30/60 toggle. **59/59** headless C# tes
 # 2. Pin the toolchain and open the project:
 python3 Tools/Build/pin_toolchain.py --editor-version 6000.3.<patch>f1
 # 3. Open this folder in Unity → menu Tools → Wayfinder → Setup Project
+#    then play: Title → slot "New" → VerticalSlice (greybox campaign slice)
 # 4. Run headless checks any time (no Unity needed):
-python3 Tools/Build/headless_cs.py all           # real C# 9 compile + 59 EditMode NUnit tests
+python3 Tools/Build/headless_cs.py all           # real C# 9 compile + 109 EditMode NUnit tests
 python3 Tools/Validation/validate_content.py
 python3 Tools/Validation/formula_checks.py
 python3 Tools/Balance/economy_sim.py

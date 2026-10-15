@@ -65,7 +65,7 @@ namespace Wayfinder.Progression
             Func<int, int, bool> lineOfSightFilter = null)
         {
             float radius = fromVista ? WorldConstants.VistaRevealRadiusMeters : WorldConstants.DriveRevealRadiusMeters;
-            float before = RevealedCountableCells;
+            int before = RevealedCountableCells;
 
             RevealedCells.RevealCircle(worldX, worldZ, radius, WorldConstants.MapCellSizeMeters,
                 (x, z) => CountableMask.Get(x, z) && (lineOfSightFilter == null || lineOfSightFilter(x, z)));
@@ -74,9 +74,9 @@ namespace Wayfinder.Progression
                 SurveyedCells.RevealCircle(worldX, worldZ, radius, WorldConstants.MapCellSizeMeters,
                     (x, z) => CountableMask.Get(x, z));
 
-            int newly = RevealedCountableCells - (int)before;
+            int newly = RevealedCountableCells - before;
             PayMappingThresholds();
-            return (int)newly;
+            return newly;
         }
 
         /// <summary>
@@ -121,6 +121,8 @@ namespace Wayfinder.Progression
                 LandmarkDiscoveryRewardSalvage);
             return true;
         }
+
+        public bool IsLandmarkDiscovered(string landmarkId) => _discoveredLandmarks.Contains(landmarkId ?? string.Empty);
 
         /// <summary>Cache collection registry (QA case 2: re-collect is a typed failure upstream).</summary>
         public bool IsCacheCollected(string cacheId) => _collectedCaches.Contains(cacheId);
@@ -208,6 +210,27 @@ namespace Wayfinder.Progression
 
         public bool IsCompleted(string contractId) => _completed.Contains(contractId);
         public bool IsAccepted(string contractId) => _accepted.Contains(contractId);
+
+        /// <summary>Sorted ids for deterministic saves.</summary>
+        public IEnumerable<string> AcceptedIds => Sorted(_accepted);
+        public IEnumerable<string> CompletedIds => Sorted(_completed);
+
+        static List<string> Sorted(HashSet<string> set)
+        {
+            var list = new List<string>(set);
+            list.Sort(StringComparer.Ordinal);
+            return list;
+        }
+
+        public void Restore(IEnumerable<string> accepted, IEnumerable<string> completed)
+        {
+            _accepted.Clear();
+            _completed.Clear();
+            if (completed != null) foreach (var id in completed) if (!string.IsNullOrEmpty(id)) _completed.Add(id);
+            if (accepted != null)
+                foreach (var id in accepted)
+                    if (!string.IsNullOrEmpty(id) && !_completed.Contains(id)) _accepted.Add(id);
+        }
 
         public CommandResult Accept(string contractId)
         {

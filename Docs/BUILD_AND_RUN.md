@@ -10,7 +10,25 @@ For a Moto G45, see [MOTO_G45_BUILD_AND_TEST.md](MOTO_G45_BUILD_AND_TEST.md). Yo
 still need an installed/licensed Unity desktop (borrowed or cloud); the phone can
 control it and install its APK. The optional workflow is manual and self-hosted,
 not a GitHub-hosted editor or a phone-only compiler. The latest domain suite passes
-59/59 tests; earlier 55/49 counts below are historical snapshots.
+109/109 tests (Batch C); earlier 59/55/49 counts below are historical snapshots.
+
+## Campaign slice (Batch C, 15 Oct 2026)
+
+**VERIFIED (headless, no Unity):** `python3 Tools/Build/headless_cs.py all` → 7 assemblies
+compile with 0 warnings, **109/109** EditMode tests pass (campaign loop, interruption at every
+save step, rescue, camps, autosave, Q01–Q04 slice ledger). `python3 Tools/Validation/validate_content.py`
+now also validates `Assets/Wayfinder/Content/vertical_slice.json`.
+
+**UNVERIFIED (needs Unity):** after `Tools → Wayfinder → Setup Project` (which now also copies the
+campaign JSON into `Assets/Wayfinder/Resources/Content/` — generated, git-ignored — and builds the
+VerticalSlice scene in world coordinates), press Play in `Bootstrap` → Title → choose a slot →
+**New** (a second tap confirms replacing an occupied slot) → the garage panel opens: accept
+missions, research, load cargo, **Depart**. Drive with WASD/arrows or the on-screen pedals; hold
+**E/Interact** (or the on-screen HOLD INTERACT button) at caches, camp sockets, the gauge, the fuse
+site and the relay; stop near landmarks below 15 km/h for 2 s to discover them; stop inside the
+garage arrival pad (< 1 m/s for 2 s) to bank and see the summary. **Pause → Save & quit** returns
+to the title; **Continue** resumes. Saves live in `Application.persistentDataPath/saves/slot-N/`.
+`Tools → Wayfinder → Refresh Campaign Content` re-copies the JSON after content edits.
 
 ## Latest setup/build workflow (15 Oct 2026)
 

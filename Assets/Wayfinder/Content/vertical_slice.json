@@ -1,0 +1,58 @@
+{
+  "id": "slice.forest.v1",
+  "schemaVersion": 1,
+  "description": "M2 vertical slice (blueprint 21.3): one 1024 m x 1024 m forest test area centred on the home garage. References canonical content ids; only placements that content leaves unset (camp sockets, mission sites, ford checkpoints, greybox features) are authored here. Landmark and cache positions come from their positionHint and remain placeholders until M3 route validation (KI-008).",
+  "area": { "minX": 512, "minZ": 1792, "sizeMeters": 1024 },
+  "vehicleId": "vehicle.scout.s1",
+  "garage": {
+    "id": "garage.home",
+    "spawn": { "x": 1024, "y": 0.6, "z": 2288, "yawDegrees": 180 },
+    "arrivalCenter": { "x": 1024, "y": 0, "z": 2290 },
+    "arrivalRadiusMeters": 14
+  },
+  "missions": ["Q01", "Q02", "Q03", "Q04"],
+  "researchTierCount": 6,
+  "landmarks": [
+    { "id": "landmark.forest.01", "observationRadiusMeters": 30, "vista": true },
+    { "id": "landmark.forest.02", "observationRadiusMeters": 30, "vista": false },
+    { "id": "landmark.forest.03", "observationRadiusMeters": 30, "vista": false },
+    { "id": "landmark.forest.04", "observationRadiusMeters": 30, "vista": false },
+    { "id": "landmark.forest.05", "observationRadiusMeters": 30, "vista": false },
+    { "id": "landmark.forest.06", "observationRadiusMeters": 30, "vista": true }
+  ],
+  "caches": [
+    "cache.forest.001", "cache.forest.002", "cache.forest.007", "cache.forest.009",
+    "cache.forest.010", "cache.forest.016", "cache.forest.021", "cache.forest.022",
+    "cache.forest.028", "cache.forest.034", "cache.forest.037", "cache.forest.039"
+  ],
+  "interactionRadiusMeters": 6,
+  "campSockets": [
+    { "id": "camp.forest.a", "position": { "x": 1240, "y": 0, "z": 2520 }, "radiusMeters": 8 },
+    { "id": "camp.forest.b", "position": { "x": 700, "y": 0, "z": 1960 }, "radiusMeters": 8 }
+  ],
+  "inspectTargets": [
+    { "id": "landmark.forest.04", "missionCode": "Q02", "position": { "x": 972, "y": 0, "z": 2316 }, "radiusMeters": 10 }
+  ],
+  "checkpointRoutes": [
+    {
+      "id": "route.forest.ford",
+      "missionCode": "Q02",
+      "radiusMeters": 8,
+      "checkpoints": [
+        { "x": 985, "y": 0, "z": 2333 },
+        { "x": 985, "y": 0, "z": 2367 }
+      ]
+    }
+  ],
+  "questItemSites": [
+    { "id": "questsite.forest.relay_fuse", "itemId": "relay_fuse", "missionCode": "Q04", "position": { "x": 1022, "y": 0, "z": 2380 }, "radiusMeters": 6 }
+  ],
+  "relays": [
+    { "id": "relay.forest", "requiresItem": "relay_fuse", "missionCode": "Q04", "position": { "x": 1400, "y": 0, "z": 2740 }, "radiusMeters": 10 }
+  ],
+  "greyboxFeatures": [
+    { "kind": "water", "center": { "x": 1000, "y": 0, "z": 2350 }, "size": { "x": 200, "y": 0.35, "z": 12 } },
+    { "kind": "mud", "center": { "x": 900, "y": 0, "z": 2200 }, "size": { "x": 30, "y": 0.1, "z": 40 } },
+    { "kind": "hill", "center": { "x": 1150, "y": 0, "z": 2600 }, "size": { "x": 60, "y": 8, "z": 90 } }
+  ]
+}

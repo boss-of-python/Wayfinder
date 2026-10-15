@@ -13,7 +13,13 @@ Checks (§16.6, CONTENT-01, UPG-01, QUEST-01, ITEM-01, PROD-01):
   * cache payouts inside authored bands; contract rewards follow §9.3 formula
   * surface table matches §4.4 exactly; vehicle table matches §4.2/§10.1
   * Packages/manifest.json contains no ad / IAP / analytics / tracking SDK (PROD-01)
+  * vertical_slice.json (§21.3): 1024 m area, 6 landmarks, 12 caches, Q01–Q04, 1 garage,
+    2 camp sockets, tiers 1–6; every id resolves, every site lies inside the area, every slice
+    mission objective has a reachable site, and the slice economy affords tiers 1–6 plus a
+    crafted second camp kit without mapping income (mirrors CampaignFieldTests/CampaignSessionTests)
 """
+
+import math
 
 import json
 import os
@@ -279,6 +285,125 @@ def check_surfaces_vehicles():
                 err(f"{vid} {key}: {v[key]} != §10.1 value {expected}")
 
 
+SLICE_OBJECTIVE_SITES = {
+    "DiscoverLandmark": lambda sl, t, n: t in [l["id"] for l in sl["landmarks"]],
+    "InspectObject": lambda sl, t, n: t in [i["id"] for i in sl.get("inspectTargets", [])],
+    "TraverseCheckpoints": lambda sl, t, n: any(r["id"] == t and len(r["checkpoints"]) >= n
+                                                for r in sl.get("checkpointRoutes", [])),
+    "EstablishCamp": lambda sl, t, n: t in [c["id"] for c in sl.get("campSockets", [])],
+    "ActivateRelay": lambda sl, t, n: t in [r["id"] for r in sl.get("relays", [])],
+    "CollectQuestItem": lambda sl, t, n: t == "salvage_bundle" or t in [q["itemId"] for q in sl.get("questItemSites", [])],
+    "ReturnToHub": lambda sl, t, n: t == sl["garage"]["id"],
+}
+
+
+def check_vertical_slice():
+    """§21.3 vertical-slice manifest — the C# twin is CampaignFieldTests.SliceManifest_MatchesBlueprintScope."""
+    sl = load("vertical_slice.json")
+    landmarks = {l["id"]: l for l in load("landmarks.json")}
+    caches = {c["id"]: c for c in load("caches.json")}
+    camps = {c["id"]: c for c in load("camps.json")}
+    garages = {g["id"]: g for g in load("garages.json")}
+    missions = {m["displayCode"]: m for m in load("missions.json")}
+    upgrades = sorted(load("upgrades.json"), key=lambda u: u["tier"])
+    recipes = {r["id"]: r for r in load("recipes.json")}
+
+    area = sl["area"]
+    size = area["sizeMeters"]
+
+    def inside(p, what):
+        if not (area["minX"] <= p["x"] < area["minX"] + size and area["minZ"] <= p["z"] < area["minZ"] + size):
+            err(f"slice: {what} at ({p['x']}, {p['z']}) lies outside the {size} m area")
+
+    def dist(a, b):
+        return math.hypot(a["x"] - b["x"], a["z"] - b["z"])
+
+    if size != 1024:
+        err(f"slice: area must be 1024 m (found {size})")
+    if len(sl["landmarks"]) != 6:
+        err(f"slice: expected 6 landmarks, found {len(sl['landmarks'])}")
+    if len(sl["caches"]) != 12 or len(set(sl["caches"])) != 12:
+        err(f"slice: expected 12 distinct caches, found {len(sl['caches'])}")
+    if len(sl.get("campSockets", [])) != 2:
+        err("slice: expected 2 camp sockets")
+    if sl["missions"] != ["Q01", "Q02", "Q03", "Q04"]:
+        err(f"slice: missions must be Q01–Q04 (found {sl['missions']})")
+    if sl.get("researchTierCount") != 6:
+        err("slice: researchTierCount must be 6")
+
+    garage = sl["garage"]
+    if garage["id"] not in garages:
+        err(f"slice: unknown garage {garage['id']}")
+    inside(garage["spawn"], "garage spawn")
+    if dist(garage["spawn"], garage["arrivalCenter"]) > garage["arrivalRadiusMeters"]:
+        err("slice: garage spawn must lie inside the arrival volume")
+
+    for l in sl["landmarks"]:
+        if l["id"] not in landmarks:
+            err(f"slice: unknown landmark {l['id']}")
+            continue
+        inside(landmarks[l["id"]]["positionHint"], l["id"])
+    positions = []
+    for cid in sl["caches"]:
+        if cid not in caches:
+            err(f"slice: unknown cache {cid}")
+            continue
+        p = caches[cid]["positionHint"]
+        inside(p, cid)
+        if dist(p, garage["arrivalCenter"]) < 60:
+            err(f"slice: {cid} sits inside the garage yard (< 60 m from the arrival centre)")
+        for other_id, other in positions:
+            if dist(p, other) < 10:
+                err(f"slice: {cid} and {other_id} are closer than 10 m")
+        positions.append((cid, p))
+    for c in sl.get("campSockets", []):
+        if c["id"] not in camps:
+            err(f"slice: unknown camp socket {c['id']}")
+        inside(c["position"], c["id"])
+    for key in ("inspectTargets", "questItemSites", "relays"):
+        for site in sl.get(key, []):
+            inside(site["position"], site["id"])
+    for route in sl.get("checkpointRoutes", []):
+        for i, cp in enumerate(route["checkpoints"]):
+            inside(cp, f"{route['id']}[{i}]")
+    for feature in sl.get("greyboxFeatures", []):
+        inside(feature["center"], f"greybox {feature['kind']}")
+
+    for code in sl["missions"]:
+        m = missions.get(code)
+        if m is None:
+            err(f"slice: unknown mission {code}")
+            continue
+        for o in m["objectives"]:
+            check = SLICE_OBJECTIVE_SITES.get(o["type"])
+            if check is None or not check(sl, o["targetId"], o["count"]):
+                err(f"slice: {code} objective {o['type']} {o['targetId']} has no reachable site")
+
+    tiers = upgrades[:sl.get("researchTierCount", 0)]
+    for t in tiers:
+        gate = t.get("requiredMission") or ""
+        if gate and gate not in sl["missions"]:
+            err(f"slice: tier {t['tier']} gated by {gate}, which is not in the slice")
+
+    # Economy: affordable WITHOUT mapping income (mapping only adds margin).
+    income = sum(caches[c]["salvageUnits"] for c in sl["caches"] if c in caches)
+    income += sum(landmarks[l["id"]].get("discoveryRewardSalvage", 120) for l in sl["landmarks"] if l["id"] in landmarks)
+    income += sum(missions[c]["reward"]["salvage"] for c in sl["missions"] if c in missions)
+    camp_kit = recipes["recipe.camp_kit"]
+    spend = sum(t["costSalvage"] for t in tiers) + camp_kit.get("salvageFee", 0)
+    if income < spend:
+        err(f"slice economy dead-end: income {income} < tiers 1–6 + camp kit {spend}")
+    materials = {}
+    for cid in sl["caches"]:
+        for m in caches.get(cid, {}).get("materials", []):
+            materials[m["itemId"]] = materials.get(m["itemId"], 0) + m["quantity"]
+    for inp in camp_kit["inputs"]:
+        if materials.get(inp["itemId"], 0) < inp["quantity"]:
+            err(f"slice: second camp kit needs {inp['quantity']} {inp['itemId']}, caches give {materials.get(inp['itemId'], 0)}")
+    print(f"vertical slice: income without mapping {income} vs spend {spend} (margin {income - spend}); "
+          f"materials {materials}")
+
+
 def check_dependency_scan():
     """PROD-01: no ad/IAP/analytics/tracking/multiplayer dependency may appear."""
     manifest_path = os.path.join(ROOT, "Packages", "manifest.json")
@@ -307,6 +432,7 @@ def main():
     check_items_recipes()
     check_caches_contracts()
     check_surfaces_vehicles()
+    check_vertical_slice()
     check_dependency_scan()
 
     print(f"validate_content: {len(errors)} error(s), {len(warnings)} warning(s)")

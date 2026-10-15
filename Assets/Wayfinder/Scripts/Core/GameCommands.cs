@@ -104,10 +104,17 @@ namespace Wayfinder.Core
         /// <summary>Extraction / camp deposit. Converts salvage_bundle units to banked Salvage, escrow → wallet.</summary>
         public readonly ContentId HubId;
         public readonly InventoryId CargoSource;
-        public BankCargo(TransactionId tx, ContentId hubId, InventoryId cargoSource) : base(tx)
+        /// <summary>
+        /// Hub storage that receives crafting materials (garage storage on extraction, camp storage
+        /// on deposit). Default (empty) leaves materials in cargo.
+        /// </summary>
+        public readonly InventoryId MaterialDestination;
+        public BankCargo(TransactionId tx, ContentId hubId, InventoryId cargoSource,
+            InventoryId materialDestination = default) : base(tx)
         {
             HubId = hubId;
             CargoSource = cargoSource;
+            MaterialDestination = materialDestination;
         }
     }
 

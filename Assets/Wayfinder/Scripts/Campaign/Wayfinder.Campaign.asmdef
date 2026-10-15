@@ -1,0 +1,21 @@
+{
+    "name": "Wayfinder.Campaign",
+    "rootNamespace": "Wayfinder.Campaign",
+    "references": [
+        "Wayfinder.Core",
+        "Wayfinder.Simulation",
+        "Wayfinder.World",
+        "Wayfinder.Progression",
+        "Wayfinder.Persistence",
+        "Unity.Newtonsoft.Json"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -1,0 +1,4 @@
+real glue vs real campaign assemblies + stubs: exit 0, 0 error(s)
+control A — Pose alias removed (expect CS0104): caught — error CS0104: 'Pose' is an ambiguous reference between 'UnityEngine.Pose' and 'Wayfinder.Campaign.Pose'
+control B — misnamed session member (expect CS1061): caught — error CS1061: 'CampaignSession' does not contain a definition for 'FullRescueNow' and no accessible extension method 'FullRescueNow' accepting a first argument of type 'CampaignSession' could be found (are you missing a using directive or an assembly reference?)
+STUB TYPE-CHECK: PASS (scratch; not Unity evidence)

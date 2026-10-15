@@ -46,6 +46,12 @@ namespace Wayfinder.Persistence
         public List<string> protectedLedgerItemIds = new List<string>();
         public List<string> relicIds = new List<string>();
         public List<string> ownedVehicleIds = new List<string> { "vehicle.scout.s1" };
+        /// <summary>
+        /// Next append-only transaction sequence number (§2.3). Persisted so ids issued after a
+        /// reload can never collide with ids already in appliedTransactionIds — a collision would
+        /// turn a legitimate new pickup into a silent idempotent no-op. Additive field (D-021).
+        /// </summary>
+        public int nextTransactionSequence;
     }
 
     [Serializable] public sealed class WalletDto { public int salvage; public int escrowedSalvage; }
@@ -106,6 +112,18 @@ namespace Wayfinder.Persistence
         public List<ItemStackDto> cargo = new List<ItemStackDto>();
         public List<string> pendingRewardKeys = new List<string>();
         public float elapsedSimulationSeconds;
+        /// <summary>Expedition summary counters (§2.3: distance, discoveries, fuel used). Additive (D-021).</summary>
+        public ExpeditionStatsDto stats = new ExpeditionStatsDto();
+    }
+
+    [Serializable]
+    public sealed class ExpeditionStatsDto
+    {
+        public float distanceMeters;
+        public float fuelUsedLiters;
+        public int cachesCollected;
+        public int landmarksDiscovered;
+        public int cellsRevealed;
     }
 
     [Serializable]

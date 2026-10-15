@@ -66,12 +66,72 @@ namespace Wayfinder.Progression
         }
     }
 
+    /// <summary>Contents of a one-time pickup (cache), resolved from content (caches.json).</summary>
+    public sealed class PickupContents
+    {
+        public readonly string PickupId;
+        public readonly int SalvageUnits;
+        public readonly IReadOnlyList<ItemStack> Stacks;
+
+        public PickupContents(string pickupId, int salvageUnits, IEnumerable<(string itemId, int quantity)> materials)
+        {
+            if (string.IsNullOrEmpty(pickupId)) throw new ArgumentException("pickup id required", nameof(pickupId));
+            if (salvageUnits < 0) throw new ArgumentOutOfRangeException(nameof(salvageUnits));
+            PickupId = pickupId;
+            SalvageUnits = salvageUnits;
+            var stacks = new List<ItemStack>();
+            if (salvageUnits > 0)
+                stacks.Add(new ItemStack(new ContentId(ItemCatalog.SalvageBundle), salvageUnits));
+            if (materials != null)
+                foreach (var (itemId, quantity) in materials)
+                    if (quantity > 0) stacks.Add(new ItemStack(new ContentId(itemId), quantity));
+            Stacks = stacks;
+        }
+    }
+
+    /// <summary>Resolves pickup ids to their authored contents (implemented by the campaign content catalog).</summary>
+    public interface IPickupCatalog
+    {
+        bool TryGetContents(string pickupId, out PickupContents contents);
+    }
+
+    /// <summary>Dictionary-backed pickup catalog (tests and the campaign content loader).</summary>
+    public sealed class PickupCatalog : IPickupCatalog
+    {
+        readonly Dictionary<string, PickupContents> _byId = new Dictionary<string, PickupContents>(StringComparer.Ordinal);
+
+        public PickupCatalog Add(PickupContents contents)
+        {
+            if (contents == null) throw new ArgumentNullException(nameof(contents));
+            _byId[contents.PickupId] = contents;
+            return this;
+        }
+
+        public bool TryGetContents(string pickupId, out PickupContents contents) =>
+            _byId.TryGetValue(pickupId ?? string.Empty, out contents);
+
+        public int Count => _byId.Count;
+    }
+
+    /// <summary>
+    /// Explicit collaborators of <see cref="TransactionService"/> (§15.3 composition root). A
+    /// command whose collaborator is missing fails with a typed error — there is no hidden
+    /// static fallback (the previous research path silently used ResearchService.Global, KI-023).
+    /// </summary>
+    public sealed class TransactionDependencies
+    {
+        public ResearchService Research;
+        public DiscoveryService Discovery;
+        public GarageService Garage;
+        public IPickupCatalog Pickups;
+    }
+
     /// <summary>
     /// Atomic, idempotent gameplay mutations (§12.4, §16.3, Appendix D).
     /// Every command carries a TransactionId; replaying an applied ID is a no-op success.
-    /// Banking: snapshot → tx id → apply to memory revision → write/verify save → only then
-    /// acknowledge and clear field cargo. Interruption at any step resolves to old or new
-    /// complete state, never mixed (QA case 4).
+    /// Multi-step commands checkpoint inventory + wallet and roll back on any failure, so a
+    /// failed command never leaves partial state. Persistence (write/verify before
+    /// acknowledging) is layered on top by the campaign session (QA case 4).
     /// </summary>
     public sealed class TransactionService
     {
@@ -79,14 +139,19 @@ namespace Wayfinder.Progression
         readonly List<string> _appliedOrder = new List<string>();
         readonly EconomyService _economy;
         readonly InventoryService _inventory;
+        readonly TransactionDependencies _deps;
 
         /// <summary>Fired only AFTER a transaction commits (§16.3).</summary>
         public event Action<GameEvent> OnCommitted;
 
         public TransactionService(EconomyService economy, InventoryService inventory)
+            : this(economy, inventory, null) { }
+
+        public TransactionService(EconomyService economy, InventoryService inventory, TransactionDependencies dependencies)
         {
             _economy = economy ?? throw new ArgumentNullException(nameof(economy));
             _inventory = inventory ?? throw new ArgumentNullException(nameof(inventory));
+            _deps = dependencies ?? new TransactionDependencies();
         }
 
         public bool WasApplied(TransactionId transactionId) =>
@@ -103,95 +168,92 @@ namespace Wayfinder.Progression
             if (WasApplied(command.TransactionId))
                 return CommandResult.Ok(); // idempotent replay — never grants twice (QA cases 1/2/16)
 
+            var inventoryCheckpoint = _inventory.Checkpoint();
+            int bankedBefore = _economy.BankedSalvage, escrowBefore = _economy.EscrowedSalvage;
+            GameEvent committed = null;
             CommandResult result;
             switch (command)
             {
                 case CollectPickup collect:
-                    result = ExecuteCollect(collect, out var collectedEvent);
-                    if (result.Success) Commit(command.TransactionId, collectedEvent);
-                    return result;
-
+                    result = ExecuteCollect(collect, out committed);
+                    break;
                 case BankCargo bank:
-                    result = ExecuteBank(bank, out var bankedEvent);
-                    if (result.Success) Commit(command.TransactionId, bankedEvent);
-                    return result;
-
+                    result = ExecuteBank(bank, out committed);
+                    break;
                 case ResearchUpgrade research:
-                    result = ExecuteResearch(research, out var researchEvent);
-                    if (result.Success) Commit(command.TransactionId, researchEvent);
-                    return result;
-
+                    result = ExecuteResearch(research, out committed);
+                    break;
                 case EstablishCamp establish:
-                    result = ExecuteEstablishCamp(establish, out var campEvent);
-                    if (result.Success) Commit(command.TransactionId, campEvent);
-                    return result;
-
+                    result = ExecuteEstablishCamp(establish, out committed);
+                    break;
                 case CraftItem craft:
-                    result = ExecuteCraft(craft);
-                    if (result.Success) Commit(command.TransactionId, null);
-                    return result;
-
+                    result = CraftingService.TryCraft(_inventory, _economy, craft.RecipeId, craft.MaterialSource,
+                        craft.OutputDestination);
+                    break;
                 case TransferItems transfer:
                     result = _inventory.Transfer(transfer.From, transfer.To,
                         new ItemStack(transfer.ItemId, transfer.Quantity));
-                    if (result.Success) Commit(command.TransactionId, null);
-                    return result;
-
+                    break;
                 case SellItems sell:
                     result = _inventory.Remove(sell.Source, sell.ItemId, sell.Quantity);
-                    if (result.Success)
-                    {
-                        result = _economy.Sell(sell.ItemId.Value, sell.Quantity);
-                        if (!result.Success)
-                        {
-                            // rollback: put items back — currency ledger never skims items
-                            _inventory.Add(sell.Source, new ItemStack(sell.ItemId, sell.Quantity));
-                        }
-                        else Commit(command.TransactionId, null);
-                    }
-                    return result;
-
-                case RequestRecovery recovery:
-                    // Recovery itself is always available (REC-01); event only.
-                    Commit(command.TransactionId, null);
-                    return CommandResult.Ok();
-
+                    if (result.Success) result = _economy.Sell(sell.ItemId.Value, sell.Quantity);
+                    break;
+                case RequestRecovery _:
+                    // Recovery itself is always available (REC-01); the campaign session applies
+                    // the rescue rules and persists them. Here it is an event-only marker.
+                    result = CommandResult.Ok();
+                    break;
                 default:
                     return CommandResult.Fail(FailureReason.InvalidTarget, $"unhandled command {command.GetType().Name}");
             }
+
+            if (!result.Success)
+            {
+                // Atomicity: whatever a failed command touched is restored exactly.
+                _inventory.Rollback(inventoryCheckpoint);
+                _economy.Restore(bankedBefore, escrowBefore);
+                return result;
+            }
+            Commit(command.TransactionId, committed);
+            return result;
         }
 
         CommandResult ExecuteCollect(CollectPickup cmd, out GameEvent committed)
         {
             committed = null;
-            // Double-collect guard: the pickup registry is consulted by the caller (DiscoveryService);
-            // here we only add. The AppliedTransactionIds + pickup collected-set together make
-            // a second collect a typed failure (QA case 2).
-            var stack = new ItemStack(new ContentId(ItemCatalog.SalvageBundle), 1);
-            var add = _inventory.Add(cmd.Destination, stack);
-            return add;
+            string pickupId = cmd.PickupId.Value;
+            if (_deps.Pickups == null)
+                return CommandResult.Fail(FailureReason.ContentMissing, "pickup catalog not configured");
+            if (!_deps.Pickups.TryGetContents(pickupId, out var contents))
+                return CommandResult.Fail(FailureReason.ContentMissing, $"unknown pickup '{pickupId}'");
+            // Double-collect guard lives in the same commit as the grant (QA case 2).
+            if (_deps.Discovery != null && _deps.Discovery.IsCacheCollected(pickupId))
+                return CommandResult.Fail(FailureReason.AlreadyCollected, pickupId);
+
+            // All stacks fit or nothing is added and the cache stays uncollected (QA case 3).
+            var add = _inventory.AddAll(cmd.Destination, contents.Stacks);
+            if (!add.Success) return add;
+            _deps.Discovery?.TryMarkCacheCollected(pickupId);
+            committed = new PickupCollected(cmd.TransactionId, cmd.PickupId, contents.SalvageUnits);
+            return CommandResult.Ok();
         }
 
         CommandResult ExecuteBank(BankCargo cmd, out GameEvent committed)
         {
             committed = null;
-            int units = _inventory.QuantityOf(cmd.CargoSource, ItemCatalog.SalvageBundle);
-            if (units > 0)
-            {
-                var remove = _inventory.Remove(cmd.CargoSource, new ContentId(ItemCatalog.SalvageBundle), units);
-                if (!remove.Success) return remove;
-            }
-            int escrowBanked = _economy.BankEscrow();
-            _economy.Grant(units); // 1 salvage_bundle unit banks into 1 Salvage (§10.3)
+            var settlement = CargoSettlement.Settle(_inventory, _economy, cmd.CargoSource, cmd.MaterialDestination);
+            if (!settlement.Result.Success) return settlement.Result;
             committed = new ExpeditionBanked(cmd.TransactionId, cmd.TransactionId.Value,
-                units + escrowBanked, 0);
+                settlement.SalvageUnitsBanked + settlement.EscrowBanked, 0);
             return CommandResult.Ok();
         }
 
         CommandResult ExecuteResearch(ResearchUpgrade cmd, out GameEvent committed)
         {
             committed = null;
-            var result = ResearchService.Global.TryPurchase(cmd.UpgradeId, _economy);
+            if (_deps.Research == null)
+                return CommandResult.Fail(FailureReason.InternalError, "research service not configured");
+            var result = _deps.Research.TryPurchase(cmd.UpgradeId, _economy);
             if (!result.Success) return result;
             committed = new UpgradeResearched(cmd.TransactionId, cmd.UpgradeId);
             return CommandResult.Ok();
@@ -200,20 +262,23 @@ namespace Wayfinder.Progression
         CommandResult ExecuteEstablishCamp(EstablishCamp cmd, out GameEvent committed)
         {
             committed = null;
-            // Atomicity (QA case 10): consume kit ONLY when the camp activates in the same commit.
-            bool hasKit = _inventory.QuantityOf(cmd.KitSource, "camp_kit") > 0
-                          || _inventory.QuantityOf(cmd.KitSource, "camp_kit") > 0;
-            if (!hasKit)
+            // Atomicity (QA case 10): the kit is consumed in the SAME commit that activates the
+            // camp. The previous version only removed the kit and relied on an event subscriber
+            // to activate the camp (KI-021).
+            if (_deps.Garage == null)
+                return CommandResult.Fail(FailureReason.InternalError, "garage service not configured");
+            string campId = cmd.CampId.Value;
+            if (!GarageService.IsKnownCamp(campId))
+                return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown camp socket '{campId}'");
+            if (_deps.Garage.IsCampActivated(campId))
+                return CommandResult.Fail(FailureReason.AlreadyApplied, "camp already established");
+            if (_inventory.QuantityOf(cmd.KitSource, ItemCatalog.CampKit) < 1)
                 return CommandResult.Fail(FailureReason.ItemNotFound, "camp kit required");
-            var remove = _inventory.Remove(cmd.KitSource, new ContentId("camp_kit"), 1);
+            var remove = _inventory.Remove(cmd.KitSource, new ContentId(ItemCatalog.CampKit), 1);
             if (!remove.Success) return remove;
+            _deps.Garage.ActivateCamp(campId);
             committed = new CampEstablished(cmd.TransactionId, cmd.CampId);
             return CommandResult.Ok();
-        }
-
-        CommandResult ExecuteCraft(CraftItem cmd)
-        {
-            return CraftingService.TryCraft(_inventory, cmd.RecipeId, cmd.MaterialSource, cmd.OutputDestination);
         }
 
         void Commit(TransactionId transactionId, GameEvent committedEvent)
@@ -234,6 +299,79 @@ namespace Wayfinder.Progression
                 if (!string.IsNullOrEmpty(id) && _applied.Add(id))
                     _appliedOrder.Add(id);
             }
+        }
+    }
+
+    /// <summary>
+    /// Hub settlement shared by garage extraction and camp deposit (§2.3, §12.2, §12.4):
+    /// every salvage_bundle unit banks into 1 Salvage, escrow banks, and crafting materials
+    /// move to hub storage when a destination is given. Materials that do not fit (camp storage
+    /// is 500 kg) simply stay in cargo — nothing is lost. Consumables and mission objects stay loaded.
+    /// </summary>
+    public static class CargoSettlement
+    {
+        public readonly struct Outcome
+        {
+            public readonly CommandResult Result;
+            public readonly int SalvageUnitsBanked;
+            public readonly int EscrowBanked;
+            public readonly int MaterialUnitsStored;
+            public readonly int MaterialUnitsLeftInCargo;
+
+            public Outcome(CommandResult result, int salvage, int escrow, int stored, int left)
+            {
+                Result = result;
+                SalvageUnitsBanked = salvage;
+                EscrowBanked = escrow;
+                MaterialUnitsStored = stored;
+                MaterialUnitsLeftInCargo = left;
+            }
+        }
+
+        public static Outcome Settle(InventoryService inventory, EconomyService economy,
+            InventoryId cargo, InventoryId materialDestination)
+        {
+            if (inventory == null) throw new ArgumentNullException(nameof(inventory));
+            if (economy == null) throw new ArgumentNullException(nameof(economy));
+
+            int units = inventory.QuantityOf(cargo, ItemCatalog.SalvageBundle);
+            if (units > 0)
+            {
+                var remove = inventory.Remove(cargo, new ContentId(ItemCatalog.SalvageBundle), units);
+                if (!remove.Success) return new Outcome(remove, 0, 0, 0, 0);
+            }
+
+            int stored = 0, left = 0;
+            if (!string.IsNullOrEmpty(materialDestination.Value))
+            {
+                // Snapshot the material totals first: moving mutates the stack list.
+                var totals = new List<(string itemId, int quantity)>();
+                foreach (var stack in inventory.Stacks(cargo))
+                {
+                    if (ItemCatalog.CategoryOf(stack.ItemId.Value) != ItemCategory.Material) continue;
+                    int index = totals.FindIndex(t => t.itemId == stack.ItemId.Value);
+                    if (index < 0) totals.Add((stack.ItemId.Value, stack.Quantity));
+                    else totals[index] = (totals[index].itemId, totals[index].quantity + stack.Quantity);
+                }
+                foreach (var (itemId, quantity) in totals)
+                {
+                    // Largest quantity that fits, so a nearly full camp store still takes something.
+                    int moved = 0;
+                    for (int q = quantity; q > 0; q--)
+                    {
+                        if (!inventory.CanAdd(materialDestination, new ItemStack(new ContentId(itemId), q)).Fits) continue;
+                        if (inventory.Transfer(cargo, materialDestination, new ItemStack(new ContentId(itemId), q)).Success)
+                            moved = q;
+                        break;
+                    }
+                    stored += moved;
+                    left += quantity - moved;
+                }
+            }
+
+            int escrow = economy.BankEscrow();
+            economy.Grant(units); // 1 salvage_bundle unit banks into 1 Salvage (§10.3)
+            return new Outcome(CommandResult.Ok(), units, escrow, stored, left);
         }
     }
 
@@ -291,9 +429,16 @@ namespace Wayfinder.Progression
             throw new KeyNotFoundException($"Unknown recipe '{id}'.");
         }
 
-        public static CommandResult TryCraft(InventoryService inventory, ContentId recipeId,
+        /// <summary>
+        /// Crafts one recipe: validates materials, fee and output capacity BEFORE consuming
+        /// anything, then consumes inputs, charges the Salvage fee and produces the output.
+        /// The fee was previously never charged (KI-022), so e.g. a camp kit cost 0 instead of 80.
+        /// </summary>
+        public static CommandResult TryCraft(InventoryService inventory, EconomyService economy, ContentId recipeId,
             InventoryId materialSource, InventoryId outputDestination)
         {
+            if (inventory == null) throw new ArgumentNullException(nameof(inventory));
+            if (economy == null) throw new ArgumentNullException(nameof(economy));
             var recipe = GetRecipe(recipeId);
 
             // 1. Validate ALL inputs first (never consume on failure).
@@ -303,23 +448,36 @@ namespace Wayfinder.Progression
                     return CommandResult.Fail(FailureReason.InsufficientMaterials, $"{itemId} ×{qty}");
             }
 
+            if (economy.BankedSalvage < recipe.SalvageFee)
+                return CommandResult.Fail(FailureReason.InsufficientCurrency,
+                    $"fee {recipe.SalvageFee}, have {economy.BankedSalvage}");
+
             // 2. Capacity preview for the output.
             var outputStack = new ItemStack(new ContentId(recipe.OutputItemId), recipe.OutputQuantity);
             var capacity = inventory.CanAdd(outputDestination, outputStack);
             if (!capacity.Fits)
                 return CommandResult.Fail(capacity.Reason, "output would not fit");
 
-            // 3. Consume inputs, then produce (inputs reserved-then-committed).
+            // 3. Consume inputs, charge the fee, then produce — rolled back as one unit on failure.
+            var checkpoint = inventory.Checkpoint();
+            int banked = economy.BankedSalvage, escrow = economy.EscrowedSalvage;
             foreach (var (itemId, qty) in recipe.Inputs)
             {
                 var remove = inventory.Remove(materialSource, new ContentId(itemId), qty);
                 if (!remove.Success)
                 {
-                    // Extremely unexpected after validation; restore is caller's transaction concern.
+                    inventory.Rollback(checkpoint);
                     return CommandResult.Fail(FailureReason.InternalError, "input vanished mid-craft");
                 }
             }
-            return inventory.Add(outputDestination, outputStack);
+            var fee = economy.TrySpend(recipe.SalvageFee, default);
+            var add = fee.Success ? inventory.Add(outputDestination, outputStack) : fee;
+            if (!add.Success)
+            {
+                inventory.Rollback(checkpoint);
+                economy.Restore(banked, escrow);
+            }
+            return add;
         }
 
         /// <summary>QA case 17 predicate: sell price of output must be less than total input purchase value + fee.</summary>

@@ -1,5 +1,21 @@
 # Unity implementation batch — 15 October 2026
 
+## Campaign composition batch (Batch C)
+
+New engine-free `Wayfinder.Campaign` assembly (per-slot `CampaignSession`, snapshot saves,
+autosave, field controller, view models) — **109/109 headless tests**, evidence in
+`Docs/evidence/campaign-session-2026-10-15/`. New Unity-facing files are **syntax-checked only**
+(plus a scratch stub type-check that is not Unity evidence): `Platform/CampaignHost.cs`,
+`Presentation/VerticalSliceDriver.cs`, the save-slot UI in `Presentation/TitleFlowHost.cs`,
+`SceneBuilder.BuildVerticalSlice` (world coordinates, from `Content/vertical_slice.json`),
+`ProjectSetup.CopyCampaignContent`, `Tests/PlayMode/CampaignPlayModeTests.cs` (2 tests; 9 PlayMode
+tests total) and 2 new editor tests in `Tests/Editor/ProjectSetupTests.cs` (Resources content copy is
+verbatim; the VerticalSlice scene has its driver/rig at the garage spawn and one marker per slice
+cache/landmark). First-open checklist for this batch: Setup Project → confirm
+`Assets/Wayfinder/Resources/Content/*.json` exist → Test Runner EditMode (expect 109) and PlayMode
+(expect 9) → play Title → New → VerticalSlice → Depart → collect a cache → return → research.
+Researched stats beyond tank size/cargo mass are not yet applied to physics (KI-025).
+
 ## Later same-day mobile continuation
 
 See **[MOTO_G45_BUILD_AND_TEST.md](MOTO_G45_BUILD_AND_TEST.md)** for the latest

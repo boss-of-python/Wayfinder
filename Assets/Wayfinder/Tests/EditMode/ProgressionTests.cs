@@ -53,15 +53,28 @@ namespace Wayfinder.Tests
         [Test]
         public void Transaction_ReplayedIdGrantsNothingTwice_QA1_QA2_QA16()
         {
+            // Revised with KI-020: collection now grants the authored cache contents (caches.json:
+            // cache.forest.001 = 77 Salvage) instead of a hard-coded single unit, and the collected
+            // registry is checked inside the same commit. The replay assertions are unchanged.
             var economy = new EconomyService();
             var inv = NewInventory();
-            var tx = new TransactionService(economy, inv);
+            var discovery = new DiscoveryService();
+            var pickups = new PickupCatalog().Add(new PickupContents("cache.forest.001", 77, null));
+            var tx = new TransactionService(economy, inv,
+                new TransactionDependencies { Discovery = discovery, Pickups = pickups });
             var command = new CollectPickup(new TransactionId("tx-1"), new ContentId("cache.forest.001"), Cargo);
 
             Assert.IsTrue(tx.Execute(command).Success);
             Assert.IsTrue(tx.Execute(command).Success, "replay is a no-op success");
-            Assert.AreEqual(1, inv.QuantityOf(Cargo, "salvage_bundle"), "items granted once");
+            Assert.AreEqual(77, inv.QuantityOf(Cargo, "salvage_bundle"), "items granted once");
             Assert.IsTrue(tx.WasApplied(new TransactionId("tx-1")));
+            Assert.IsTrue(discovery.IsCacheCollected("cache.forest.001"));
+
+            // A second interaction with a NEW transaction id is a typed failure (QA case 2).
+            var again = tx.Execute(new CollectPickup(new TransactionId("tx-2"), new ContentId("cache.forest.001"), Cargo));
+            Assert.IsFalse(again.Success);
+            Assert.AreEqual(FailureReason.AlreadyCollected, again.Reason);
+            Assert.AreEqual(77, inv.QuantityOf(Cargo, "salvage_bundle"));
         }
 
         [Test]
@@ -114,12 +127,16 @@ namespace Wayfinder.Tests
         public void Crafting_ConsumesOnlyWhenCapacityAllows()
         {
             var inv = NewInventory(slots: 1, mass: 999f);
+            var economy = new EconomyService();
+            economy.Grant(100);
             inv.Add(Cargo, new ItemStack(new ContentId("scrap_metal"), 2));
             inv.Add(Cargo, new ItemStack(new ContentId("polymer"), 1));
             // 1 slot occupied by scrap (stack) → output repair_kit needs its own slot: rejected.
-            var result = CraftingService.TryCraft(inv, new ContentId("recipe.repair_kit"), Cargo, Cargo);
+            // (Signature gained the wallet with KI-022: the recipe fee is now actually charged.)
+            var result = CraftingService.TryCraft(inv, economy, new ContentId("recipe.repair_kit"), Cargo, Cargo);
             Assert.IsFalse(result.Success);
             Assert.AreEqual(2, inv.QuantityOf(Cargo, "scrap_metal"), "materials not consumed on failure");
+            Assert.AreEqual(100, economy.BankedSalvage, "fee not charged on failure");
         }
 
         [Test]
@@ -163,9 +180,12 @@ namespace Wayfinder.Tests
         [Test]
         public void Camp_EstablishmentAtomic_QA10()
         {
+            // Revised with KI-021: activation now happens inside the same commit as kit consumption,
+            // so the test injects the GarageService and asserts the camp is really active.
             var economy = new EconomyService();
             var inv = NewInventory();
-            var tx = new TransactionService(economy, inv);
+            var garage = new GarageService();
+            var tx = new TransactionService(economy, inv, new TransactionDependencies { Garage = garage });
             CampEstablished committed = null;
             tx.OnCommitted += e => { if (e is CampEstablished ce) committed = ce; };
 
@@ -178,23 +198,31 @@ namespace Wayfinder.Tests
             var ok = tx.Execute(new EstablishCamp(new TransactionId("camp-2"), new ContentId("camp.forest.a"), Cargo));
             Assert.IsTrue(ok.Success);
             Assert.AreEqual(0, inv.QuantityOf(Cargo, "camp_kit"), "kit consumed only with activation");
+            Assert.IsTrue(garage.IsCampActivated("camp.forest.a"), "camp activated in the same commit");
             Assert.IsNotNull(committed);
             Assert.AreEqual("camp.forest.a", committed.CampId.Value);
+            Assert.IsFalse(garage.IsCampActivated("camp.forest.b"));
         }
 
         [Test]
         public void Missions_LifecycleAndSingleReward_QA1()
         {
+            // Uses a local instance (public constructor since KI-023) instead of the shared
+            // MissionService.Global, so the test no longer depends on fixture execution order.
             var economy = new EconomyService();
-            MissionService.Global.Restore(null, new[] { ("Q01", MissionState.Active, new[] { 1, 1, 0 }) });
-            MissionService.Global.ReportObjective("Q01", 2);
-            Assert.AreEqual(MissionState.ReadyToTurnIn, MissionService.Global.StateOf("Q01"));
+            var missions = new MissionService();
+            missions.Restore(null, new[] { ("Q01", MissionState.Active, new[] { 1, 1, 0 }) });
+            missions.ReportObjective("Q01", 2);
+            Assert.AreEqual(MissionState.ReadyToTurnIn, missions.StateOf("Q01"));
 
             var ledger = new ClaimedRewardLedger();
-            Assert.IsTrue(MissionService.Global.TryTurnIn("Q01", new ContentId("garage.home"), economy, ledger).Success);
+            Assert.IsTrue(missions.TryTurnIn("Q01", new ContentId("garage.home"), economy, ledger).Success);
             Assert.AreEqual(150, economy.BankedSalvage);
-            Assert.AreEqual(MissionState.Completed, MissionService.Global.StateOf("Q01"));
-            Assert.AreEqual(MissionState.Available, MissionService.Global.StateOf("Q02"), "next mission unlocks");
+            Assert.AreEqual(MissionState.Completed, missions.StateOf("Q01"));
+            Assert.AreEqual(MissionState.Available, missions.StateOf("Q02"), "next mission unlocks");
+            Assert.IsFalse(missions.TryTurnIn("Q01", new ContentId("garage.home"), economy, ledger).Success,
+                "a completed mission cannot be turned in again");
+            Assert.AreEqual(150, economy.BankedSalvage, "reward paid exactly once");
         }
 
         [Test]

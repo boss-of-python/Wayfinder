@@ -48,6 +48,10 @@ namespace Wayfinder.Progression
     /// </summary>
     public sealed class MissionService
     {
+        /// <summary>
+        /// Legacy process-wide instance kept for older call sites/tests. Campaign code creates one
+        /// <see cref="MissionService"/> per save slot (KI-023) — never use this from gameplay.
+        /// </summary>
         public static readonly MissionService Global = new MissionService();
 
         readonly Dictionary<string, MissionDefinition> _definitions =
@@ -58,7 +62,7 @@ namespace Wayfinder.Progression
             new Dictionary<string, int[]>(StringComparer.Ordinal);
         readonly HashSet<string> _completedCodes = new HashSet<string>(StringComparer.Ordinal);
 
-        MissionService()
+        public MissionService()
         {
             // Q01–Q20 (§9.2) — stable IDs, rewards, and prerequisites. Objectives use typed vocabulary.
             Define("Q01", "First Tracks", 150, new[]
@@ -225,15 +229,142 @@ namespace Wayfinder.Progression
             }
         }
 
-        public CommandResult Accept(string code)
+        public CommandResult Accept(string code) => Accept(code, null);
+
+        /// <summary>
+        /// Accepts an Available mission. <paramref name="currentWorldProgress"/> lets the caller
+        /// pre-satisfy objectives that are already true in the persistent world (landmark already
+        /// discovered, camp already established, relay already active…) so accepting late can never
+        /// dead-lock a one-time objective. Returns the progress applied, capped at each Count.
+        /// </summary>
+        public CommandResult Accept(string code, Func<MissionObjective, int> currentWorldProgress)
         {
-            if (!_definitions.TryGetValue(code, out var def))
+            if (string.IsNullOrEmpty(code) || !_definitions.TryGetValue(code, out var def))
                 return CommandResult.Fail(FailureReason.InvalidTarget, "unknown mission");
             if (_states[code] != MissionState.Available)
                 return CommandResult.Fail(FailureReason.MissionLocked, _states[code].ToString());
             _states[code] = MissionState.Active;
-            _objectiveCounters[code] = new int[def.Objectives.Count];
+            var counters = new int[def.Objectives.Count];
+            if (currentWorldProgress != null)
+                for (int i = 0; i < counters.Length; i++)
+                    counters[i] = Math.Max(0, Math.Min(def.Objectives[i].Count, currentWorldProgress(def.Objectives[i])));
+            _objectiveCounters[code] = counters;
+            UpdateReadiness(code);
             return CommandResult.Ok();
+        }
+
+        /// <summary>
+        /// Routes a typed world event to every Active mission objective with the same condition type
+        /// and target (e.g. DiscoverLandmark/landmark.forest.01). Counters are capped at Count, so
+        /// replayed events are harmless. Returns the number of objectives that advanced.
+        /// </summary>
+        public int ReportCondition(MissionConditionType type, string targetId, int amount = 1)
+        {
+            if (amount <= 0 || string.IsNullOrEmpty(targetId)) return 0;
+            int advanced = 0;
+            foreach (var code in ActiveCodesSnapshot())
+            {
+                var def = _definitions[code];
+                var counters = _objectiveCounters[code];
+                for (int i = 0; i < def.Objectives.Count; i++)
+                {
+                    var objective = def.Objectives[i];
+                    if (objective.Type != type || objective.TargetId.Value != targetId) continue;
+                    if (counters[i] >= objective.Count) continue;
+                    counters[i] = Math.Min(objective.Count, counters[i] + amount);
+                    advanced++;
+                }
+                UpdateReadiness(code);
+            }
+            return advanced;
+        }
+
+        /// <summary>
+        /// Monotonic absolute progress (e.g. RevealMapPercent = current coverage %). Never lowers a counter.
+        /// </summary>
+        public int SetConditionProgress(MissionConditionType type, string targetId, int value)
+        {
+            int advanced = 0;
+            foreach (var code in ActiveCodesSnapshot())
+            {
+                var def = _definitions[code];
+                var counters = _objectiveCounters[code];
+                for (int i = 0; i < def.Objectives.Count; i++)
+                {
+                    var objective = def.Objectives[i];
+                    if (objective.Type != type || objective.TargetId.Value != targetId) continue;
+                    int next = Math.Min(objective.Count, Math.Max(counters[i], value));
+                    if (next == counters[i]) continue;
+                    counters[i] = next;
+                    advanced++;
+                }
+                UpdateReadiness(code);
+            }
+            return advanced;
+        }
+
+        /// <summary>
+        /// Ordered checkpoint routes (TraverseCheckpoints): checkpoint <paramref name="checkpointIndex"/>
+        /// counts only when it is the next one, so re-driving an earlier gate (even after a reload)
+        /// can never inflate the counter. Returns the number of objectives that advanced.
+        /// </summary>
+        public int ReportCheckpoint(string routeId, int checkpointIndex)
+        {
+            int advanced = 0;
+            foreach (var code in ActiveCodesSnapshot())
+            {
+                var def = _definitions[code];
+                var counters = _objectiveCounters[code];
+                for (int i = 0; i < def.Objectives.Count; i++)
+                {
+                    var objective = def.Objectives[i];
+                    if (objective.Type != MissionConditionType.TraverseCheckpoints || objective.TargetId.Value != routeId) continue;
+                    if (counters[i] >= objective.Count || counters[i] != checkpointIndex) continue;
+                    counters[i]++;
+                    advanced++;
+                }
+                UpdateReadiness(code);
+            }
+            return advanced;
+        }
+
+        List<string> ActiveCodesSnapshot()
+        {
+            var codes = new List<string>();
+            foreach (var kv in _states)
+                if (kv.Value == MissionState.Active && _objectiveCounters.ContainsKey(kv.Key)) codes.Add(kv.Key);
+            codes.Sort(StringComparer.Ordinal);
+            return codes;
+        }
+
+        void UpdateReadiness(string code)
+        {
+            if (_states[code] != MissionState.Active) return;
+            var def = _definitions[code];
+            var counters = _objectiveCounters[code];
+            for (int i = 0; i < counters.Length; i++)
+                if (counters[i] < def.Objectives[i].Count) return;
+            _states[code] = MissionState.ReadyToTurnIn;
+        }
+
+        /// <summary>Mission codes currently in <paramref name="state"/>, in code order (deterministic UI/save order).</summary>
+        public List<string> CodesInState(MissionState state)
+        {
+            var codes = new List<string>();
+            foreach (var kv in _states)
+                if (kv.Value == state) codes.Add(kv.Key);
+            codes.Sort(StringComparer.Ordinal);
+            return codes;
+        }
+
+        public IEnumerable<string> CompletedCodes
+        {
+            get
+            {
+                var codes = new List<string>(_completedCodes);
+                codes.Sort(StringComparer.Ordinal);
+                return codes;
+            }
         }
 
         /// <summary>
@@ -251,11 +382,7 @@ namespace Wayfinder.Progression
 
             var objective = _definitions[code].Objectives[objectiveIndex];
             counters[objectiveIndex] = Math.Min(objective.Count, counters[objectiveIndex] + 1);
-
-            bool allDone = true;
-            for (int i = 0; i < counters.Length; i++)
-                if (counters[i] < _definitions[code].Objectives[i].Count) { allDone = false; break; }
-            if (allDone) _states[code] = MissionState.ReadyToTurnIn;
+            UpdateReadiness(code);
             return CommandResult.Ok();
         }
 
@@ -277,29 +404,59 @@ namespace Wayfinder.Progression
                 RefreshAvailability();
                 return CommandResult.Ok();
             }
-            // Already claimed previously (replay) — state converges without paying again.
+            // Already claimed previously (replay) — state converges without paying again, and the
+            // successor still unlocks (the previous version left it Locked, KI-018).
             _states[code] = MissionState.Completed;
             _completedCodes.Add(code);
+            RefreshAvailability();
             return CommandResult.Fail(FailureReason.AlreadyApplied);
         }
 
         public int[] ObjectiveCounters(string code) =>
             _objectiveCounters.TryGetValue(code, out var c) ? c : Array.Empty<int>();
 
+        /// <summary>
+        /// Restores mission progress. Completed codes are restored as Completed — the previous
+        /// version reset them to Locked and RefreshAvailability then re-opened them as Available
+        /// (mission regression after every load, KI-018). Unknown codes are ignored and counter
+        /// arrays are normalised to the current objective count so content edits cannot crash
+        /// ReportObjective.
+        /// </summary>
         public void Restore(IEnumerable<string> completedCodes,
             IEnumerable<(string code, MissionState state, int[] counters)> active)
         {
             _completedCodes.Clear();
             _states.Clear();
             _objectiveCounters.Clear();
-            if (completedCodes != null)
-                foreach (var c in completedCodes) _completedCodes.Add(c);
             foreach (var kv in _definitions) _states[kv.Key] = MissionState.Locked;
+            if (completedCodes != null)
+                foreach (var c in completedCodes)
+                {
+                    if (string.IsNullOrEmpty(c) || !_definitions.ContainsKey(c)) continue;
+                    _completedCodes.Add(c);
+                    _states[c] = MissionState.Completed;
+                }
             if (active != null)
                 foreach (var (code, state, counters) in active)
                 {
-                    _states[code] = state;
-                    _objectiveCounters[code] = counters ?? Array.Empty<int>();
+                    if (string.IsNullOrEmpty(code) || !_definitions.TryGetValue(code, out var def)) continue;
+                    if (_completedCodes.Contains(code)) continue; // completion never regresses
+                    if (state == MissionState.Completed)
+                    {
+                        _completedCodes.Add(code);
+                        _states[code] = MissionState.Completed;
+                        continue;
+                    }
+                    if (state == MissionState.Locked || state == MissionState.Available) continue; // derived below
+                    var normalized = new int[def.Objectives.Count];
+                    if (counters != null)
+                        for (int i = 0; i < normalized.Length && i < counters.Length; i++)
+                            normalized[i] = Math.Max(0, Math.Min(def.Objectives[i].Count, counters[i]));
+                    // Accepted/Active/ReadyToTurnIn resume as Active; ReadyToTurnIn is then re-derived
+                    // from the counters, so a record can only be turn-in-ready if it really is complete.
+                    _states[code] = MissionState.Active;
+                    _objectiveCounters[code] = normalized;
+                    UpdateReadiness(code);
                 }
             RefreshAvailability();
         }
