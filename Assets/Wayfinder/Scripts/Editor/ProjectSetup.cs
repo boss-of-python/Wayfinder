@@ -40,6 +40,9 @@ namespace Wayfinder.Editor
 
             // Preserve the authored input file as the single source; build a loadable TextAsset copy.
             Directory.CreateDirectory(Path.GetDirectoryName(ControlsOutputPath));
+            // The Resources folder is generated, so Unity does not know about it yet; import it
+            // before importing files into it, otherwise ImportAsset has no folder to attach to.
+            AssetDatabase.Refresh();
             File.Copy("Assets/Wayfinder/Content/Input/WayfinderControls.inputactions", ControlsOutputPath, true);
             AssetDatabase.ImportAsset(ControlsOutputPath, ImportAssetOptions.ForceSynchronousImport);
             CopyCampaignContent();
@@ -63,6 +66,8 @@ namespace Wayfinder.Editor
         public static void CopyCampaignContent()
         {
             Directory.CreateDirectory(CampaignContentResourcesDir);
+            // Generated folder: register it with the AssetDatabase before importing into it.
+            AssetDatabase.Refresh();
             foreach (var name in Wayfinder.Campaign.CampaignContent.RequiredFiles)
             {
                 string destination = CampaignContentResourcesDir + "/" + name;
