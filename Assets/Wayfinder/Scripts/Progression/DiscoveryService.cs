@@ -66,18 +66,30 @@ namespace Wayfinder.Progression
         {
             float radius = fromVista ? WorldConstants.VistaRevealRadiusMeters : WorldConstants.DriveRevealRadiusMeters;
             int before = RevealedCountableCells;
+            Func<int, int, bool> eligible = (x, z) =>
+                CountableMask.Get(x, z) && (lineOfSightFilter == null || lineOfSightFilter(x, z));
 
-            RevealedCells.RevealCircle(worldX, worldZ, radius, WorldConstants.MapCellSizeMeters,
-                (x, z) => CountableMask.Get(x, z) && (lineOfSightFilter == null || lineOfSightFilter(x, z)));
+            RevealedCells.RevealCircle(worldX, worldZ, radius, WorldConstants.MapCellSizeMeters, eligible);
 
+            // Surveyed detail obeys the same occlusion as the reveal (§8.1 "also respecting large
+            // terrain occlusion"); previously it ignored the filter, so a cell hidden behind a ridge
+            // could be "surveyed" without being revealed.
             if (fromVista)
-                SurveyedCells.RevealCircle(worldX, worldZ, radius, WorldConstants.MapCellSizeMeters,
-                    (x, z) => CountableMask.Get(x, z));
+                SurveyedCells.RevealCircle(worldX, worldZ, radius, WorldConstants.MapCellSizeMeters, eligible);
 
             int newly = RevealedCountableCells - before;
             PayMappingThresholds();
             return newly;
         }
+
+        /// <summary>
+        /// <see cref="RevealAround"/> with the §8.1 terrain line-of-sight filter built from a height
+        /// sampler (metres; NaN = unknown, never occludes). A null sampler reveals the full radius.
+        /// </summary>
+        public int RevealVisibleAround(float worldX, float worldZ, bool fromVista, Func<float, float, float> terrainHeight) =>
+            RevealAround(worldX, worldZ, fromVista,
+                TerrainLineOfSight.CellFilter(terrainHeight, worldX, worldZ, WorldConstants.MapCellSizeMeters,
+                    fromVista ? TerrainLineOfSight.VistaEyeHeightMeters : TerrainLineOfSight.EyeHeightMeters));
 
         /// <summary>
         /// Every 50 newly revealed countable cells grants 50 Salvage ONCE (§8.4).

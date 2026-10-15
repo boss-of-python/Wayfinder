@@ -128,6 +128,59 @@ namespace Wayfinder.Core
             return g;
         }
 
+        /// <summary>Overwrites every bit with <paramref name="source"/> (same dimensions). Allocation-free.</summary>
+        public void CopyFrom(BitGrid source)
+        {
+            if (source == null) throw new ArgumentNullException(nameof(source));
+            if (source.Width != Width || source.Height != Height)
+                throw new ArgumentException("Grid dimensions must match.");
+            Array.Copy(source._words, _words, _words.Length);
+        }
+
+        /// <summary>
+        /// Appends the row-major index (z * Width + x) of every cell whose bit differs from
+        /// <paramref name="other"/> — set here and clear there, or the reverse — and returns how
+        /// many were appended. Compares 64 cells per step, so an unchanged 96 × 96 map costs 144
+        /// word comparisons; the map view uses this to redraw only cells that changed (§8.1).
+        /// </summary>
+        public int CollectDifferences(BitGrid other, List<int> cellIndices)
+        {
+            if (other == null) throw new ArgumentNullException(nameof(other));
+            if (cellIndices == null) throw new ArgumentNullException(nameof(cellIndices));
+            if (other.Width != Width || other.Height != Height)
+                throw new ArgumentException("Grid dimensions must match.");
+            int added = 0;
+            int cells = CellCount;
+            for (int w = 0; w < _words.Length; w++)
+            {
+                ulong diff = _words[w] ^ other._words[w];
+                while (diff != 0)
+                {
+                    int bit = TrailingZeroCount(diff);
+                    int index = (w << 6) + bit;
+                    if (index < cells)
+                    {
+                        cellIndices.Add(index);
+                        added++;
+                    }
+                    diff &= diff - 1;
+                }
+            }
+            return added;
+        }
+
+        static int TrailingZeroCount(ulong v)
+        {
+            // .NET Standard 2.1 has no BitOperations; a de Bruijn-free loop is fine at ≤ 64 steps.
+            int n = 0;
+            while ((v & 1ul) == 0)
+            {
+                v >>= 1;
+                n++;
+            }
+            return n;
+        }
+
         int Index(int x, int z)
         {
             if (x < 0 || x >= Width || z < 0 || z >= Height)

@@ -30,6 +30,32 @@ garage arrival pad (< 1 m/s for 2 s) to bank and see the summary. **Pause → Sa
 to the title; **Continue** resumes. Saves live in `Application.persistentDataPath/saves/slot-N/`.
 `Tools → Wayfinder → Refresh Campaign Content` re-copies the JSON after content edits.
 
+## Exploration map (Batch D, 15 Oct 2026)
+
+**VERIFIED (headless, no Unity):** `python3 Tools/Build/headless_cs.py all` → **130/130** EditMode
+tests, including 21 map tests. To regenerate the map evidence PNGs:
+
+```bash
+WAYFINDER_MAP_SNAPSHOT_DIR=/tmp/map python3 Tools/Build/headless_cs.py test   # after `compile`
+python3 Tools/Validation/rgba_to_png.py /tmp/map                               # raw RGBA → PNG (stdlib only)
+```
+
+**UNVERIFIED (needs Unity) — map controls in the VerticalSlice:**
+
+| Action | Touch | Desktop / controller |
+|---|---|---|
+| Open the full map (pauses the drive) | Tap the minimap (HUD right edge) | **M** / gamepad **Select**; garage: **Map (M)** button |
+| Close | **Close (M)** button | **M** or **Esc** / gamepad Select or East |
+| Pan / zoom | Drag; pinch | Arrow keys; mouse wheel or **+ / −** |
+| Select a marker (details, distance, bearing) | Tap | Click |
+| Place a custom marker (max 10) | Long-press 0.6 s → **Place** | **Mark centre** button → **Place** |
+| Route to a marker (dashed straight-line estimate) / clear | Select it → **Route here** / **Clear route** | same |
+| Recentre on the vehicle | **Center on car** | **C** |
+| Filter layers | **Hubs / Sites / Tasks / Marks** toggles | same |
+
+The sheet covers the 1,024 m slice area at 2 m per pixel. Fog means "not explored yet"; contour lines
+mean "surveyed from a vista". Unopened caches never appear on the map (§7.6).
+
 ## Latest setup/build workflow (15 Oct 2026)
 
 Read **[UNITY_HANDOFF.md](UNITY_HANDOFF.md)** for the current source implementation,

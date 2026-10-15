@@ -84,7 +84,10 @@ namespace Wayfinder.Campaign
                 discoveredLandmarkIds = Sorted(s.Discovery.DiscoveredLandmarkIds),
                 collectedCacheIds = Sorted(s.Discovery.CollectedCacheIds),
                 relicIds = Sorted(s.Discovery.RelicIds),
-                mappingRewardsPaidThroughCount = s.Discovery.MappingRewardsPaidThroughCount
+                mappingRewardsPaidThroughCount = s.Discovery.MappingRewardsPaidThroughCount,
+                customMarkers = MarkerDtos(s.MapMarkers),
+                nextCustomMarkerIndex = s.MapMarkers.NextIndex,
+                routeTargetMarkerId = s.MapMarkers.RouteTargetId
             };
 
             var e = s.Expedition;
@@ -151,6 +154,7 @@ namespace Wayfinder.Campaign
             s.Discovery.Restore(world.revealedCellsBase64, world.surveyedCellsBase64, world.countableMaskBase64,
                 world.discoveredLandmarkIds, world.collectedCacheIds, relics, world.mappingRewardsPaidThroughCount);
             s.Discovery.RewardLedger.Restore(p.claimedRewardKeys);
+            s.MapMarkers.Restore(FromMarkerDtos(world.customMarkers), world.nextCustomMarkerIndex, world.routeTargetMarkerId);
             s.Transactions.Restore(p.appliedTransactionIds);
 
             var acceptedContracts = new List<string>();
@@ -214,6 +218,24 @@ namespace Wayfinder.Campaign
         }
 
         static int Clamp100(int v) => v < 0 ? 0 : (v > 100 ? 100 : v);
+
+        /// <summary>Markers keep placement order (the order the player sees in lists), not sorted order.</summary>
+        static List<MapMarkerDto> MarkerDtos(MapMarkerService markers)
+        {
+            var list = new List<MapMarkerDto>(markers.Count);
+            foreach (var m in markers.Markers)
+                list.Add(new MapMarkerDto { id = m.Id, x = m.X, z = m.Z, label = m.Label });
+            return list;
+        }
+
+        static List<CustomMapMarker> FromMarkerDtos(List<MapMarkerDto> dtos)
+        {
+            var list = new List<CustomMapMarker>();
+            if (dtos == null) return list;
+            foreach (var d in dtos)
+                if (d != null) list.Add(new CustomMapMarker(d.id, d.x, d.z, d.label));
+            return list;
+        }
 
         static string StripMissionPrefix(string id) =>
             id != null && id.StartsWith(MissionPrefix, StringComparison.Ordinal) ? id.Substring(MissionPrefix.Length) : id ?? string.Empty;

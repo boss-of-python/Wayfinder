@@ -33,6 +33,9 @@ Statuses: Open / Mitigated / Resolved.
 | KI-026 | Minor | Campaign Unity glue is syntax-checked only | `CampaignHost`, the slot UI in `TitleFlowHost`, `VerticalSliceDriver`, `SceneBuilder.BuildVerticalSlice`, `ProjectSetup.CopyCampaignContent`, 2 new PlayMode tests and 2 new editor tests have never been compiled or run by Unity. A scratch type-check against hand-written UnityEngine stubs passed and caught one real ambiguity (`UnityEngine.Pose`, fixed with an alias), but stubs cannot detect real API drift | M2 scene flow | Open — first editor open: Setup Project → Test Runner (PlayMode) → play Title → New → VerticalSlice. |
 | KI-027 | Minor | Slice placements are compact and the slice ground is flat | Content `positionHint`s for forest landmarks/caches cluster within ~260 m of the home garage (KI-008), so most of the 1,024 m area is empty and trips are short; the greybox scene has a flat ground plane plus one hill, a ford and a mud patch — no heightfield terrain | M2 slice feel, 30-minute target | Open — M3 route validation/WorldBaker may move positions (ids stable); terrain bake needed before slice playtests. |
 | KI-028 | Minor | Storage/modules/hub travel simplified for the slice | One shared 500 kg camp store (save has a single `campStorage`), researched modules auto-installed (no §10.2 slot equipping), no camp↔garage hub-travel action in `CampaignSession` yet (`GarageService.TryHubTravel` exists), sell/repair-kit use not exposed in the slice UI | CAMP-01, UPG-01, ITEM-01 | Open — D-023; needs a schema bump for per-camp storage. |
+| KI-029 | Minor | Map terrain comes from the slice manifest, not baked data | `SliceMapTerrain` rebuilds the greybox from `vertical_slice.json` (flat ground, 8 m hill, ford, mud, arrival pad), so the map's relief and the reveal line-of-sight are only as rich as the greybox. The map sheet covers the 1,024 m slice area; cells outside it count toward mainland % but are not drawn, and outside the area heights are unknown (NaN, never occlude). Forest/meadow colour variation is not invented. | MAP-01/MAP-04 fidelity | Open — M3: implement `IMapTerrainSource` over the baked heightfield/minimap tiles and pass `fullMainland: true` to `ExplorationMap`. |
+| KI-030 | Minor | No route graph: routes and return estimates are straight-line estimates | The route line to a custom marker is a dashed straight line, and the "Return" estimate is straight-line distance × 1.3 detour × L/km (measured once ≥ 300 m has been driven, otherwise the 2.7 L/km nominal). There are no solid "known route" segments (§13.4) and no pathing around water or cliffs | MAP-04, §13.4 routes | Open — needs the M3 `RouteGraph` bake plus driven-road tracking. |
+| KI-031 | Minor | Map/minimap Unity UI is syntax-checked only | `MapTextureBinding`, `MapGlyphs`, `MinimapView`, `MapOverlayView` and the `VerticalSliceDriver` map wiring were never compiled or run by Unity. A scratch stub type-check against the real Wayfinder assemblies passed, but it cannot detect Unity API drift. Unverified: real touch pinch and long-press feel, `RectMask2D` clipping, the 1 MB texture upload cost at ≤ 4 Hz on a phone, and rich-text legend glyphs in `LegacyRuntime.ttf`. The map pause uses `Time.timeScale`/`SuppressInputs` in the driver, not a central `AppState.MapPaused` state machine. Map strings are English literals (no localization keys yet) and have no TalkBack/VoiceOver labels | MAP-04, UI-01, §19 | Open — first editor open: run `MapPlayModeTests` (2), then play: M / minimap tap → pinch, pan, long-press → place → route → close. |
 
 ## 15 October 2026 source-level update (not Unity gate closure)
 
@@ -75,3 +78,12 @@ new tests fail when each fix or safeguard is reverted. The pure campaign layer i
 **Verified (headless)**: 109/109 EditMode tests, 0 warnings, .NET Standard 2.1 profile OK.
 The Unity-facing campaign glue is **syntax-checked only** (KI-026). KI-001/002/005/006 and
 every Unity/device gate remain open; M2's gate is not passed.
+
+## 15 October 2026 — exploration map batch (Batch D)
+
+New: KI-029 (map terrain from the slice manifest), KI-030 (straight-line route/return
+estimates), KI-031 (map UI syntax-checked only). Fixed in this batch: vista *surveyed* flags
+ignored terrain occlusion (D-028). Before this batch the reveal had no line-of-sight filter at
+all in the campaign path, and it now has one; the map-reveal cadence follows §16.2 (2 Hz).
+Headless evidence: `Docs/evidence/exploration-map-2026-10-15/` (130/130 tests, 11/11 mutation
+check). The M2 gate is still **not** passed.

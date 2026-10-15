@@ -39,8 +39,8 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   no deadlocks and no arbitrage. See `Docs/EVIDENCE_M0.md`.
 - **Verified without Unity (headless C#):** the non-Unity assemblies (Core, pure Simulation
   math, World, Progression, Persistence) compile with a real Roslyn C# 9 compiler at warning level 4
-  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 109 EditMode NUnit tests
-  pass** (59 before the Batch C campaign layer) (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
+  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 130 EditMode NUnit tests
+  pass** (59 before the Batch C campaign layer, 109 before the Batch D map) (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
   write-ups in `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/UNITY_HANDOFF.md`). Running them found and fixed a save-checksum bug that
   would have blocked every save (KI-013), a water-stall re-drain (KI-014) and an inventory stack bug
   (KI-015).
@@ -49,6 +49,26 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   physics, device builds, touch play, thermal performance — the authoring environment had no
   Unity/Android/Xcode toolchain (`Docs/KNOWN_ISSUES.md` KI-001). Nothing here claims a build log,
   APK, IPA, screenshot or device measurement that does not exist.
+
+## Exploration map update (15 Oct 2026, Batch D)
+
+The slice now has an **exploration map that starts blank and fills in as you explore** (§8.1, §13.2,
+§13.4):
+- Driving reveals 64 m cells around the car twice a second; cells hidden behind major ridges stay fogged.
+- Vistas survey 384 m and add contour lines.
+- Every revealed cell is saved and survives rescue.
+- A HUD **minimap** and a full **map screen**: region % mapped against the 60 % finale gate, legend,
+  filters, tap-to-inspect, pinch/drag, up to ten long-press custom markers with a dashed route
+  estimate, *Center on car*, and a fuel-aware return estimate to the nearest safe hub.
+- Unopened caches are never shown.
+
+**Verified headlessly:** 130/130 C# tests, including 21 map tests. The tests prove a new game's sheet is
+fully fogged, an incremental redraw equals a full redraw byte-for-byte, and markers persist; an 11/11
+mutation check confirms the tests catch regressions. PNG snapshots of a scripted exploration go from 0 %
+to 68 % mapped (`Docs/evidence/exploration-map-2026-10-15/`).
+
+**Implemented, syntax-checked only:** the Unity minimap and map screen (KI-031). Map terrain still
+comes from the greybox slice (KI-029), and routes are straight-line estimates (KI-030).
 
 ## Campaign composition update (15 Oct 2026, Batch C)
 

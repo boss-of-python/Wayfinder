@@ -1,5 +1,10 @@
 # Wayfinder — Executed Evidence: headless C# compile + EditMode tests (2026-10-14)
 
+> **Update 2026-10-15 (Batch D — exploration map):** 7 assemblies / 57 files, 0 warnings,
+> **130/130** EditMode tests (21 new map tests), 29 Unity-dependent files parse-checked, 11/11 map
+> mutation check. Artifacts: `Docs/evidence/exploration-map-2026-10-15/`. Caveat found this batch:
+> `headless_cs.py test` runs the *last compiled* assemblies, so run `compile` first (or `all`).
+>
 > **Update 2026-10-15 (Batch C):** the harness now also compiles the new engine-free
 > `Wayfinder.Campaign` assembly (11 files) and profile-checks it against .NET Standard 2.1.
 > Current result: 7 assemblies / 47 files, 0 warnings, **109/109** EditMode tests, 24

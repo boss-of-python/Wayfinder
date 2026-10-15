@@ -92,12 +92,16 @@ namespace Wayfinder.Campaign
             return CommandResult.Ok();
         }
 
-        /// <summary>Map reveal (§8.1): 96 m while driving, 384 m from a vista. Returns newly revealed cells.</summary>
+        /// <summary>
+        /// Map reveal (§8.1): 96 m while driving, 384 m from a vista, filtered by terrain
+        /// line-of-sight from <see cref="MapTerrain"/> so cells behind major ridges stay fogged.
+        /// Returns newly revealed countable cells.
+        /// </summary>
         public int RevealAround(float x, float z, bool vista)
         {
             if (!Expedition.IsActive) return 0;
             int escrowBefore = Economy.EscrowedSalvage;
-            int newly = Discovery.RevealAround(x, z, vista);
+            int newly = Discovery.RevealVisibleAround(x, z, vista, HeightSampler);
             if (newly <= 0) return 0;
             Expedition.Stats.CellsRevealed += newly;
             Missions.SetConditionProgress(MissionConditionType.RevealMapPercent, "map", (int)Discovery.MapCoveragePercent);

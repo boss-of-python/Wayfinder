@@ -1,5 +1,29 @@
 # Unity implementation batch — 15 October 2026
 
+## Exploration map batch (Batch D)
+
+A fog-of-war map that **starts blank and fills in as you explore** (§8.1/§13.2/§13.4). Its rules and
+pixels are engine-free and **headless-verified (130/130 tests)**, with evidence in
+`Docs/evidence/exploration-map-2026-10-15/`. New Unity-facing files are **syntax-checked only**, plus a
+scratch stub type-check that is not Unity evidence:
+- `Presentation/MapTextureBinding.cs`: raster → `Texture2D` RGBA32, uploaded with `LoadRawTextureData`.
+- `Presentation/MapGlyphs.cs`: procedural icon sprites.
+- `Presentation/MinimapView.cs`: HUD minimap, a `RawImage.uvRect` crop; tap it to open the map.
+- `Presentation/MapOverlayView.cs`: the full map screen with pinch/drag/wheel, tap select, long-press →
+  confirm marker, route, filters, legend, return estimate.
+- `VerticalSliceDriver` wiring: minimap at the HUD's right edge, **M** / gamepad Select / minimap tap
+  opens the map, the map freezes the drive (`timeScale` 0 + input suppression), garage **Map (M)** button.
+- `Tests/PlayMode/MapPlayModeTests.cs` (2 tests; 11 PlayMode tests total).
+
+First-open checklist for this batch:
+1. Test Runner EditMode (expect 130) and PlayMode (expect 11).
+2. Play the VerticalSlice: the minimap should start parchment-blank.
+3. Drive: green terrain appears around the car within about half a second.
+4. Press M: the simulation freezes. Pinch/drag (or wheel/arrows), tap the garage, long-press → Place,
+   Route here → a dashed line appears. Close with M.
+5. Stop at Ranger Rise for 2 s: a wide area fills in.
+6. Save & quit → Continue: the same map and markers come back.
+
 ## Campaign composition batch (Batch C)
 
 New engine-free `Wayfinder.Campaign` assembly (per-slot `CampaignSession`, snapshot saves,

@@ -40,6 +40,11 @@ namespace Wayfinder.Presentation
         bool _paused, _left, _right, _gas, _brake, _interactTouch, _rescueArmed;
         string _armedResearchId = string.Empty;
         float _nextHud, _toastTimer;
+        MapPresenter _mapPresenter;
+        MinimapView _minimap;
+        MapOverlayView _mapView;
+        bool _mapPausedField;
+        int _mapClosedFrame = -1;
 
         void Start()
         {
@@ -61,6 +66,9 @@ namespace Wayfinder.Presentation
             _lifecycle.OnSuspendRequested += OnSuspend;
             _field = new SliceFieldController(_session) { LineOfSight = HasLineOfSight };
             BuildDriveUi();
+            _mapPresenter = new MapPresenter(_session);
+            _minimap = MinimapView.Create(_drivePanel, _mapPresenter, new Vector2(.80f, .44f), new Vector2(.98f, .77f));
+            _minimap.Clicked += OpenMap;
             PlaceVehicle(_session.ResumePose);
             ApplySessionToVehicle();
             if (_session.Expedition.IsActive) ShowDrive();
@@ -73,10 +81,17 @@ namespace Wayfinder.Presentation
         {
             bool pausePressed = (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) ||
                                 (Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame);
-            if (pausePressed && _session.Expedition.IsActive) SetPaused(!_paused);
+            // The open map reads its own close keys (inputs are suppressed); ignore keys in the frame it closed.
+            bool mapKey = input.MapPressed ||
+                          (Keyboard.current != null && Keyboard.current.mKey.wasPressedThisFrame) ||
+                          (Gamepad.current != null && Gamepad.current.selectButton.wasPressedThisFrame);
+            bool mapJustClosed = Time.frameCount == _mapClosedFrame;
+            if (pausePressed && _session.Expedition.IsActive && _mapView == null && !mapJustClosed) SetPaused(!_paused);
+            if (mapKey && _mapView == null && !mapJustClosed && !_paused) OpenMap();
 
-            if (_session.Expedition.IsActive && !_paused && _overlay == null)
+            if (_session.Expedition.IsActive && !_paused && _overlay == null && _mapView == null)
                 HandleFrame(_field.Update(BuildFieldInput(Time.deltaTime)));
+            _mapPresenter?.Tick(Time.unscaledDeltaTime); // 2 Hz reveals land here; budgeted redraw + upload
 
             if (_session.PendingNoticeCount > 0)
                 foreach (var notice in _session.DrainNotices()) _toasts.Enqueue(notice.Text);
@@ -99,7 +114,7 @@ namespace Wayfinder.Presentation
         void LateUpdate()
         {
             if (_session == null || vehicle == null || input == null) return;
-            if (_paused || _overlay != null || !_session.Expedition.IsActive)
+            if (_paused || _overlay != null || _mapView != null || !_session.Expedition.IsActive)
             {
                 vehicle.ZeroInputsAndHold();
                 return;
@@ -257,7 +272,40 @@ namespace Wayfinder.Presentation
             else _toasts.Enqueue(SummaryText.Describe(summary, _session));
         }
 
-        void OnSuspend() => SetPaused(true);
+        void OnSuspend()
+        {
+            if (_mapView != null) _mapView.Close();
+            SetPaused(true);
+        }
+
+        // ------------------------------------------------------------------ map (§13.2 minimap, §13.4 map screen)
+
+        /// <summary>Opens the full map. During an expedition it freezes the simulation (AppState MapPaused, §9).</summary>
+        void OpenMap()
+        {
+            if (_mapView != null || _paused || _mapPresenter == null) return;
+            _mapPausedField = _session.Expedition.IsActive && _overlay == null;
+            if (_mapPausedField)
+            {
+                _left = _right = _gas = _brake = _interactTouch = false;
+                foreach (var hold in _root.GetComponentsInChildren<TouchHoldButton>()) hold.Release();
+                input.SuppressInputs(true);
+                vehicle.ZeroInputsAndHold();
+                Time.timeScale = 0f;
+            }
+            _mapPresenter.RebuildMarkersNow();
+            _mapView = MapOverlayView.Create(_root, _mapPresenter, _session, OnMapClosed, message => _toasts.Enqueue(message));
+        }
+
+        void OnMapClosed()
+        {
+            _mapView = null;
+            _mapClosedFrame = Time.frameCount;
+            if (!_mapPausedField) return;
+            _mapPausedField = false;
+            input.SuppressInputs(false);
+            Time.timeScale = 1f;
+        }
 
         public void SetPaused(bool paused)
         {
@@ -384,6 +432,7 @@ namespace Wayfinder.Presentation
             PrototypeUi.Button(overlay, "Craft camp kit (80 + materials)", new Vector2(.52f, .10f), new Vector2(.74f, .18f))
                 .onClick.AddListener(() => Act(_session.Craft("recipe.camp_kit")));
             PrototypeUi.Button(overlay, "Depart", new Vector2(.76f, .10f), new Vector2(.98f, .18f)).onClick.AddListener(OnDepart);
+            PrototypeUi.Button(overlay, "Map (M)", new Vector2(.52f, .02f), new Vector2(.74f, .08f)).onClick.AddListener(OpenMap);
             PrototypeUi.Button(overlay, "Save & quit to title", new Vector2(.02f, .02f), new Vector2(.24f, .08f)).onClick.AddListener(GoToTitle);
         }
 
@@ -417,6 +466,7 @@ namespace Wayfinder.Presentation
         void OnDestroy()
         {
             if (_lifecycle != null) _lifecycle.OnSuspendRequested -= OnSuspend;
+            _mapPresenter?.Dispose();
             Time.timeScale = 1f;
         }
     }

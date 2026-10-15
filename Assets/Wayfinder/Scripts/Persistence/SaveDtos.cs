@@ -93,6 +93,20 @@ namespace Wayfinder.Persistence
         public List<string> collectedCacheIds = new List<string>();
         public List<string> relicIds = new List<string>();
         public int mappingRewardsPaidThroughCount;
+        /// <summary>Player map markers, at most ten (§13.4), in placement order. Additive (D-021, D-027).</summary>
+        public List<MapMarkerDto> customMarkers = new List<MapMarkerDto>();
+        /// <summary>Next marker id suffix, so a removed marker's id is never reused. Additive (D-027).</summary>
+        public int nextCustomMarkerIndex = 1;
+        /// <summary>Marker the route line points at, or empty. Additive (D-027).</summary>
+        public string routeTargetMarkerId = "";
+    }
+
+    [Serializable]
+    public sealed class MapMarkerDto
+    {
+        public string id;
+        public float x, z;
+        public string label = "";
     }
 
     [Serializable]

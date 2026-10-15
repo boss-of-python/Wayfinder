@@ -98,7 +98,8 @@ namespace Wayfinder.Campaign
     public sealed class SliceFieldController
     {
         public const float InteractionMaxSpeedKph = 15f;
-        public const float RevealIntervalSeconds = 1f;
+        /// <summary>§16.2 update frequencies: "map reveal 2 Hz" (was 1 Hz before the map batch).</summary>
+        public const float RevealIntervalSeconds = 0.5f;
         public const float RevealMinTravelMeters = 16f;
 
         readonly CampaignSession _session;
