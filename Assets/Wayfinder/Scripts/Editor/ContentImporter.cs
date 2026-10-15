@@ -182,7 +182,7 @@ namespace Wayfinder.Editor
                 {
                     foreach (var p in pre)
                     {
-                        string preId = p.Value<string>();
+                        string preId = (string)p;
                         if (!preId.StartsWith("mission."))
                             report.Error($"mission {code}: bad prerequisite id {preId}");
                     }
