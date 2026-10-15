@@ -1,0 +1,83 @@
+# Free cloud build of an installable development APK, using GameCI on GitHub's own machines.
+# Manual only: Actions tab -> "Android APK (free cloud build)" -> Run workflow.
+name: Android APK (free cloud build)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-cloud-build
+  cancel-in-progress: false
+
+env:
+  # Unity 6.3 LTS release that has a ready-made GameCI Android image.
+  UNITY_VERSION: 6000.3.26f1
+
+jobs:
+  apk:
+    name: Build Wayfinder-dev.apk
+    runs-on: ubuntu-latest # standard runner = free on public repositories
+    timeout-minutes: 180
+    steps:
+      - name: Free disk space (the Unity Android image is about 9 GB)
+        uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
+        with:
+          android: true # the Unity image brings its own Android SDK
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Pin the Unity version for this build only (nothing is committed)
+        run: python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"
+
+      - name: Reuse Unity's import cache from earlier runs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: Library
+          key: Library-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('Assets/**', 'Packages/**') }}
+          restore-keys: |
+            Library-Android-${{ env.UNITY_VERSION }}-
+
+      - name: "Unity 1 of 2: Setup Project (scenes, URP, player settings)"
+        uses: game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45 # v6.0.0
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: Android
+          buildMethod: Wayfinder.Editor.ProjectSetup.Setup
+          versioning: None
+          allowDirtyBuild: true
+
+      - name: "Unity 2 of 2: Build the development APK"
+        uses: game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45 # v6.0.0
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: Android
+          buildMethod: Wayfinder.Editor.BuildCommands.BuildAndroidDev
+          versioning: None
+          allowDirtyBuild: true
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Wayfinder-dev-APK
+          path: Builds/Android/Wayfinder-dev.apk
+          if-no-files-found: error
+          retention-days: 7
