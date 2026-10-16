@@ -396,6 +396,26 @@ esac
         self.assertIn("Could not download the log", result.stdout)
         self.assertFalse((self.root / "Logs/job.txt").exists())
 
+    def test_download_failure_reports_gh_error_without_signature(self):
+        # Run 38880573866: the job id was found but the log redirect failed, and the only notice
+        # said "could not download". The real error must reach the annotation, signature removed.
+        self.gh.write_text(self.gh.read_text().replace(
+            '*"/actions/jobs/4242/logs"*) cat "$GH_JOB_LOG" ;;',
+            '*"/actions/jobs/4242/logs"*) echo \'Get "https://blob.example/job-logs.txt?sig=SECRET&se=1": EOF\' >&2; exit 1 ;;'))
+        result = self.fetch(attempts="3")
+        self.assertEqual(1, result.returncode)
+        self.assertIn("after 3 attempts", result.stdout)
+        self.assertIn("EOF", result.stdout)
+        self.assertIn("?<redacted>", result.stdout)
+        self.assertNotIn("SECRET", result.stdout)
+        self.assertFalse((self.root / "Logs/job.txt").exists())
+        self.assertEqual(3, self.calls.read_text().count("/actions/jobs/4242/logs"))
+
+    def test_workflow_gives_the_log_a_longer_retry_window(self):
+        diagnose = WORKFLOW.read_text()
+        self.assertIn("fetch_job_log.sh \"Build Wayfinder-dev.apk\" Logs/unity-job-log.txt 12 10",
+                      diagnose)
+
     def test_missing_run_context_is_reported_not_crashed(self):
         env = {k: v for k, v in self.env.items() if k != "GITHUB_RUN_ID"}
         result = self.fetch(env=env)
