@@ -154,6 +154,12 @@ class ReportUnityFailureTests(unittest.TestCase):
         result = run(REPORT, self.root, self.env, logs=[log])
         self.assertIn("::error file=Library/PackageCache/com.unity.inputsystem", result.stdout)
 
+    def test_gameci_custom_editor_log_path_is_scanned(self):
+        self.write_log(REAL_ERROR + "\n", relative="Logs/Unity-Setup.log")
+        result = run(REPORT, self.root, self.env)
+        self.assertIn("::error file=Library/PackageCache/com.unity.inputsystem", result.stdout)
+        self.assertIn("Logs/Unity-Setup.log", self.summary.read_text())
+
     def test_overlapping_globs_list_each_log_once(self):
         # Builds/Logs/Editor.log matches both the explicit path and Builds/Logs/*.log.
         self.write_log(REAL_ERROR + "\n")
@@ -231,6 +237,12 @@ class CloudBuildWorkflowTests(unittest.TestCase):
     def setUp(self):
         self.text = WORKFLOW.read_text()
 
+    def test_only_one_cloud_build_workflow_can_be_dispatched(self):
+        workflows = sorted((TOOLS.parent.parent / ".github/workflows").glob("android-cloud-build*.yml"))
+        self.assertEqual([WORKFLOW], workflows,
+                         "duplicate manual workflows with the same display name make it easy to "
+                         "dispatch a stale build without diagnostics")
+
     def step_block(self, name):
         """The YAML for exactly one step: from its name up to (not including) the next step."""
         start = self.text.index(f"- name: {name}")
@@ -267,6 +279,21 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         self.assertIn("UNITY_VERSION: 6000.3.26f1", self.text)
         self.assertIn("buildMethod: Wayfinder.Editor.ProjectSetup.Setup", self.text)
         self.assertIn("buildMethod: Wayfinder.Editor.BuildCommands.BuildAndroidDev", self.text)
+
+    def test_cold_cache_and_unity_log_directories_are_prepared_before_cache(self):
+        prepare = self.text.index("- name: Prepare Unity cache and diagnostic log folders")
+        cache = self.text.index("- name: Reuse Unity's import cache from earlier runs")
+        self.assertLess(prepare, cache)
+        self.assertIn("mkdir -p Library Logs Builds/Logs", self.text[prepare:cache])
+        self.assertIn("hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**')", self.text)
+
+    def test_each_unity_step_writes_its_full_log_for_diagnostics_and_artifact_upload(self):
+        setup = self.step_block('"Unity 1 of 2: Setup Project (scenes, URP, player settings)"')
+        build = self.step_block('"Unity 2 of 2: Build the development APK"')
+        self.assertIn('customParameters: "-logFile /github/workspace/Logs/Unity-Setup.log"', setup)
+        self.assertIn('customParameters: "-logFile /github/workspace/Logs/Unity-Android-Dev.log"', build)
+        artifact = self.step_block("Upload Unity logs and the resolved package lock (for offline diagnosis)")
+        self.assertIn("Logs/", artifact)
 
     def test_action_pins_are_unchanged(self):
         for pin in ["jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",

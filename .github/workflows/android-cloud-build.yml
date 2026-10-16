@@ -53,11 +53,16 @@ jobs:
       - name: Pin the Unity version for this build only (nothing is committed)
         run: python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"
 
+      # GameCI writes the Editor log in the mounted workspace when -logFile is supplied below.
+      # Pre-create Library so a cold cache is a normal empty cache, not a missing-path warning.
+      - name: Prepare Unity cache and diagnostic log folders
+        run: mkdir -p Library Logs Builds/Logs
+
       - name: Reuse Unity's import cache from earlier runs
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: Library
-          key: Library-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('Assets/**', 'Packages/**') }}
+          key: Library-Android-${{ env.UNITY_VERSION }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
             Library-Android-${{ env.UNITY_VERSION }}-
 
@@ -71,7 +76,8 @@ jobs:
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
           buildMethod: Wayfinder.Editor.ProjectSetup.Setup
-          versioning: None
+          versioning: 'None'
+          customParameters: "-logFile /github/workspace/Logs/Unity-Setup.log"
           allowDirtyBuild: true
 
       - name: "Unity 2 of 2: Build the development APK"
@@ -84,7 +90,8 @@ jobs:
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
           buildMethod: Wayfinder.Editor.BuildCommands.BuildAndroidDev
-          versioning: None
+          versioning: 'None'
+          customParameters: "-logFile /github/workspace/Logs/Unity-Android-Dev.log"
           allowDirtyBuild: true
 
       # Unity's own exit code is famously undescriptive ("Build failed with exit code 1").
