@@ -1,0 +1,71 @@
+== validate_content.py
+vertical slice: income without mapping 3436 vs spend 3130 (margin 306); materials {'polymer': 4, 'scrap_metal': 4, 'electronics': 2}
+validate_content: 0 error(s), 0 warning(s)
+CONTENT VALIDATION PASSED
+EXIT=0
+== formula_checks.py
+== Wayfinder formula checks ==
+[ok  ] fuel: blueprint example rate = 0.02255 L/s — got 0.02255
+[ok  ] fuel: 24 L ≈ 17.7 min at example rate — got 17.74 min
+[ok  ] fuel: engine off consumes zero
+[ok  ] fuel: drain bounded ≤ 0.047 L/s — got 0.047
+[ok  ] damage: impacts < 3 m/s ignored
+[ok  ] damage: D(5) = 5.6 — got 5.6
+[ok  ] damage: D(10) clamps to 35
+[ok  ] damage: D(3) = 0
+[ok  ] research: 20 tiers
+[ok  ] research: Σ incremental cost = 32,200 — got 32200
+[ok  ] steering: limit @0 km/h = 34° — got 34.0
+[ok  ] steering: limit @20 km/h = 26° — got 26.0
+[ok  ] steering: limit @40 km/h = 16° — got 16.0
+[ok  ] steering: limit @70 km/h = 10° — got 10.0
+[ok  ] slip: matched rolling = 0
+[ok  ] slip: locked wheel at 10 m/s = -1 — got -1.0
+[ok  ] rescue: 25% floor of 37 units = 9
+[ok  ] rescue: zero units → zero loss
+[ok  ] rescue: only salvage_bundle is ever lost (rule invariants)
+[ok  ] water: baseline wading 0.55 m
+[ok  ] water: upgraded wading 0.85 m
+[ok  ] water: stall after 2 s above intake
+[ok  ] water: main routes impassable > 1.2 m
+[ok  ] world: 24 chunks × 256 m = 6144 m
+[ok  ] map: 96 cells × 64 m = 6144 m
+[ok  ] terrain: 129 samples × 2 m spacing = 256 m chunk
+[ok  ] map: 96×96 = 9216 cells
+[ok  ] hash: deterministic
+[ok  ] hash: distinct inputs differ
+[ok  ] hash: chunkSeed deterministic
+[ok  ] hash: layerId changes seed
+[ok  ] seam: adjacent chunk borders agree ≤ 1 mm — worst diff 0.0
+[ok  ] seam: quantization grid is 1 mm
+[ok  ] heightfield: deterministic
+[ok  ] heightfield: within −20..520 m band (± detail) — got 238.23
+[ok  ] heightfield: non-degenerate relief (spread > 50 m) — spread 184.1 m, range 172.4..356.4
+
+0 failure(s)
+FORMULA CHECKS PASSED
+EXIT=0
+== economy_sim.py
+== Wayfinder economy simulation (§11.5) ==
+Total research cost: 32200 Salvage
+
+--- pattern: conservative ---
+  tiers by 1 h: 3 (target ≥ 3) | by 5 h: 8 (target ≥ 5) | by 12 h: 13 (target ≥ 10)
+  full tree after 34.8 h, bank 24
+
+--- pattern: typical ---
+  tiers by 1 h: 4 (target ≥ 3) | by 5 h: 9 (target ≥ 5) | by 12 h: 15 (target ≥ 10)
+  full tree after 22.0 h, bank 113
+
+--- pattern: thorough ---
+  tiers by 1 h: 4 (target ≥ 3) | by 5 h: 10 (target ≥ 5) | by 12 h: 16 (target ≥ 10)
+  full tree after 16.0 h, bank 2
+
+deadlock scan: OK (free garage services + no-cost repeatable jobs + Salvage-only research)
+arbitrage scan: OK (no recipe creates currency)
+
+NOTE: this is a model (KI-010). It cannot certify fun or playtime.
+ECONOMY SIMULATION COMPLETED WITH NO DEADLOCKS
+EXIT=0
+== git diff --check
+EXIT=0

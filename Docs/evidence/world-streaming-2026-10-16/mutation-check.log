@@ -1,0 +1,19 @@
+[baseline] total=164 failed=0
+[CAUGHT] KI-017 defect: integer division truncates the scatter cell (old behaviour) -> 2 failing test(s), e.g. CellGrid_TilesEachChunkExactly_AndCellIsNeverSmallerThanSpacing
+[CAUGHT] Spacing rule disabled: eligible neighbours never block (§7.6) -> 2 failing test(s), e.g. MinimumSpacing_HoldsAcrossChunkBorders_ForAllSpeciesBands
+[CAUGHT] Road corridor + 1 m shoulder ignored (§7.6) -> 1 failing test(s), e.g. Exclusions_RoadCorridorShoulderSlopeReservedAndDensityAreRespected
+[CAUGHT] Reserved POI/camp footprints ignored (§7.6) -> 1 failing test(s), e.g. Exclusions_RoadCorridorShoulderSlopeReservedAndDensityAreRespected
+[CAUGHT] Steep slopes ignored (§7.6) -> 1 failing test(s), e.g. Exclusions_RoadCorridorShoulderSlopeReservedAndDensityAreRespected
+[CAUGHT] Candidates share one seed per chunk (no per-candidate index, §7.3) -> 1 failing test(s), e.g. ZeroDensity_ProducesNothing_AndDenseLayerFillsMostOfTheChunk
+[CAUGHT] Activation hysteresis removed: retain band = enter band -> 1 failing test(s), e.g. Hysteresis_BoundaryOscillation_DoesNotDeactivateOrReload
+[CAUGHT] Dormant chunks release their data (handle leak-free but re-IO on re-entry) -> 1 failing test(s), e.g. Dormant_ChunkReenteringTheRing_ReactivatesWithoutReloadingData
+[CAUGHT] Pinned chunks ignored (recovery destination / stopping corridor, §18.3) -> 1 failing test(s), e.g. Pinned_Chunk_IsNeverUnloaded_EvenFarAway
+[CAUGHT] Activation budget ignored (§18.3 per-frame activation budget) -> 1 failing test(s), e.g. ActivationBudget_LimitsInstantiationPerStep
+[CAUGHT] Handle ledger ignores Deactivating (leak accounting) -> 4 failing test(s), e.g. Dormant_ChunkReenteringTheRing_ReactivatesWithoutReloadingData
+[CAUGHT] Cancelled load keeps its handle (QA 12 leak) -> 5 failing test(s), e.g. Cancel_ReleasesHandle_AndLateDataIsRejected
+[CAUGHT] Late data accepted for a cancelled chunk -> 1 failing test(s), e.g. Cancel_ReleasesHandle_AndLateDataIsRejected
+[CAUGHT] Failed loads retry without limit -> 1 failing test(s), e.g. FailedLoad_RetriesThenRecordsStreamingDefect_WithoutLeaking
+[CAUGHT] Loading hold never raised -> 3 failing test(s), e.g. FailedLoad_RetriesThenRecordsStreamingDefect_WithoutLeaking
+[restored] failed=0
+SUMMARY mutations=15 ok=True
+EXIT=0
