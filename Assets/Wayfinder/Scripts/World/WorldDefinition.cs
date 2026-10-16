@@ -229,7 +229,9 @@ namespace Wayfinder.World
     /// <summary>
     /// Chunk streaming state machine (§18.3):
     /// Unloaded → Requested → DataReady → Activating → Active → Deactivating → Unloaded,
-    /// with Failed and cancellation. Pure state logic; WorldStreamer drives it.
+    /// with Failed and cancellation. Hysteresis extension (D-034): Deactivating → DataReady keeps a
+    /// chunk's data while it is outside the active ring but inside the unload radius.
+    /// Pure state logic; ChunkStreamPlanner drives it.
     /// </summary>
     public enum ChunkState
     {
@@ -278,7 +280,8 @@ namespace Wayfinder.World
                 case ChunkState.Active:
                     return to == ChunkState.Deactivating || to == ChunkState.Failed;
                 case ChunkState.Deactivating:
-                    return to == ChunkState.Unloaded || to == ChunkState.Failed;
+                    // DataReady = hysteresis retention (§18.3): objects removed, data kept so re-entry costs no IO.
+                    return to == ChunkState.Unloaded || to == ChunkState.DataReady || to == ChunkState.Failed;
                 case ChunkState.Failed:
                     return to == ChunkState.Unloaded; // retry from scratch
                 default:

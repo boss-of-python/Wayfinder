@@ -193,3 +193,16 @@ Both values come from a real editor banner in run 38754979851 (`Unity Editor ver
 - The `Unity-logs` artifact also carries `Packages/packages-lock.json`, so a successful run yields the exact resolved package set to commit.
 **Rationale:** Annotations are readable from `GET /repos/{owner}/{repo}/check-runs/{id}/annotations`, which this environment *can* reach, while the raw log host is out of reach — five failed runs were undiagnosable until the owner pasted a log. Scoping warnings to `Assets/Wayfinder` keeps the repository's zero-warning standard (D-014) about our code rather than vendored packages.
 **Status:** Approved — 33 tests (`Tools/Build/test_build_diagnostics.py`) and a 9/9 mutation check (`Docs/evidence/cloud-build-2026-10-15/mutation_check.py`), both run against the verbatim lines of the real failure.
+
+## 2026-10-16 — D-034 Scatter spacing and streaming hysteresis (M3, Batch G)
+
+**Decision:**
+- **Scatter (§7.6):** the world is tiled by a candidate grid whose cells tile each 256 m chunk exactly. Cell size is `256 / floor(256 / spacing)`, which is ≥ the minimum spacing, so each candidate is owned by one chunk and confined to its cell. Each candidate's randomness is `StableHash.CandidateSeed(ChunkSeed(owner chunk, layer), globalIndex)` (§7.3). A candidate is accepted when it is eligible (density draw, height band, slope, road-edge clearance, not reserved) and no eligible candidate within the spacing has a higher `(priority, index)`. Two accepted points are therefore never closer than the spacing, and neighbouring chunks agree at their borders because each candidate is computed from its global index alone. Trees use a 1 m road clearance; other species set their own.
+- **Activation (§18.3):** the 3 × 3 ring around the player's chunk is always instantiated. Outside it, a chunk is instantiated when its rectangle is within **256 m** of the player and kept until **384 m**. Distances are measured from the player to the chunk rectangle, not in chunk indices. This is the metre-based "unload farther than the load threshold" rule in §18.3, extended to instantiation.
+- **Data retention:** a chunk that leaves the activation band but stays within **640 m** is deactivated and keeps its data (`Deactivating → DataReady`, a new legal transition in `ChunkStateMachine`). It is unloaded only beyond 640 m.
+- **Worst cases (asserted by tests):** instantiated ≤ 4 × 4 during a crossing, retained data ≤ 6 × 6.
+
+**Rationale:** Chunk-index hysteresis was tested first and failed. A one-chunk move shifts the whole keep window, so oscillating across a boundary deactivated about three chunks per crossing (1218 deactivations in 400 crossings). Metre bands measured from the player do not move when the player jitters across a border. Dormant retention keeps re-entry free of IO. The 4 × 4 instantiated worst case is a deliberate trade against the 3 × 3 wording in §18.3: the 3 × 3 ring is still always active, and the extra column exists only while the player is crossing or retreating.
+
+**Status:** Approved (implementation-side). Measured on the analytic test surface only. The 4 × 4 instantiated bound is an owner-review item, to be confirmed on device against the frame budget (KI-038, KI-037).
+

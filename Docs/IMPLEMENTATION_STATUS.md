@@ -1,10 +1,37 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-15. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-16. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## Batch 2026-10-16-G — Scatter placement + chunk streaming planner (M3, headless-verified; Unity host not yet written)
+
+Milestone **M3 World pipeline**. Requirements: GEN-03 (§7.6 scatter), ARCH-03 / PERF-01 (§18.3 streaming planner),
+QA-01 case 12 (planner level). Closes the engine-free part of **KI-017**. Decision **D-034**. Evidence:
+`Docs/evidence/world-streaming-2026-10-16/`.
+
+| Item | Before | After | Evidence |
+|---|---|---|---|
+| `World/ScatterPlacer.cs` — per-candidate seeding (§7.3), chunk-independent candidate grid whose cells tile each 256 m chunk, priority-based Poisson spacing (3–8 m) that holds across chunk borders, road shoulder 1 m, slope, reserved pads, density | no scatter placer (KI-017) | **Verified (headless)** — 10 tests | `headless-console.log`, `mutation-check.log` (9 scatter mutants caught) |
+| `World/ChunkStreamPlanner.cs` — request ring 3 × 3, prefetch 200 m ahead, distance hysteresis (256 / 384 / 640 m), dormant data retention, pinning, activation budget, retry → streaming defect, handle ledger, loading hold | only the state machine (`ChunkStateMachine`) | **Verified (headless)** — 11 tests, including 300 crossings with host/planner handle agreement on every tick | idem |
+| `ChunkStateMachine`: `Deactivating → DataReady` (dormant retention) | no retention path | Added as a documented extension (D-034); no existing test depended on it | idem |
+| Simulated Unity host (`StreamHostSim`) used by the tests; counts asset handles independently of the planner | — | Test harness; the real host is not written | `WorldStreamingTests.cs` |
+
+- **164/164** headless EditMode tests (143 → 164), 0 compile warnings, .NET Standard 2.1 profile OK, 29 Unity files parse.
+  Content validator, formula checks and economy simulation still pass (`python-checks.log`).
+- **Mutation check: 15/15 caught**, baseline green before and after. Note: the first run missed one mutant (a handle
+  accounting break visible only between a step and its completions); a mid-tick invariant closed it.
+- **Defects found and fixed in this batch:** integer division in the scatter cell size (grid did not tile the chunk);
+  chunk-index hysteresis thrashed (≈3 deactivations per boundary crossing); diagonal ring corners dropped near edges;
+  chunks leaving the ring were unloaded and reloaded on re-entry. Each is pinned by a regression test.
+- **Executable now (headless):** given a player position and velocity, the planner produces request, activate,
+  deactivate, cancel and unload commands; the scatter placer produces the same tree/rock instances for a chunk on every
+  run, with spacing respected across borders.
+- **Not done (open):** the `WorldStreamer` MonoBehaviour host and Addressables handles (KI-037); scatter over the baked
+  real terrain, road carve and POI surfaces (KI-038); cache/landmark socket placement (§7.2 step 9); the full-mainland
+  bake and greybox traversal. **M3 gate not passed.**
 
 ## Batch 2026-10-15-F — First real Unity run: the cloud build's actual failure, found and fixed
 
@@ -166,7 +193,7 @@ Two incorrect test expectations were corrected against the blueprint (torque 212
 | **M0 Foundation** | Unity project layout, URP/package pins, asmdefs, Bootstrap/Title/PhysicsTestGround/VerticalSlice scene builders, app state flow, input actions, test assemblies, build scripts, docs | **Implemented — domain layer Verified (headless); gate Blocked on toolchain** | Android/iOS smoke builds require owner toolchain (KI-001/002/006). Core/World/Progression/Persistence compile + 49/49 EditMode tests pass headlessly; Unity-only files parse-checked. |
 | **M1 Vehicle proving ground** | Scout S1 spec, WheelCollider controller, powertrain, steering/assists, camera, surfaces, suspension, fuel/damage/water/mud, winch, reset, PhysicsTestGround rig | **Math Verified (headless); WheelCollider/camera Implemented (unverified)** | Powertrain/fuel/damage/water/mud/recovery math executed (14 tests). Needs Unity physics demonstration on device (KI-009). |
 | **M2 Forest vertical slice** | Inventory/wallet/transactions, garage/camp, missions Q01–Q04, mapping/discovery, research tiers 1–6, save/atomic banking, recovery, campaign session + slice manifest, touch UI | **Campaign composition Verified (headless) — 109/109; Unity glue Implemented (syntax-checked only)** | Domain loop, interruption-at-every-step, rescue, camp atomicity, autosave and full Q01–Q04 slice ledger executed headlessly (Batch C). Gate still needs the playable 30-minute slice + interruption tests **on device** (KI-001/026/027). |
-| **M3 World pipeline** | Deterministic hash/PRNG, noise heightfield, 24×24 chunk bake, seam checks, route graph/validator, chunk state machine | **In progress; hash/PRNG/bitset Verified (headless) + seam/hash Verified (Python mirror)** — scatter placer and streamer host **not yet implemented** (KI-017, corrected from earlier "Implemented") | Needs scatter placer + streamer, then in-editor bake + full-mainland traversal. |
+| **M3 World pipeline** | Deterministic hash/PRNG, noise heightfield, 24×24 chunk bake, seam checks, route graph/validator, chunk state machine, scatter placer, streaming planner | **In progress; hash/PRNG/bitset, seam/hash, scatter placer and streaming planner Verified (headless) — 164/164** (Batch G). The `WorldStreamer` MonoBehaviour host, real-terrain scatter and the full-mainland bake are **not yet implemented** (KI-037/038) | Needs the Unity streamer host, socket placement, in-editor bake + full-mainland traversal and route validation on real terrain. |
 | **M4 Full campaign systems** | All 20 missions, 30 contracts + 5 templates, 20 research tiers, 4 vehicles, item/recipe catalog, camps/garages, relic ledger, finale Q20 | **Implemented; services Verified (headless) + content Verified** | Needs greybox full-campaign playthrough. |
 | **M5 Content & assets** | Final art/audio, five visual regions, vehicle art, UI polish, icons, lore, sound | **Not started** (placeholders tracked in ASSET_MANIFEST.csv) | Hero assets must not be placeholders at this gate. |
 | **M6 Optimization & usability** | Device frame-time/memory/thermal, accessibility verification, economy pacing playtests | **Not started** (quality tiers defined; simulator model runs) | Requires measured device profiles. |
@@ -229,6 +256,10 @@ FINISH-01 (Implemented definitions; credits flow coded).
 | 20 | 150% scale / 30% text expansion layout | Not covered — needs UI layout pass (M2/M6 device check) |
 
 ## Next dependency-ordered batch
+
+0. **After Batch G (2026-10-16):** the engine-free M3 work is done. Remaining M3 work is Unity-dependent (streamer host,
+   scatter on baked terrain, bake) and needs one owner cloud run first (item 1 below). Cache/landmark socket placement
+   (§7.2 step 9) is the next headless-only M3 item.
 
 1. **Owner, ~10 minutes**: dispatch **Actions → Android APK (free cloud build) → Run workflow** on branch `arena/700fea1a-wayfinder` (KI-035 — the agent's token lacks `actions: write`). That single run compiles the four remaining Unity-facing assemblies (KI-034), runs `ProjectSetup.Setup` and, if it gets there, produces `Wayfinder-dev.apk` as an artifact. Any failure now self-reports as annotations (D-033), so no log paste is needed. Then commit `Packages/packages-lock.json` from the `Unity-logs` artifact (KI-002).
    *Local alternative:* install Unity 6.3 LTS + Android module, open the project, `Tools → Wayfinder → Setup Project`, commit generated scenes/meta (KI-004/005).
