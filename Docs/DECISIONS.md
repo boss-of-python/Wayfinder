@@ -187,6 +187,9 @@ Both values come from a real editor banner in run 38754979851 (`Unity Editor ver
 **Status:** Approved. Editor pin verified; `Packages/packages-lock.json` still to be committed from the next run's `Unity-logs` artifact (KI-002).
 
 ## 2026-10-15 — D-033 CI failures must self-report, and secrets are never printed
+*Partly superseded by D-035 (2026-10-16): Unity leaves no `Editor.log` in the workspace under
+game-ci — its log is the Actions job log, which is now fetched explicitly. The annotation
+contract and the secret handling below still stand.*
 **Decision:** Two stdlib/bash helpers make the cloud build diagnosable without the raw Actions log:
 - `Tools/Build/report_unity_failure.sh` — reads the `Editor.log` that survives in the workspace (`Builds/Logs/Editor.log`, plus `Logs/*.log`) and emits check-run annotations: up to ten `error CS` annotations with file/line/column, the batchmode abort reason, editor exceptions, package-resolution failures, warnings in `Assets/Wayfinder` only, which Wayfinder assemblies Unity compiled, and the APK size; the full lists go to the job summary. It **always exits 0** and runs with `always()`/`continue-on-error` only after a Unity step was attempted, so it cannot change the build's verdict and does not emit a misleading missing-log note on preflight failures.
 - `Tools/Build/check_unity_secrets.sh` — runs after checkout but before expensive disk cleanup or the image pull. It accepts either `UNITY_LICENSE` or both `UNITY_EMAIL` and `UNITY_PASSWORD`: run 38754979851 proves the account route activated Personal licensing while `UNITY_LICENSE` was empty. It warns on leading/trailing whitespace and **never prints a value**.
@@ -206,3 +209,39 @@ Both values come from a real editor banner in run 38754979851 (`Unity Editor ver
 
 **Status:** Approved (implementation-side). Measured on the analytic test surface only. The 4 × 4 instantiated bound is an owner-review item, to be confirmed on device against the frame budget (KI-038, KI-037).
 
+
+## 2026-10-16 — D-035 The job log is the Unity log, and diagnostics may never be silent
+
+**Decision:**
+- **The editor log is fetched, not hoped for.** game-ci's `build.sh` starts Unity with
+  `-logfile /dev/stdout` and appends `customParameters` *after* it, so Unity's log is the GitHub
+  Actions **job log**. A new reporting job (`diagnose`, `needs: apk`, `if: always()`,
+  `permissions: actions: read`) runs `Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk"`,
+  which downloads that finished job's plain-text log from
+  `GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs`, and reruns
+  `Tools/Build/report_unity_failure.sh` over it. The log is also uploaded as the `Unity-job-log`
+  artifact. The dead `customParameters: -logFile …` override is removed from both Unity steps.
+- **`report_unity_failure.sh` is never silent.** It always annotates which files it inspected and
+  their sizes; it distinguishes a real editor log from Unity's auxiliary worker logs and says so;
+  it is told how the Unity steps ended (`UNITY_SETUP_OUTCOME`/`UNITY_BUILD_OUTCOME`/
+  `UNITY_JOB_RESULT`) and also infers failure from the log; and when a failure matches no pattern
+  it emits an explicit error plus a 40-line, percent/newline-encoded log tail. New patterns: an
+  unresolvable `-executeMethod`, any `*.Exception:` line, and this project's own breadcrumb.
+- **Editor entry points leave a breadcrumb.** `Assets/Wayfinder/Scripts/Editor/EditorFailureLog.cs`
+  wraps `ProjectSetup.Setup` and the four `BuildCommands` entry points: a thrown exception is
+  appended to `Logs/wayfinder-editor-failure.log` (collected by the `Unity-logs` artifact and
+  matched by the reporter) **and rethrown**, so Unity's exit code remains the verdict.
+- **The runner is pinned to `ubuntu-24.04`.** Run 38875757162 carried GitHub's notice that the
+  `ubuntu-latest` label migrates to Ubuntu 26 from 2026-10-19.
+
+**Rationale:** run 38875757162 failed for eight minutes and produced two annotations, neither of
+them a cause (KI-039). D-033 assumed Unity leaves an `Editor.log` in the workspace; it does not,
+and the globbed worker logs made "nothing to report" indistinguishable from "nothing went wrong".
+A diagnostic that can be silent is not a diagnostic. Fetching the job log needs no new third-party
+action, only `actions: read` on the workflow token, and keeps the annotations API — the one host
+this environment can reach — as the single place a failure is read from. The breadcrumb covers the
+case the API cannot: it survives in the workspace artifact even if the job log is unavailable.
+
+**Status:** Approved; executed locally only. 86/86 Python tests and 17/17 mutations caught
+(`Docs/evidence/cloud-build-2026-10-16/`); **no part of it has run in CI yet** — the next owner
+dispatch is what proves it, and what finally names the Unity failure (KI-041).

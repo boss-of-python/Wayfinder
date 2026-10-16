@@ -1,0 +1,52 @@
+# Why a `-logFile` custom parameter cannot deliver Unity's editor log in this workflow.
+#
+# Source: game-ci/cli v0.1.72 (the CLI that game-ci/unity-builder@v6.0.0 downloads and runs;
+# run 38754979851 logged "game-ci build --targetPlatform=Android ..." from
+# /tmp/game-ci-cli-cache/v0.1.72/game-ci). Fetched from codeload.github.com as
+# https://codeload.github.com/game-ci/cli/tar.gz/refs/tags/v0.1.72 on 2026-10-16.
+# File: dist/platforms/ubuntu/steps/build.sh, lines 158-181, verbatim.
+#
+# `-logfile /dev/stdout` is passed FIRST; `$CUSTOM_PARAMETERS` (the action's `customParameters`
+# input) is appended LAST. The editor log is therefore the container's stdout - i.e. the GitHub
+# Actions *job log* - and the workflow's `-logFile /github/workspace/Logs/Unity-Setup.log`
+# produced no readable editor log in run 38875757162.
+
+158:  BUILD_PROFILE_FLAGS=(-activeBuildProfile "$BUILD_PROFILE")
+159:fi
+160:
+161:${ENGINE_LAUNCH_WRAPPER:-} unity-editor \
+162:  -logfile /dev/stdout \
+163:  $QUIT_FLAG \
+164:  -customBuildName "$BUILD_NAME" \
+165:  -projectPath "$UNITY_PROJECT_PATH" \
+166:  "${BUILD_TARGET_FLAG[@]}" \
+167:  -customBuildTarget "$BUILD_TARGET" \
+168:  -customBuildPath "$CUSTOM_BUILD_PATH" \
+169:  -customBuildProfile "$BUILD_PROFILE" \
+170:  "${BUILD_PROFILE_FLAGS[@]}" \
+171:  -executeMethod "$BUILD_METHOD" \
+172:  -buildVersion "$VERSION" \
+173:  -androidVersionCode "$ANDROID_VERSION_CODE" \
+174:  -androidKeystoreName "$ANDROID_KEYSTORE_NAME" \
+175:  -androidKeystorePass "$ANDROID_KEYSTORE_PASS" \
+176:  -androidKeyaliasName "$ANDROID_KEYALIAS_NAME" \
+177:  -androidKeyaliasPass "$ANDROID_KEYALIAS_PASS" \
+178:  -androidTargetSdkVersion "$ANDROID_TARGET_SDK_VERSION" \
+179:  -androidExportType "$ANDROID_EXPORT_TYPE" \
+180:  -androidSymbolType "$ANDROID_SYMBOL_TYPE" \
+181:  $CUSTOM_PARAMETERS
+
+# Two further facts from the same CLI version, both confirmed against the 2026-10-15 log:
+#
+# 1. dist/platforms/ubuntu/steps/build.sh:218-223 creates the build directory before the build
+#    (`mkdir -p "$BUILD_PATH_FULL"`) and ends with `ls -alh` on it, and
+#    dist/platforms/ubuntu/steps/runsteps.sh takes the step's exit code from BUILD_EXIT_CODE.
+#    A build method that produces no artefact (Setup Project) therefore does NOT fail by itself:
+#    the failing exit code in run 38875757162 came from Unity.
+#
+# 2. dist/platforms/ubuntu/entrypoint.sh:47-48 auto-detects the Android API level with
+#       targetAPILine=$(grep 'AndroidTargetSdkVersion' "$fullProjectPath/ProjectSettings/ProjectSettings.asset")
+#    This repository does not commit ProjectSettings.asset (KI-004/KI-005), so the grep finds
+#    nothing and the SDK manager is asked for "platforms;android-" - exactly the
+#    "Warning: Failed to find package 'platforms;android-'" line in the 2026-10-15 log. It is a
+#    warning, not the failure: the image ships an Android SDK. Tracked as KI-040.

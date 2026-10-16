@@ -26,11 +26,16 @@ namespace Wayfinder.Editor
             return scenes;
         }
 
+        // The four entry points below are what CI invokes with -executeMethod. EditorFailureLog
+        // records the cause in Logs/wayfinder-editor-failure.log before rethrowing, because the
+        // editor log itself only exists on the build container's stdout (D-035).
         [MenuItem("Tools/Wayfinder/Build/Android Development")]
-        public static void BuildAndroidDev() => BuildAndroid(true);
+        public static void BuildAndroidDev() =>
+            EditorFailureLog.Run("Wayfinder.Editor.BuildCommands.BuildAndroidDev", () => BuildAndroid(true));
 
         [MenuItem("Tools/Wayfinder/Build/Android Release AAB")]
-        public static void BuildAndroidRelease() => BuildAndroid(false);
+        public static void BuildAndroidRelease() =>
+            EditorFailureLog.Run("Wayfinder.Editor.BuildCommands.BuildAndroidRelease", () => BuildAndroid(false));
 
         static void BuildAndroid(bool development)
         {
@@ -104,10 +109,12 @@ namespace Wayfinder.Editor
         }
 
         [MenuItem("Tools/Wayfinder/Build/iOS Development")]
-        public static void BuildIOSDev() => BuildIOS(true);
+        public static void BuildIOSDev() =>
+            EditorFailureLog.Run("Wayfinder.Editor.BuildCommands.BuildIOSDev", () => BuildIOS(true));
 
         [MenuItem("Tools/Wayfinder/Build/iOS Release")]
-        public static void BuildIOSRelease() => BuildIOS(false);
+        public static void BuildIOSRelease() =>
+            EditorFailureLog.Run("Wayfinder.Editor.BuildCommands.BuildIOSRelease", () => BuildIOS(false));
 
         static void BuildIOS(bool development)
         {

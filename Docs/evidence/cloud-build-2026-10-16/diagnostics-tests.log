@@ -1,0 +1,7 @@
+# python3 -m unittest discover -s Tools/Build -p 'test_*.py'
+# 2026-10-16T09:19:29Z
+.
+----------------------------------------------------------------------
+Ran 86 tests in 2.051s
+
+OK

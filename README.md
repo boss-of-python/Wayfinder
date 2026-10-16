@@ -141,9 +141,13 @@ run the supported desktop Unity Editor itself. A manual, dedicated-Windows-runne
 APK workflow is prepared in `.github/workflows/android-phone-build.yml`; it has
 not been run and requires secure owner setup, not a phone-only or free hosted build.
 
-Latest executed checks (16 Oct): **164/164** headless C# tests and **62/62** mocked Python
-build/pipeline tests pass. The mobile pause/focus and authored-water wiring remain Unity-unverified;
-no real APK or device result exists.
+Latest executed checks (16 Oct): **164/164** headless C# tests and **86/86** mocked Python
+build/pipeline tests pass. The free cloud build was dispatched again on 16 Oct
+([38875757162](https://github.com/boss-of-python/Wayfinder/actions/runs/38875757162)): Unity ran
+for five minutes and failed in *Setup Project* without reporting a cause, so the diagnostics were
+rebuilt to read Unity's log from the Actions job log and to never stay silent (D-035,
+`Docs/evidence/cloud-build-2026-10-16/`). The mobile pause/focus and authored-water wiring remain
+Unity-unverified; no real APK or device result exists.
 
 ## Quick start (owner machine)
 

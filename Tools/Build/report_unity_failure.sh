@@ -2,14 +2,26 @@
 # Turn Unity's undescriptive CI failure ("Build failed with exit code 1") into the real cause.
 #
 # Unity aborts batchmode with exit code 1 for many different reasons, and GameCI prints
-# "Please note that the exit code is not very descriptive". This script reads the Unity
-# Editor.log that survives in the workspace and emits GitHub Actions annotations, which are
-# readable from the API (repos/{owner}/{repo}/check-runs/{id}/annotations) without having to
-# download the raw run log.
+# "Please note that the exit code is not very descriptive". This script reads a Unity log and
+# emits GitHub Actions annotations, which are readable from the API
+# (repos/{owner}/{repo}/check-runs/{id}/annotations) without having to download the raw run log.
+#
+# Which log? game-ci's build.sh runs `unity-editor -logfile /dev/stdout ... $CUSTOM_PARAMETERS`,
+# so the editor log is the *job log*, not a file in the workspace: run 38875757162 (2026-10-16)
+# proved a `-logFile` custom parameter does not deliver it. The workspace then only holds Unity's
+# auxiliary worker logs (`Logs/AssetImportWorker*.log`, shader compiler), which match none of the
+# patterns below — that run's diagnostics were therefore completely silent. Two rules follow:
+#   1. the workflow's "Explain the Unity result" job downloads the finished job log and passes it
+#      here explicitly, and
+#   2. this script is never silent: it always says which files it inspected, says so loudly when
+#      no editor log was among them, and prints a log tail when a failure has no recognised cause.
 #
 # Usage:  report_unity_failure.sh [workspace_dir] [log_file ...]
 #   workspace_dir  defaults to $GITHUB_WORKSPACE, else the current directory
 #   log_file       optional explicit logs; defaults to the paths GameCI/Unity write to
+#
+# Environment (optional): UNITY_SETUP_OUTCOME / UNITY_BUILD_OUTCOME / UNITY_JOB_RESULT carry the
+# verdict of the Unity steps, so a failure with no recognised cause is still reported as one.
 #
 # Always exits 0: it reports a failure, it must never become one (the Unity step's own exit
 # code is the job's verdict).
@@ -39,13 +51,62 @@ fi
 say() { printf '%s\n' "$1" >>"$summary"; }
 say "## Unity build diagnostics"
 
+# Workflow commands are single-line: encode %, CR and LF so a multi-line excerpt survives.
+escape() {
+  printf '%s' "$1" | awk 'BEGIN { ORS = "" }
+    { gsub(/%/, "%25"); gsub(/\r/, "%0D"); if (NR > 1) printf "%%0A"; printf "%s", $0 }'
+}
+
+errors_emitted=0
+emit_error() { # emit_error <annotation-body>
+  printf '::error %s\n' "$1"
+  errors_emitted=$((errors_emitted + 1))
+}
+
+# A Unity step that was attempted and did not succeed, as reported by the workflow.
+step_failed=no
+for outcome in "${UNITY_SETUP_OUTCOME:-}" "${UNITY_BUILD_OUTCOME:-}" "${UNITY_JOB_RESULT:-}"; do
+  case "$outcome" in
+    failure | cancelled | timed_out) step_failed=yes ;;
+  esac
+done
+
 if [ -z "${logs// /}" ]; then
   say "No Unity log survived in the workspace; read the Unity step output above."
   echo "::notice title=Unity diagnostics::No Editor.log left in the workspace - read the Unity step output for the failure."
+  if [ "$step_failed" = yes ]; then
+    emit_error "title=Unity log unavailable::A Unity step did not succeed and no log reached this script. The editor log is the job log (game-ci passes -logfile /dev/stdout); the \"Explain the Unity result\" job downloads it from the Actions API."
+  fi
   exit 0
 fi
 
 say "Logs inspected:$logs"
+
+# Say what was actually read, with sizes: run 38875757162 looked identical to "nothing ran".
+inspected=""
+for log in $logs; do
+  if [ -f "$log" ]; then
+    size="$(wc -c <"$log" 2>/dev/null | tr -d ' ') bytes"
+  else
+    size="missing"
+  fi
+  inspected="${inspected:+$inspected, }${log#"$workspace"/} ($size)"
+done
+
+# Is any of them a real editor log, or only Unity's auxiliary worker/shader logs?
+editor_log_markers='Unity Editor version:|COMMAND LINE ARGUMENTS|Aborting batchmode|Scripts have compiler errors|Build failed, with exit code|Build succeeded|\[Licensing::Module\]'
+if grep -qhE "$editor_log_markers" $logs 2>/dev/null; then
+  editor_log=yes
+else
+  editor_log=no
+fi
+say "- Editor log recognised among them: **$editor_log**"
+echo "::notice title=Unity diagnostics::Inspected $inspected; editor log recognised: $editor_log."
+
+# Evidence of failure from the logs themselves, so this works without the workflow's outcomes.
+if grep -qhE 'Build failed, with exit code|Aborting batchmode due to failure|Unity aborted before completing|Scripts have compiler errors|error CS[0-9]+:' $logs 2>/dev/null; then
+  step_failed=yes
+fi
 
 # Every Library/PackageCache path Unity mentioned, i.e. the packages it really unpacked.
 resolved_paths="$(grep -hoE 'Library/PackageCache/[A-Za-z0-9.@+-]+' $logs 2>/dev/null | sort -u)"
@@ -71,13 +132,13 @@ if [ "$error_count" -gt 0 ]; then
     lineno="$(printf '%s' "$line" | sed -E 's/^(.*)\(([0-9]+),([0-9]+)\): error CS[0-9]+:.*$/\2/')"
     column="$(printf '%s' "$line" | sed -E 's/^(.*)\(([0-9]+),([0-9]+)\): error CS[0-9]+:.*$/\3/')"
     message="$(printf '%s' "$line" | sed -E 's/^[^(]*\([0-9]+,[0-9]+\): //')"
-    echo "::error file=$file,line=$lineno,col=$column,title=Unity compile error::$message"
+    emit_error "file=$file,line=$lineno,col=$column,title=Unity compile error::$message"
     reported=$((reported + 1))
   done <<EOF
 $error_lines
 EOF
   if [ "$error_count" -gt "$reported" ]; then
-    echo "::error title=Unity compile errors::$error_count unique compile errors; $reported reported here, all of them are in the Unity log."
+    emit_error "title=Unity compile errors::$error_count unique compile errors; $reported reported here, all of them are in the Unity log."
   fi
 fi
 
@@ -88,7 +149,7 @@ if [ -n "$abort_reasons" ]; then
   while IFS= read -r reason; do
     [ -z "$reason" ] && continue
     say "- Unity aborted batchmode: $reason"
-    echo "::error title=Unity aborted batchmode::$reason"
+    emit_error "title=Unity aborted batchmode::$reason"
   done <<EOF
 $abort_reasons
 EOF
@@ -97,7 +158,22 @@ fi
 aborted="$(grep -hoE 'Unity aborted before completing: .*' $logs 2>/dev/null | detimestamp | sort -u | head -1)"
 if [ -n "$aborted" ]; then
   say "- GameCI: $aborted"
-  echo "::error title=Unity aborted::$aborted"
+  emit_error "title=Unity aborted::$aborted"
+fi
+
+# An -executeMethod that Unity cannot resolve (renamed/uncompiled Editor assembly) aborts
+# before any of our code runs, and says so in one line.
+method_errors="$(grep -hE 'executeMethod' $logs 2>/dev/null \
+  | grep -iE 'could not be found|not found|does not exist|no such method' \
+  | detimestamp | sort -u | head -3)"
+if [ -n "$method_errors" ]; then
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    say "- Build method unresolved: $line"
+    emit_error "title=Unity build method not found::$line"
+  done <<EOF
+$method_errors
+EOF
 fi
 
 # ---- 3. package resolution (an unpinnable version fails here, before any compile) ---------
@@ -110,7 +186,7 @@ if [ -n "$resolution" ]; then
   say '```'
   while IFS= read -r line; do
     [ -z "$line" ] && continue
-    echo "::error title=Unity package resolution::$line"
+    emit_error "title=Unity package resolution::$line"
   done <<EOF
 $resolution
 EOF
@@ -129,7 +205,20 @@ if [ -f "$manifest" ] && [ -n "$resolved_paths" ]; then
 fi
 
 # ---- 4. editor exceptions (a buildMethod that throws, e.g. Setup Project) -----------------
-exceptions="$(grep -hoE '(BuildFailedException|UnityException|InvalidOperationException|NullReferenceException|ArgumentException|MissingMethodException|TypeLoadException|IOException|UnauthorizedAccessException): .*' $logs 2>/dev/null \
+# Our own entry points write Logs/wayfinder-editor-failure.log before rethrowing, so the cause
+# of a Setup/Build failure survives even when only workspace files can be read.
+breadcrumbs="$(grep -hoE '\[Wayfinder\] Editor method failed: .*' $logs 2>/dev/null | detimestamp | sort -u | head -5)"
+if [ -n "$breadcrumbs" ]; then
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    say "- $line"
+    emit_error "title=Wayfinder editor method failed::$line"
+  done <<EOF
+$breadcrumbs
+EOF
+fi
+
+exceptions="$(grep -hoE '[A-Za-z][A-Za-z0-9_.]*Exception: .*' $logs 2>/dev/null \
   | detimestamp | sort -u | head -10)"
 if [ -n "$exceptions" ]; then
   say '```'
@@ -137,7 +226,7 @@ if [ -n "$exceptions" ]; then
   say '```'
   while IFS= read -r line; do
     [ -z "$line" ] && continue
-    echo "::error title=Unity exception::$line"
+    emit_error "title=Unity exception::$line"
   done <<EOF
 $exceptions
 EOF
@@ -181,6 +270,43 @@ for apk in "$workspace/Builds/Android/Wayfinder-dev.apk" "$workspace"/Builds/And
     echo "::notice title=Unity artefact::${apk#"$workspace"/}, $size bytes"
   fi
 done
+
+# ---- 8. never be silent about a failure --------------------------------------------------
+if [ "$step_failed" = yes ] && [ "$editor_log" = no ]; then
+  say "- **No editor log was available.** game-ci runs \`unity-editor -logfile /dev/stdout\`, so Unity's log is the job log, not a workspace file."
+  missing="A Unity step failed but no editor log was inspected ($inspected). game-ci runs unity-editor with -logfile /dev/stdout, so the editor log is the job log; the \"Explain the Unity result\" job downloads it from the Actions API and reruns this script over it."
+  if [ "$errors_emitted" -gt 0 ]; then
+    # A cause was already reported (e.g. our own breadcrumb file): context, not the headline.
+    echo "::notice title=Unity editor log missing::$missing"
+  else
+    emit_error "title=Unity editor log missing::$missing"
+  fi
+fi
+
+if [ "$step_failed" = yes ] && [ "$errors_emitted" -eq 0 ]; then
+  # Unrecognised failure: publish the end of the biggest log so the cause is still readable
+  # from the annotations API instead of leaving an empty "Build failed with exit code 1".
+  biggest=""
+  biggest_size=0
+  for log in $logs; do
+    [ -f "$log" ] || continue
+    size="$(wc -c <"$log" 2>/dev/null | tr -d ' ')"
+    if [ "${size:-0}" -ge "$biggest_size" ]; then
+      biggest="$log"
+      biggest_size="$size"
+    fi
+  done
+  tail_text=""
+  if [ -n "$biggest" ]; then
+    tail_text="$(grep -v '^[[:space:]]*$' "$biggest" 2>/dev/null | detimestamp | tail -40 | cut -c1-200)"
+  fi
+  say "- **Failure with no recognised cause.** Tail of ${biggest#"$workspace"/}:"
+  say '```'
+  printf '%s\n' "$tail_text" >>"$summary"
+  say '```'
+  emit_error "title=Unity failure not explained::A Unity step failed but no compile error, abort reason, package failure or exception matched in: $inspected. The log tail is in the next annotation and in the job summary."
+  echo "::notice title=Unity log tail::$(escape "$tail_text")"
+fi
 
 if [ "$error_count" -eq 0 ] && [ -z "$aborted" ]; then
   say "- No compile error or batchmode abort found in the logs inspected."

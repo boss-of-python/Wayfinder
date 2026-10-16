@@ -1,0 +1,5 @@
+# python3 Tools/Build/headless_cs.py all
+# 2026-10-16T09:19:32Z
+  Test Count: 164, Passed: 164, Failed: 0, Warnings: 0, Inconclusive: 0, Skipped: 0
+syntax-check: 30 file(s), 0 syntax error(s)
+[headless-cs] SUMMARY compile=OK tests=OK netstandard2.1-profile=OK syntax=OK

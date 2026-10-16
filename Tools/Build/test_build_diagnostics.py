@@ -6,9 +6,17 @@ failed cloud build of 2026-10-15 (run 38754979851, Unity 6000.3.26f1): that run 
 inside Unity's own Input System package. The scripts must turn that into an annotation that is
 readable from the GitHub API, because Unity's exit code is not descriptive.
 
+Run 38875757162 (2026-10-16) then failed a second way: the diagnostics said *nothing at all*.
+game-ci starts Unity with `-logfile /dev/stdout`, so the editor log is the job log; the
+workspace only held Unity's auxiliary worker logs, which match none of the patterns. The whole
+8-minute build produced one annotation, "Build failed with exit code 1". The tests below pin
+the two fixes: the reporter is never silent, and a second job downloads the finished job log
+(Tools/Build/fetch_job_log.sh) and annotates from it.
+
 Stdlib only (no PyYAML): the workflow checks below are structural text assertions.
 """
 from pathlib import Path
+import stat
 import subprocess
 import tempfile
 import unittest
@@ -16,7 +24,18 @@ import unittest
 TOOLS = Path(__file__).resolve().parent
 REPORT = TOOLS / "report_unity_failure.sh"
 SECRETS = TOOLS / "check_unity_secrets.sh"
+FETCH_JOB_LOG = TOOLS / "fetch_job_log.sh"
 WORKFLOW = TOOLS.parent.parent / ".github/workflows/android-cloud-build.yml"
+
+# The job whose log carries Unity's editor output, and the job that reads it.
+BUILD_JOB_NAME = "Build Wayfinder-dev.apk"
+
+# Verbatim worker-log noise of the kind that left run 38875757162 undiagnosable: these files
+# exist in Logs/ after any import, so "a log exists" never meant "the cause is readable".
+WORKER_LOG = ("Using pre-set license\n"
+              "Cmd: initializeCompiler\n"
+              "Cmd: ImportAsset\n"
+              "  path: Assets/Wayfinder/Content/Input/WayfinderControls.inputactions\n")
 
 # Verbatim from the 2026-10-15 failure, with the GitHub Actions timestamp prefix.
 REAL_ERROR = ("2026-10-15T14:56:44.8497357Z Library/PackageCache/com.unity.inputsystem@920b46832575/"
@@ -196,6 +215,199 @@ class ReportUnityFailureTests(unittest.TestCase):
         result = run(REPORT, self.root, self.env, logs=[self.root / "does-not-exist.log"])
         self.assertEqual(0, result.returncode)
 
+    # ---- regressions for run 38875757162: diagnostics that said nothing at all ----------
+
+    def failing_env(self, **extra):
+        env = dict(self.env)
+        env["UNITY_SETUP_OUTCOME"] = "failure"
+        env.update(extra)
+        return env
+
+    def test_every_run_says_which_logs_it_inspected(self):
+        self.write_log(WORKER_LOG, relative="Logs/AssetImportWorker0.log")
+        result = run(REPORT, self.root, self.env)
+        self.assertIn("::notice title=Unity diagnostics::Inspected Logs/AssetImportWorker0.log (",
+                      result.stdout)
+        self.assertIn("bytes); editor log recognised: no.", result.stdout)
+
+    def test_worker_logs_only_are_reported_as_a_missing_editor_log_not_as_silence(self):
+        # The exact 2026-10-16 shape: Unity ran and failed, Logs/ holds only worker logs.
+        self.write_log(WORKER_LOG, relative="Logs/AssetImportWorker0.log")
+        self.write_log("Cmd: compileSnippet\n", relative="Logs/shadercompiler-UnityShaderCompiler-0.log")
+        result = run(REPORT, self.root, self.failing_env())
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("::error title=Unity editor log missing::", result.stdout)
+        self.assertIn("-logfile /dev/stdout", result.stdout)
+        self.assertIn("AssetImportWorker0.log", result.stdout)
+
+    def test_a_succeeding_run_with_only_worker_logs_invents_no_failure(self):
+        self.write_log(WORKER_LOG, relative="Logs/AssetImportWorker0.log")
+        result = run(REPORT, self.root, self.env)
+        self.assertNotIn("::error", result.stdout)
+
+    def test_failed_step_without_any_log_is_an_error_not_only_a_notice(self):
+        result = run(REPORT, self.root, self.failing_env())
+        self.assertIn("::notice title=Unity diagnostics::No Editor.log", result.stdout)
+        self.assertIn("::error title=Unity log unavailable::", result.stdout)
+
+    def test_unexplained_failure_publishes_a_log_tail_annotation(self):
+        self.write_log("Unity Editor version:    6000.3.26f1 (de8167e7440c)\n"
+                       "Something unrecognised went wrong at 100% load\n"
+                       "Build failed, with exit code 1\n")
+        result = run(REPORT, self.root, self.env)
+        self.assertIn("::error title=Unity failure not explained::", result.stdout)
+        tail = [line for line in result.stdout.splitlines()
+                if line.startswith("::notice title=Unity log tail::")]
+        self.assertEqual(1, len(tail), result.stdout)
+        # One-line workflow command: newlines and percent signs must be encoded.
+        self.assertIn("%0A", tail[0])
+        self.assertIn("100%25 load", tail[0])
+        self.assertIn("Failure with no recognised cause", self.summary.read_text())
+
+    def test_recognised_failure_does_not_add_a_tail_annotation(self):
+        self.write_log(REAL_ERROR + "\nBuild failed, with exit code 1\n")
+        result = run(REPORT, self.root, self.env)
+        self.assertIn("::error file=Library/PackageCache/com.unity.inputsystem", result.stdout)
+        self.assertNotIn("::notice title=Unity log tail::", result.stdout)
+        self.assertNotIn("::error title=Unity failure not explained::", result.stdout)
+
+    def test_editor_entry_point_breadcrumb_is_reported(self):
+        # Written by Assets/Wayfinder/Scripts/Editor/EditorFailureLog.cs before it rethrows.
+        self.write_log(
+            "2026-10-16T08:53:20.1Z [Wayfinder] Editor method failed: "
+            "Wayfinder.Editor.ProjectSetup.Setup - System.IO.FileNotFoundException: "
+            "Could not find file 'Assets/Wayfinder/Content/Input/WayfinderControls.inputactions'.\n"
+            "  at System.IO.File.Copy (System.String sourceFileName)\n",
+            relative="Logs/wayfinder-editor-failure.log")
+        result = run(REPORT, self.root, self.failing_env())
+        self.assertIn("::error title=Wayfinder editor method failed::[Wayfinder] Editor method "
+                      "failed: Wayfinder.Editor.ProjectSetup.Setup - "
+                      "System.IO.FileNotFoundException:", result.stdout)
+        self.assertNotIn("2026-10-16T08:53:20.1Z", result.stdout)
+        # The cause is known, so the missing editor log is context, not the headline.
+        self.assertIn("::notice title=Unity editor log missing::", result.stdout)
+
+    def test_unresolvable_build_method_is_reported(self):
+        self.write_log("Aborting batchmode due to failure:\n"
+                       "executeMethod method Wayfinder.Editor.ProjectSetup.Setup in class "
+                       "Wayfinder.Editor.ProjectSetup could not be found.\n")
+        result = run(REPORT, self.root, self.env)
+        self.assertIn("::error title=Unity build method not found::executeMethod method "
+                      "Wayfinder.Editor.ProjectSetup.Setup", result.stdout)
+
+    def test_any_dotted_exception_type_is_reported(self):
+        self.write_log("System.NullReferenceException: Object reference not set to an instance\n")
+        result = run(REPORT, self.root, self.env)
+        self.assertIn("::error title=Unity exception::System.NullReferenceException: "
+                      "Object reference not set to an instance", result.stdout)
+
+    def test_downloaded_job_log_is_accepted_as_the_editor_log(self):
+        # What the diagnose job passes: the finished job's plain-text log, timestamps and all.
+        log = self.write_log(
+            "2026-10-16T08:48:30.0Z Unity Editor version:    6000.3.26f1 (de8167e7440c)\n"
+            + REAL_ERROR + "\n"
+            + REAL_ABORT + "\n",
+            relative="Logs/unity-job-log.txt")
+        env = dict(self.env)
+        env["UNITY_JOB_RESULT"] = "failure"
+        result = run(REPORT, self.root, env, logs=[log])
+        self.assertIn("editor log recognised: yes", result.stdout)
+        self.assertIn("::error file=Library/PackageCache/com.unity.inputsystem", result.stdout)
+        self.assertIn("::error title=Unity aborted batchmode::Scripts have compiler errors.",
+                      result.stdout)
+        self.assertNotIn("::error title=Unity editor log missing::", result.stdout)
+
+
+class FetchJobLogTests(unittest.TestCase):
+    """fetch_job_log.sh orchestration, with `gh` replaced by a recording stub.
+
+    The stub answers the two API calls the script makes; it does not re-implement gh's --jq, so
+    these tests cover which call is made, the retry/exit contract and the output file - not
+    GitHub's JSON shape.
+    """
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.calls = self.root / "gh-calls.txt"
+        self.job_log = self.root / "remote-job-log.txt"
+        self.job_log.write_text("2026-10-16T08:48:30.0Z Unity Editor version: 6000.3.26f1\n"
+                                "2026-10-16T08:53:30.0Z Build failed, with exit code 1\n")
+        self.gh = self.root / "fake-gh"
+        self.write_gh(job_id="4242")
+        self.env = {
+            "PATH": "/usr/bin:/bin",
+            "WAYFINDER_GH": str(self.gh),
+            "GITHUB_REPOSITORY": "boss-of-python/Wayfinder",
+            "GITHUB_RUN_ID": "38875757162",
+            "GITHUB_RUN_ATTEMPT": "1",
+            "GH_CALLS": str(self.calls),
+            "GH_JOB_LOG": str(self.job_log),
+        }
+
+    def write_gh(self, job_id="4242"):
+        self.gh.write_text(f"""#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$GH_CALLS"
+case "$*" in
+  *"/jobs?per_page=100"*)
+    case "$*" in
+      *'select(.name == "{BUILD_JOB_NAME}")'*) printf '%s\\n' "{job_id}" ;;
+      *) exit 0 ;;
+    esac ;;
+  *"/actions/jobs/{job_id}/logs"*) cat "$GH_JOB_LOG" ;;
+  *) exit 1 ;;
+esac
+""")
+        self.gh.chmod(self.gh.stat().st_mode | stat.S_IEXEC)
+
+    def fetch(self, env=None, attempts="2", pause="0"):
+        return subprocess.run(
+            ["bash", str(FETCH_JOB_LOG), BUILD_JOB_NAME, str(self.root / "Logs/job.txt"),
+             attempts, pause],
+            capture_output=True, text=True, env=env or self.env)
+
+    def test_downloads_the_named_job_log(self):
+        result = self.fetch()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        written = (self.root / "Logs/job.txt").read_text()
+        self.assertIn("Build failed, with exit code 1", written)
+        self.assertIn("::notice title=Unity job log::", result.stdout)
+        self.assertIn("2 lines", result.stdout)
+
+    def test_asks_for_this_run_attempt_only(self):
+        env = dict(self.env, GITHUB_RUN_ATTEMPT="3")
+        self.fetch(env=env)
+        calls = self.calls.read_text()
+        self.assertIn("runs/38875757162/attempts/3/jobs", calls)
+        self.assertIn(f'select(.name == "{BUILD_JOB_NAME}")', calls)
+
+    def test_unknown_job_name_fails_softly_with_a_notice(self):
+        self.write_gh(job_id="")  # stub finds no job with that name
+        result = self.fetch()
+        self.assertEqual(1, result.returncode)
+        self.assertIn("::notice title=Unity job log::No job named", result.stdout)
+        self.assertFalse((self.root / "Logs/job.txt").exists())
+
+    def test_empty_log_response_leaves_no_empty_file(self):
+        self.job_log.write_text("")
+        result = self.fetch()
+        self.assertEqual(1, result.returncode)
+        self.assertIn("Could not download the log", result.stdout)
+        self.assertFalse((self.root / "Logs/job.txt").exists())
+
+    def test_missing_run_context_is_reported_not_crashed(self):
+        env = {k: v for k, v in self.env.items() if k != "GITHUB_RUN_ID"}
+        result = self.fetch(env=env)
+        self.assertEqual(1, result.returncode)
+        self.assertIn("cannot download the build job log", result.stdout)
+
+    def test_usage_error_is_distinct(self):
+        result = subprocess.run(["bash", str(FETCH_JOB_LOG)], capture_output=True, text=True,
+                                env=self.env)
+        self.assertEqual(2, result.returncode)
+        self.assertIn("usage:", result.stderr)
+
 
 class CheckUnitySecretsTests(unittest.TestCase):
     def env_with(self, **values):
@@ -242,6 +454,35 @@ class CheckUnitySecretsTests(unittest.TestCase):
         result = run(SECRETS, env=self.env_with(UNITY_LICENSE="  SUPER-SECRET-LICENSE  ",
                                                 UNITY_EMAIL="a@b.c", UNITY_PASSWORD="pw"))
         self.assertNotIn("SUPER-SECRET-LICENSE", result.stdout)
+
+
+class EditorEntryPointTests(unittest.TestCase):
+    """The -executeMethod entry points must leave a readable reason behind (D-035).
+
+    Unity's editor log lives on the build container's stdout, so an exception thrown by
+    ProjectSetup.Setup leaves nothing in the workspace. EditorFailureLog writes one grep-able
+    line that report_unity_failure.sh turns into an annotation - these assertions keep the C#
+    marker and the shell pattern from drifting apart. They are structural (no Unity here).
+    """
+
+    EDITOR = TOOLS.parent.parent / "Assets/Wayfinder/Scripts/Editor"
+
+    def test_cloud_build_entry_points_record_failures_before_rethrowing(self):
+        setup = (self.EDITOR / "ProjectSetup.cs").read_text()
+        build = (self.EDITOR / "BuildCommands.cs").read_text()
+        self.assertIn('EditorFailureLog.Run("Wayfinder.Editor.ProjectSetup.Setup", RunSetup)', setup)
+        self.assertIn('EditorFailureLog.Run("Wayfinder.Editor.BuildCommands.BuildAndroidDev"', build)
+
+    def test_the_breadcrumb_marker_is_exactly_what_the_reporter_greps_for(self):
+        source = (self.EDITOR / "EditorFailureLog.cs").read_text()
+        self.assertIn('Marker = "[Wayfinder] Editor method failed: "', source)
+        self.assertIn('LogPath = LogDirectory + "/wayfinder-editor-failure.log"', source)
+        # The same text, escaped for grep, is what the reporter looks for.
+        self.assertIn(r"\[Wayfinder\] Editor method failed: ", REPORT.read_text())
+
+    def test_the_breadcrumb_rethrows_so_unity_still_fails_the_build(self):
+        source = (self.EDITOR / "EditorFailureLog.cs").read_text()
+        self.assertIn("Record(method, error);\n                throw;", source)
 
 
 class CloudBuildWorkflowTests(unittest.TestCase):
@@ -315,13 +556,56 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         self.assertIn("mkdir -p Library Logs Builds/Logs", self.text[prepare:cache])
         self.assertIn("hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**')", self.text)
 
-    def test_each_unity_step_writes_its_full_log_for_diagnostics_and_artifact_upload(self):
-        setup = self.step_block('"Unity 1 of 2: Setup Project (scenes, URP, player settings)"')
-        build = self.step_block('"Unity 2 of 2: Build the development APK"')
-        self.assertIn('customParameters: "-logFile /github/workspace/Logs/Unity-Setup.log"', setup)
-        self.assertIn('customParameters: "-logFile /github/workspace/Logs/Unity-Android-Dev.log"', build)
+    def job_block(self, name):
+        """The YAML for exactly one job: from its key up to (not including) the next job key."""
+        start = self.text.index(f"\n  {name}:\n")
+        rest = self.text[start + 1:]
+        ends = [rest.index(f"\n  {other}:\n") for other in ("apk", "diagnose")
+                if f"\n  {other}:\n" in rest]
+        return rest[:min(ends)] if ends else rest
+
+    def test_no_dead_logfile_override_is_left_in_the_unity_steps(self):
+        # game-ci's build.sh runs `unity-editor -logfile /dev/stdout ... $CUSTOM_PARAMETERS`;
+        # run 38875757162 proved the override produces no readable editor log, so keeping it
+        # only advertises a diagnostic path that does not exist.
+        settings = "\n".join(line.split("#")[0] for line in self.text.splitlines())
+        self.assertNotIn("customParameters:", settings)
+        self.assertNotIn("-logFile /github/workspace", settings)
+
+    def test_the_unity_log_upload_still_collects_the_workspace_logs(self):
         artifact = self.step_block("Upload Unity logs and the resolved package lock (for offline diagnosis)")
         self.assertIn("Logs/", artifact)
+        self.assertIn("Builds/Logs/", artifact)
+
+    def test_in_job_diagnostics_are_told_the_unity_step_outcomes(self):
+        # Without the outcomes, a failure whose log says nothing looks exactly like a success.
+        step = self.step_block("Report the real Unity failure as annotations")
+        self.assertIn("UNITY_SETUP_OUTCOME: ${{ steps.unity_setup.outcome }}", step)
+        self.assertIn("UNITY_BUILD_OUTCOME: ${{ steps.unity_build.outcome }}", step)
+
+    def test_a_second_job_reads_the_finished_build_job_log_and_annotates_it(self):
+        diagnose = self.job_block("diagnose")
+        self.assertIn("needs: apk", diagnose)
+        self.assertIn("if: always()", diagnose)
+        self.assertIn("actions: read", diagnose)  # GET .../actions/jobs/{id}/logs
+        self.assertIn("GH_TOKEN: ${{ github.token }}", diagnose)
+        self.assertIn(f'bash Tools/Build/fetch_job_log.sh "{BUILD_JOB_NAME}" Logs/unity-job-log.txt',
+                      diagnose)
+        self.assertIn('bash Tools/Build/report_unity_failure.sh "$PWD" Logs/unity-job-log.txt',
+                      diagnose)
+        self.assertIn("UNITY_JOB_RESULT: ${{ needs.apk.result }}", diagnose)
+        # Reporting only: it must never turn a green build red or a red build green.
+        self.assertEqual(3, diagnose.count("continue-on-error: true"))
+
+    def test_the_diagnosis_job_downloads_the_job_it_is_named_after(self):
+        # A rename of the build job would silently make the diagnosis download nothing.
+        self.assertIn(f"name: {BUILD_JOB_NAME}", self.job_block("apk"))
+
+    def test_runner_image_is_pinned_so_the_ubuntu_26_migration_cannot_surprise_a_build(self):
+        # Annotation on run 38875757162: "The ubuntu-latest label will migrate to Ubuntu 26
+        # beginning October 19, 2026."
+        runners = [line.strip() for line in self.text.splitlines() if line.strip().startswith("runs-on:")]
+        self.assertEqual(["runs-on: ubuntu-24.04", "runs-on: ubuntu-24.04"], runners)
 
     def test_action_pins_are_unchanged(self):
         for pin in ["jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6",
