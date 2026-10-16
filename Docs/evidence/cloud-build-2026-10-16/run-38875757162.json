@@ -1,0 +1,130 @@
+{
+  "run": {
+    "conclusion": "failure",
+    "created_at": "2026-10-16T08:44:58Z",
+    "event": "workflow_dispatch",
+    "head_branch": "main",
+    "head_sha": "45e4dbeac2a48b8cdcba28ef557de546268b5ded",
+    "html_url": "https://github.com/boss-of-python/Wayfinder/actions/runs/38875757162",
+    "name": "Android APK (free cloud build)",
+    "run_id": 38875757162,
+    "status": "completed",
+    "updated_at": "2026-10-16T08:53:36Z"
+  },
+  "jobs": [
+    {
+      "completed_at": "2026-10-16T08:53:36Z",
+      "conclusion": "failure",
+      "job_id": 116890311358,
+      "name": "Build Wayfinder-dev.apk",
+      "started_at": "2026-10-16T08:45:03Z",
+      "steps": [
+        {
+          "completed_at": "2026-10-16T08:45:06Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "started_at": "2026-10-16T08:45:03Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:45:07Z",
+          "conclusion": "success",
+          "name": "Check out the code",
+          "number": 2,
+          "started_at": "2026-10-16T08:45:06Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:45:07Z",
+          "conclusion": "success",
+          "name": "Check Unity authentication secrets exist (values are never printed)",
+          "number": 3,
+          "started_at": "2026-10-16T08:45:07Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:45:07Z",
+          "conclusion": "success",
+          "name": "Pin the Unity version for this build only (nothing is committed)",
+          "number": 4,
+          "started_at": "2026-10-16T08:45:07Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:48:14Z",
+          "conclusion": "success",
+          "name": "Free disk space (the Unity Android image is about 9 GB)",
+          "number": 5,
+          "started_at": "2026-10-16T08:45:07Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:48:14Z",
+          "conclusion": "success",
+          "name": "Prepare Unity cache and diagnostic log folders",
+          "number": 6,
+          "started_at": "2026-10-16T08:48:14Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:48:14Z",
+          "conclusion": "success",
+          "name": "Reuse Unity's import cache from earlier runs",
+          "number": 7,
+          "started_at": "2026-10-16T08:48:14Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:53:32Z",
+          "conclusion": "failure",
+          "name": "Unity 1 of 2: Setup Project (scenes, URP, player settings)",
+          "number": 8,
+          "started_at": "2026-10-16T08:48:14Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:53:32Z",
+          "conclusion": "skipped",
+          "name": "Unity 2 of 2: Build the development APK",
+          "number": 9,
+          "started_at": "2026-10-16T08:53:32Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:53:32Z",
+          "conclusion": "success",
+          "name": "Report the real Unity failure as annotations",
+          "number": 10,
+          "started_at": "2026-10-16T08:53:32Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:53:33Z",
+          "conclusion": "success",
+          "name": "Upload Unity logs and the resolved package lock (for offline diagnosis)",
+          "number": 11,
+          "started_at": "2026-10-16T08:53:32Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:53:33Z",
+          "conclusion": "skipped",
+          "name": "Upload the APK",
+          "number": 12,
+          "started_at": "2026-10-16T08:53:33Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:53:33Z",
+          "conclusion": "skipped",
+          "name": "Post Reuse Unity's import cache from earlier runs",
+          "number": 23,
+          "started_at": "2026-10-16T08:53:33Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:53:33Z",
+          "conclusion": "success",
+          "name": "Post Check out the code",
+          "number": 24,
+          "started_at": "2026-10-16T08:53:33Z"
+        },
+        {
+          "completed_at": "2026-10-16T08:53:33Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 25,
+          "started_at": "2026-10-16T08:53:33Z"
+        }
+      ]
+    }
+  ]
+}

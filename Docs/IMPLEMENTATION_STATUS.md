@@ -8,20 +8,53 @@ API-profile check, and executed under NUnit outside Unity (D-014). It is not a U
 
 ## Latest Android APK workflow attempt — 2026-10-16
 
-The latest cloud run [38858427636](https://github.com/boss-of-python/Wayfinder/actions/runs/38858427636)
-failed in preflight because the check incorrectly required `UNITY_LICENSE`. The earlier successful
-Unity log shows Personal-license activation through `UNITY_EMAIL`/`UNITY_PASSWORD` with
-`UNITY_LICENSE` empty. Unity, package resolution, scene generation and APK building were skipped;
-no artifact exists from this attempt. The workflow now accepts either the license-file secret or
-both account secrets, verifies the editor pin, and does so before disk cleanup. Its Unity-log
-reporter is skipped unless a Unity step was attempted.
+The latest cloud run [38875757162](https://github.com/boss-of-python/Wayfinder/actions/runs/38875757162)
+(dispatched on `main` at `45e4dbe`) got **past preflight and into Unity**: activation succeeded, the
+editor ran for about five minutes and printed ~7,500 job-log lines — roughly four times the
+2026-10-15 run, so it went far beyond the line where Input System 1.12.0 used to abort — then
+*Unity 1 of 2: Setup Project* failed with `Build failed with exit code 1`.
 
-For the established account-based path, no `.ulf` or `UNITY_LICENSE` secret needs to be created;
-keep the Unity email/password secrets configured, then dispatch the updated branch. The Input
-System 1.20.1 repin remains unverified until that run reaches package resolution/compilation
-(KI-036). Latest local checks are **164/164** headless C# tests, **62/62** mocked Python
-build/pipeline tests, content validation, formula checks and economy simulation — none substitute
-for the Unity/APK/device gates.
+**Why that still did not tell us anything, and what changed (D-035).** The run's only annotations
+were GameCI's generic banner and GitHub's `ubuntu-latest` → Ubuntu 26 migration notice. The
+diagnostics step produced nothing, because game-ci launches `unity-editor -logfile /dev/stdout`
+*before* appending `customParameters`: Unity's editor log is the **job log**, never
+`Logs/Unity-Setup.log`, and the reporter was globbing Unity's auxiliary worker logs instead
+(KI-039). The workflow now has a second job, *Explain the Unity result*, which downloads the
+finished build job's log through the Actions API and annotates from it; the reporter can no
+longer be silent (it names every file it inspected, flags a missing editor log, and emits a log
+tail for an unexplained failure); `ProjectSetup.Setup` and the `BuildCommands` entry points write
+`Logs/wayfinder-editor-failure.log` before rethrowing; the dead `-logFile` override is gone and
+the runner is pinned to `ubuntu-24.04` before the 2026-10-19 label migration. Evidence:
+`Docs/evidence/cloud-build-2026-10-16/`.
+
+Keep the Unity email/password secrets configured and dispatch the branch: **one run** now names
+the Unity failure (KI-041) and confirms or refutes the Input System 1.20.1 repin (KI-036). Latest
+local checks are **164/164** headless C# tests, **86/86** mocked Python build/pipeline tests,
+**17/17** mutations caught, content validation, formula checks and economy simulation — none
+substitute for the Unity/APK/device gates.
+
+## Batch 2026-10-16-H — The cloud build explains itself (BUILD-01; fixes KI-039, opens KI-040/041)
+
+Requirements touched: **BUILD-01**, KI-006/033/034/036, new KI-039/040/041. Decision **D-035**.
+Evidence: `Docs/evidence/cloud-build-2026-10-16/` (API-verified annotations of run 38875757162,
+the upstream game-ci invocation, 86/86 tests, 17/17 mutation check, headless re-run).
+
+| Item | Before | After | Evidence |
+|---|---|---|---|
+| Diagnosing run 38875757162 | failed after 8 m 38 s with two annotations: GameCI's `Build failed with exit code 1` and GitHub's `ubuntu-latest` migration notice. **Zero** diagnostic output | Root cause proven from upstream source: game-ci runs `unity-editor -logfile /dev/stdout … $CUSTOM_PARAMETERS`, so Unity's log is the **job log** and `customParameters: -logFile …` was dead; the reporter was globbing Unity's `AssetImportWorker*` logs | `annotations-38875757162.json`, `gameci-unity-invocation.txt` |
+| Where the editor log comes from | hoped-for `Logs/Unity-Setup.log` that Unity never wrote | new `diagnose` job downloads the finished build job's log via the Actions API (`fetch_job_log.sh`, retries, `actions: read`) and reruns the reporter over it; also uploaded as `Unity-job-log` | `Tools/Build/fetch_job_log.sh`, `CloudBuildWorkflowTests` |
+| `report_unity_failure.sh` when it recognises nothing | exited 0 in silence — indistinguishable from a clean build | never silent: always names the files it inspected with sizes, flags "no editor log was inspected", and for an unexplained failure emits an error plus a 40-line encoded log tail; new patterns for unresolvable `-executeMethod`, `*.Exception:`, and the project breadcrumb; reads `UNITY_SETUP_OUTCOME`/`UNITY_BUILD_OUTCOME`/`UNITY_JOB_RESULT` | 63 diagnostics tests incl. the exact 38875757162 reproduction |
+| An exception inside an editor entry point | vanished into stdout | `EditorFailureLog.Run` wraps `ProjectSetup.Setup` and all four `BuildCommands` entry points: appends `[Wayfinder] Editor method failed: …` + stack to `Logs/wayfinder-editor-failure.log` (collected by `Unity-logs`) and **rethrows** | `EditorFailureLog.cs`, `EditorEntryPointTests` (C#↔shell contract) |
+| Runner label | `ubuntu-latest`, migrating to Ubuntu 26 on 2026-10-19 | pinned `ubuntu-24.04` in both jobs | workflow + runner-pin test |
+
+- **Verified here:** 86/86 Python tests (63 diagnostics + 23 pipeline), 17/17 mutations caught,
+  `headless_cs.py all` → compile OK / **164/164** EditMode / .NET Standard 2.1 profile OK / 30
+  Unity files parse, `bash -n` on both shell scripts, four annotation shapes reproduced by hand.
+- **Not verified:** everything that needs CI. No part of the new job, the breadcrumb or the
+  reporter has run on a real runner; **no APK**; the Unity failure of run 38875757162 is still
+  unidentified (KI-041). M0/M1/M2 gates unchanged.
+- **Blocked:** dispatching the workflow (403, no `actions: write` — KI-035). One owner dispatch of
+  `arena/fab430e0-wayfinder` resolves KI-041 and KI-036.
 
 ## Batch 2026-10-16-G — Scatter placement + chunk streaming planner (M3, headless-verified; Unity host not yet written)
 
@@ -244,6 +277,8 @@ FINISH-01 (Implemented definitions; credits flow coded).
 | .NET Standard 2.1 API-profile check | `python3 Tools/Build/headless_cs.py profile` | OK — 6 runtime assemblies |
 | C# 9 parse check of 24 Unity-dependent files | `python3 Tools/Build/headless_cs.py syntax` | OK — 0 syntax errors (not type-checked) |
 | Mutation check of Batch C fixes/safeguards | `python3 Docs/evidence/campaign-session-2026-10-15/mutation_check.py` | 8 / 8 mutations caught |
+| Build diagnostics + runner contract (mocked; no Unity) | `python3 -m unittest discover -s Tools/Build -p 'test_*.py'` | **86 / 86** (`Docs/evidence/cloud-build-2026-10-16/diagnostics-tests.log`) |
+| Mutation check of the Batch H cloud-build safeguards | `python3 Docs/evidence/cloud-build-2026-10-16/mutation_check.py` | **17 / 17** mutations caught |
 | C# NUnit suites **in Unity** | Unity Test Runner / `Tools/Build/build.sh test-editmode` | **Not run** (KI-001) |
 | Android/iOS smoke builds | `Tools/Build/build.sh android-dev` / `ios-dev` | **Not run** (KI-006) |
 
@@ -274,11 +309,12 @@ FINISH-01 (Implemented definitions; credits flow coded).
 
 ## Next dependency-ordered batch
 
-0. **After Batch G (2026-10-16):** the engine-free M3 work is done. Remaining M3 work is Unity-dependent (streamer host,
-   scatter on baked terrain, bake) and needs one owner cloud run first (item 1 below). Cache/landmark socket placement
-   (§7.2 step 9) is the next headless-only M3 item.
+0. **After Batch H (2026-10-16):** the cloud build can now explain its own failures (D-035, KI-039). The engine-free M3
+   work is done; remaining M3 work is Unity-dependent (streamer host, scatter on baked terrain, bake) and needs one
+   owner cloud run first (item 1 below). Cache/landmark socket placement (§7.2 step 9) is the next headless-only M3
+   item.
 
-1. **Owner, ~10 minutes**: dispatch **Actions → Android APK (free cloud build) → Run workflow** on branch `arena/700fea1a-wayfinder` (KI-035 — the agent's token lacks `actions: write`). That single run compiles the four remaining Unity-facing assemblies (KI-034), runs `ProjectSetup.Setup` and, if it gets there, produces `Wayfinder-dev.apk` as an artifact. Any failure now self-reports as annotations (D-033), so no log paste is needed. Then commit `Packages/packages-lock.json` from the `Unity-logs` artifact (KI-002).
+1. **Owner, ~10 minutes — the one blocking action**: dispatch **Actions → Android APK (free cloud build) → Run workflow** on branch `arena/fab430e0-wayfinder` (KI-035 — the agent's token lacks `actions: write`). That single run compiles the four remaining Unity-facing assemblies (KI-034), runs `ProjectSetup.Setup` and, if it gets there, produces `Wayfinder-dev.apk` as an artifact. **Read the *Explain the Unity result* job**, not the build job: it downloads Unity's real log and annotates the cause — compile error with file/line, abort reason, exception, or an explicit "not explained" plus a log tail (D-035). No log paste is needed; this is what finally answers KI-041 and KI-036. Then commit `Packages/packages-lock.json` from the `Unity-logs` artifact (KI-002).
    *Local alternative:* install Unity 6.3 LTS + Android module, open the project, `Tools → Wayfinder → Setup Project`, commit generated scenes/meta (KI-004/005).
 2. Fix any UnityEngine API drift in the 24 parse-checked files — first the new campaign glue (KI-026); run EditMode tests **in Unity** (expect 109/109) and the 9 PlayMode tests; play Title → New → VerticalSlice and attach logs/screens to `Docs/evidence/`.
 3. M2 follow-ups that are dependency-ready without Unity: `VehicleController.ApplyEffectiveStats` seam so researched grip/suspension/torque reach physics (KI-025); camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028); expose repair-kit/tire-patch use and selling in the session.

@@ -21,7 +21,11 @@ env:
 jobs:
   apk:
     name: Build Wayfinder-dev.apk
-    runs-on: ubuntu-latest # standard runner = free on public repositories
+    # Pinned, not ubuntu-latest: run 38875757162 carried GitHub's own notice that the
+    # ubuntu-latest label migrates to Ubuntu 26 from 2026-10-19. A 9 GB Docker Unity build
+    # must not change host OS silently between two dispatches. A standard runner is still
+    # free on public repositories; bump this pin deliberately, with a run to prove it.
+    runs-on: ubuntu-24.04
     timeout-minutes: 180
     steps:
       - name: Check out the code
@@ -52,8 +56,10 @@ jobs:
           docker-images: true
           swap-storage: false
 
-      # GameCI writes the Editor log in the mounted workspace when -logFile is supplied below.
-      # Pre-create Library so a cold cache is a normal empty cache, not a missing-path warning.
+      # Unity's editor log goes to the container's stdout (game-ci runs `unity-editor
+      # -logfile /dev/stdout`), so it lands in the job log, not here; Logs/ still collects
+      # Unity's worker logs and this project's own failure breadcrumb. Pre-create Library so a
+      # cold cache is a normal empty cache, not a missing-path warning.
       - name: Prepare Unity cache and diagnostic log folders
         run: mkdir -p Library Logs Builds/Logs
 
@@ -65,6 +71,10 @@ jobs:
           restore-keys: |
             Library-Android-${{ env.UNITY_VERSION }}-
 
+      # No `customParameters: -logFile ...`: game-ci's build.sh passes `-logfile /dev/stdout`
+      # before any custom parameter, and run 38875757162 showed the override produced no
+      # readable editor log — only Unity's worker logs, which explain nothing. The log is
+      # recovered from the Actions API by the `diagnose` job below.
       - name: "Unity 1 of 2: Setup Project (scenes, URP, player settings)"
         id: unity_setup
         uses: game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45 # v6.0.0
@@ -77,7 +87,6 @@ jobs:
           targetPlatform: Android
           buildMethod: Wayfinder.Editor.ProjectSetup.Setup
           versioning: 'None'
-          customParameters: "-logFile /github/workspace/Logs/Unity-Setup.log"
           allowDirtyBuild: true
 
       - name: "Unity 2 of 2: Build the development APK"
@@ -92,16 +101,19 @@ jobs:
           targetPlatform: Android
           buildMethod: Wayfinder.Editor.BuildCommands.BuildAndroidDev
           versioning: 'None'
-          customParameters: "-logFile /github/workspace/Logs/Unity-Android-Dev.log"
           allowDirtyBuild: true
 
       # Unity's own exit code is famously undescriptive ("Build failed with exit code 1").
-      # This turns the real cause into check-run annotations, which are readable from the
-      # GitHub API (repos/.../check-runs/{id}/annotations) without downloading the raw log.
-      # Only run after at least one Unity step was attempted; preflight failures have no Editor.log.
+      # This turns whatever survived in the workspace (worker logs, and this project's
+      # Logs/wayfinder-editor-failure.log breadcrumb) into check-run annotations, and says
+      # plainly when no editor log was available instead of reporting nothing at all.
+      # Only run after at least one Unity step was attempted; preflight failures have no log.
       - name: Report the real Unity failure as annotations
         if: ${{ always() && (steps.unity_setup.outcome == 'success' || steps.unity_setup.outcome == 'failure' || steps.unity_setup.outcome == 'cancelled' || steps.unity_build.outcome == 'success' || steps.unity_build.outcome == 'failure' || steps.unity_build.outcome == 'cancelled') }}
         continue-on-error: true
+        env:
+          UNITY_SETUP_OUTCOME: ${{ steps.unity_setup.outcome }}
+          UNITY_BUILD_OUTCOME: ${{ steps.unity_build.outcome }}
         run: bash Tools/Build/report_unity_failure.sh
 
       # packages-lock.json is what Unity really resolved (KI-002): download it from this
@@ -125,4 +137,47 @@ jobs:
           name: Wayfinder-dev-APK
           path: Builds/Android/Wayfinder-dev.apk
           if-no-files-found: error
+          retention-days: 7
+
+  # The build job's own log *is* Unity's editor log (game-ci: `unity-editor -logfile /dev/stdout`).
+  # Once that job has finished, the Actions API serves it as plain text, so this job can publish
+  # the real cause as annotations — readable with
+  # `gh api repos/{owner}/{repo}/check-runs/{job-id}/annotations` from anywhere, without the
+  # raw-log host. Reporting only: it never fails the workflow and never touches the APK.
+  diagnose:
+    name: Explain the Unity result
+    needs: apk
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read # GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs
+    steps:
+      - name: Check out the diagnostics scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download the build job's log (Unity logs to stdout, not to the workspace)
+        id: job_log
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" Logs/unity-job-log.txt
+
+      - name: Report the real Unity result as annotations
+        continue-on-error: true
+        env:
+          UNITY_JOB_RESULT: ${{ needs.apk.result }}
+        run: bash Tools/Build/report_unity_failure.sh "$PWD" Logs/unity-job-log.txt
+
+      - name: Upload the build job log (plain text, no raw-log host needed)
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Unity-job-log
+          path: Logs/unity-job-log.txt
+          if-no-files-found: ignore
           retention-days: 7

@@ -18,8 +18,16 @@ namespace Wayfinder.Editor
         public const string PipelinePath = "Assets/Wayfinder/Settings/WayfinderURP.asset";
         public const string RendererPath = "Assets/Wayfinder/Settings/WayfinderRenderer.asset";
 
+        /// <summary>
+        /// Cloud-build entry point. Wrapped so a failure is recorded in
+        /// <see cref="EditorFailureLog.LogPath"/> before it is rethrown: Unity's editor log goes to
+        /// the container's stdout, so without that file a thrown exception leaves no trace in the
+        /// workspace at all (run 38875757162, D-035).
+        /// </summary>
         [MenuItem("Tools/Wayfinder/Setup Project")]
-        public static void Setup()
+        public static void Setup() => EditorFailureLog.Run("Wayfinder.Editor.ProjectSetup.Setup", RunSetup);
+
+        static void RunSetup()
         {
             if (!Application.isBatchMode && !UnityEditor.SceneManagement.EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;

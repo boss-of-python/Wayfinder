@@ -1,0 +1,35 @@
+# Dress rehearsal of the new diagnose job against a REAL Unity job log.
+# Input: Docs/evidence/cloud-build-2026-10-15/unity-setup-failure-38754979851.log (owner-supplied
+#   excerpt of run 38754979851's job log - i.e. exactly what fetch_job_log.sh now downloads),
+#   copied to Logs/unity-job-log.txt in an otherwise empty workspace.
+# Command: UNITY_JOB_RESULT=failure bash Tools/Build/report_unity_failure.sh "$PWD" Logs/unity-job-log.txt
+# 2026-10-16T09:24:55Z
+
+::notice title=Unity diagnostics::Inspected Logs/unity-job-log.txt (18284 bytes); editor log recognised: yes.
+::error file=Library/PackageCache/com.unity.inputsystem@920b46832575/InputSystem/Editor/InputSystemPluginControl.cs,line=47,col=25,title=Unity compile error::error CS0117: 'BuildTarget' does not contain a definition for 'ReservedCFE'
+::error title=Unity aborted batchmode::Scripts have compiler errors.
+::error title=Unity aborted::Unity aborted before completing: Scripts have compiler errors.
+::warning file=Assets/Wayfinder/Scripts/Simulation/ChaseCameraBehaviour.cs,line=148,title=Unity warning::warning CS0414: The field 'ChaseCameraBehaviour._photoMode' is assigned but its value is never used
+
+# exit code: 0 (always; the Unity step owns the verdict)
+# --- job summary written by the same run ---
+## Unity build diagnostics
+Logs inspected:Logs/unity-job-log.txt
+- Editor log recognised among them: **yes**
+- Unity compile errors (unique): **1**
+```
+Library/PackageCache/com.unity.inputsystem@920b46832575/InputSystem/Editor/InputSystemPluginControl.cs(47,25): error CS0117: 'BuildTarget' does not contain a definition for 'ReservedCFE'
+```
+- Unity aborted batchmode: Scripts have compiler errors.
+- GameCI: Unity aborted before completing: Scripts have compiler errors.
+- Compiler warnings in Assets/Wayfinder (unique): **1**
+## Unity build diagnostics
+Logs inspected:Logs/unity-job-log.txt
+- Editor log recognised among them: **yes**
+- Unity compile errors (unique): **1**
+```
+Library/PackageCache/com.unity.inputsystem@920b46832575/InputSystem/Editor/InputSystemPluginControl.cs(47,25): error CS0117: 'BuildTarget' does not contain a definition for 'ReservedCFE'
+```
+- Unity aborted batchmode: Scripts have compiler errors.
+- GameCI: Unity aborted before completing: Scripts have compiler errors.
+- Compiler warnings in Assets/Wayfinder (unique): **1**

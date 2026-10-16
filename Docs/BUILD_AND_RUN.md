@@ -15,13 +15,13 @@ passes 164/164 tests (Batch G); older counts below are historical snapshots.
 ## Free cloud build route (GameCI, GitHub-hosted runner)
 
 **Executed, but no APK yet.** Five owner dispatches on 2026-10-15 reached Unity and exposed the
-Input System 1.12.0 `BuildTarget.ReservedCFE` compile error; the manifest was repinned to 1.20.1,
-but that fix is still unverified (KI-036). The latest run, [38858427636](https://github.com/boss-of-python/Wayfinder/actions/runs/38858427636)
-on 2026-10-16, stopped at an over-strict preflight that required `UNITY_LICENSE`. The earlier
-successful activation log shows GameCI activated the Personal license with `UNITY_EMAIL` and
-`UNITY_PASSWORD` while `UNITY_LICENSE` was empty. The preflight now accepts either method and
-runs before multi-minute disk cleanup. This builds a development APK on GitHub's machines; no
-local Unity install or self-hosted runner is required.
+Input System 1.12.0 `BuildTarget.ReservedCFE` compile error; the manifest was repinned to 1.20.1.
+The latest run, [38875757162](https://github.com/boss-of-python/Wayfinder/actions/runs/38875757162)
+on 2026-10-16, authenticated, ran Unity for about five minutes — well past the point where 1.12.0
+used to abort — and then failed in *Unity 1 of 2: Setup Project*. **Its cause is still unknown**
+(KI-041): the diagnostics were reading the wrong files and reported nothing at all (KI-039, now
+fixed by D-035; see `Docs/evidence/cloud-build-2026-10-16/`). This builds a development APK on
+GitHub's machines; no local Unity install or self-hosted runner is required.
 
 Run it: **Actions tab → "Android APK (free cloud build)" → Run workflow** (manual only —
 `workflow_dispatch`, never on `pull_request`). You can pick the branch; the agent cannot
@@ -49,9 +49,21 @@ What it does, in order:
 | 6 | `actions/cache` | reuses the `Library` import cache between runs |
 | 7 | GameCI `unity-builder` → `Wayfinder.Editor.ProjectSetup.Setup` | generates scenes, URP asset, quality tiers, player settings, campaign `Resources/Content` |
 | 8 | GameCI `unity-builder` → `Wayfinder.Editor.BuildCommands.BuildAndroidDev` | `Builds/Android/Wayfinder-dev.apk` (unsigned development build) |
-| 9 | `bash Tools/Build/report_unity_failure.sh` (only if Unity was attempted) | turns Unity's real failure into **check-run annotations**; preflight failures no longer get a misleading missing-log notice |
-| 10 | `actions/upload-artifact` (logs) | `Unity-logs` (Editor.log + **`Packages/packages-lock.json`**), 7-day retention |
+| 9 | `bash Tools/Build/report_unity_failure.sh` (only if Unity was attempted) | annotates whatever survived in the workspace — Unity's worker logs and `Logs/wayfinder-editor-failure.log` — and says plainly when no editor log was available |
+| 10 | `actions/upload-artifact` (logs) | `Unity-logs` (workspace logs + **`Packages/packages-lock.json`**), 7-day retention |
 | 11 | `actions/upload-artifact` (APK) | `Wayfinder-dev-APK`, 7-day retention; fails if the APK is missing |
+
+Then a second job, **Explain the Unity result** (`needs: apk`, `if: always()`), does the part that
+matters after a failure:
+
+| Step | Action | Result |
+|---|---|---|
+| 1 | `bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" Logs/unity-job-log.txt` | downloads the finished build job's plain-text log — **this is Unity's editor log**, because game-ci runs `unity-editor -logfile /dev/stdout` (D-035) |
+| 2 | `bash Tools/Build/report_unity_failure.sh "$PWD" Logs/unity-job-log.txt` | compile errors with file/line/column, the batchmode abort reason, an unresolvable `-executeMethod`, package-resolution failures, exceptions, our own failure breadcrumb — and, if nothing matches, an explicit "not explained" error plus a 40-line log tail |
+| 3 | `actions/upload-artifact` | `Unity-job-log`, so the full log is downloadable without the raw-log host |
+
+Both reporting steps are `continue-on-error: true` and the whole job is reporting-only: it can
+never turn a green build red or a red build green.
 
 ### Unity authentication secrets
 
@@ -71,27 +83,35 @@ that the Unity account activation was invalid. The updated preflight accepts eit
 ### Reading a failure without opening the log
 
 Unity aborts batchmode with exit code 1 for many reasons, and the raw log host is not reachable
-from every environment. Step 8 therefore publishes the cause as annotations:
+from every environment. Both jobs publish what they know as annotations — read the
+**Explain the Unity result** job first, it is the one that has Unity's log:
 
 ```bash
-# job id from: gh run view <run-id>
+run=<run-id>
+gh api repos/boss-of-python/Wayfinder/actions/runs/$run/jobs \
+  --jq '.jobs[] | "\(.id) \(.name) \(.conclusion)"'
 gh api repos/boss-of-python/Wayfinder/check-runs/<job-id>/annotations \
-  --jq '.[] | "\(.annotation_level) \(.path):\(.start_line) \(.message)"'
+  --jq '.[] | "[\(.annotation_level)] \(.title): \(.message)"'
 ```
 
-When Unity has been attempted, you get up to ten `error CS` annotations with file/line/column,
-the batchmode abort reason, editor exceptions, package-resolution failures, warnings in
-`Assets/Wayfinder`, which Wayfinder assemblies Unity compiled, and the APK size. The step exits 0
-and is `continue-on-error: true`, so it can never change the build's verdict. The current
-mocked workflow/diagnostics and pipeline suite is 62/62 (`python3 -m unittest discover -s
-Tools/Build -p 'test_*.py' -v`); these tests do not execute Unity.
+You get up to ten `error CS` annotations with file/line/column, the batchmode abort reason, an
+unresolvable `-executeMethod`, package-resolution failures, editor exceptions, the
+`[Wayfinder] Editor method failed: …` breadcrumb written by `EditorFailureLog`, warnings in
+`Assets/Wayfinder`, which Wayfinder assemblies Unity compiled, and the APK size. A failure that
+matches none of those is still reported, with the tail of the log attached — silence is a bug
+(KI-039), not a result. Every diagnostic step exits 0 and is `continue-on-error: true`, so it can
+never change the build's verdict. The mocked workflow/diagnostics and pipeline suite is 86/86
+(`python3 -m unittest discover -s Tools/Build -p 'test_*.py' -v`); these tests do not execute
+Unity.
 
 Limits to know up front:
 
-- The repo is **public**, so the standard `ubuntu-latest` runner is free; the 180-minute
-  timeout can be exceeded by the first image pull plus an IL2CPP Android build. The secret and
-  editor-pin preflights now fail before disk cleanup/image pull; a Unity-stage failure may still
-  cost several minutes.
+- The repo is **public**, so the standard runner is free. It is pinned to `ubuntu-24.04`, not
+  `ubuntu-latest`: run 38875757162 carried GitHub's notice that the label migrates to Ubuntu 26
+  from 2026-10-19, and a 9 GB Docker Unity build should not change host OS without a commit.
+  The 180-minute timeout can be exceeded by the first image pull plus an IL2CPP Android build.
+  The secret and editor-pin preflights fail before disk cleanup/image pull; a Unity-stage failure
+  may still cost several minutes.
 - `unity-builder` v6 ignores its `unityVersion` input and reads the version from the
   checked-out `ProjectSettings/ProjectVersion.txt` — that file is now committed and step 4 only
   verifies it.
