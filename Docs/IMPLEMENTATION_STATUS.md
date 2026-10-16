@@ -6,6 +6,35 @@ Last updated: 2026-10-15. Status values: **Not started / In progress / Implement
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
 
+## Batch 2026-10-15-F — First real Unity run: the cloud build's actual failure, found and fixed
+
+Requirements touched: **BUILD-01**, **ENG-01**, KI-001/002/003/006/033, new KI-034/035/036.
+Evidence: `Docs/evidence/cloud-build-2026-10-15/` (owner-supplied log of run 38754979851 +
+33 diagnostics tests + 9/9 mutation check + headless re-run).
+
+| Item | Before | After | Evidence |
+|---|---|---|---|
+| Why five cloud builds failed | `Build failed with exit code 1`, undiagnosable without the raw log | **One cause, in Unity's own package:** `com.unity.inputsystem@1.12.0` `InputSystemPluginControl.cs(47,25): error CS0117: 'BuildTarget' does not contain a definition for 'ReservedCFE'` — an enum member Unity 6000.3 removed | `unity-setup-failure-38754979851.log` lines 181/186 |
+| `Packages/manifest.json` | Input System 1.12.0 (blueprint pin, cannot compile on 6000.3) | **1.20.1** (D-031; the reference is gone upstream from 1.13.1) — reasoned, **not yet executed** (KI-036) | upstream package source at tags 1.12.0…1.20.1 |
+| `ProjectSettings/ProjectVersion.txt` | template placeholder `6000.3.UNVERIFIED-PIN-REQUIRED`, rewritten per CI run | **Committed verified pin** `6000.3.26f1 (de8167e7440c)`, read from the real editor banner (D-032) | same log |
+| `Tools/Build/pin_toolchain.py` | always rewrote the file, dropping any revision hash | Idempotent: leaves a matching committed pin alone, exits 1 on a deliberate mismatch, accepts `--editor-revision` | `test_build_diagnostics.py`, manual 3-case check |
+| Unity-facing C# verification | 29 files parse-checked only | Unity **compiled all six engine-free assemblies**; `VehicleController`/`ChaseCameraBehaviour` are now Unity-compiled, not parse-checked. The four Input System-dependent assemblies are still uncompiled (KI-034) | `Csc Library/Bee/artifacts/…/Wayfinder.*.dll` |
+| `ChaseCameraBehaviour` | the run's only warning: `_photoMode` write-only (CS0414) | **Fixed:** photo mode bounds the orbit per frame via `EffectiveDistance` instead of permanently mutating the authored `distance`, and exposes `PhotoMode` | 143/143 headless, 29/29 syntax |
+| `ProjectSetup` | created the generated `Resources` folders then imported into them | `AssetDatabase.Refresh()` after each created folder, so `ImportAsset` has a folder to attach to and the campaign content really lands in the APK | source diff |
+| CI diagnosability | none: Unity's exit code is undescriptive, the log host is unreachable from here | `report_unity_failure.sh` → check-run annotations (compile errors with file/line/col, abort reason, exceptions, package-resolution failures, warnings in `Assets/Wayfinder`, compiled assemblies, APK size) + job summary + `Unity-logs` artifact **including `packages-lock.json`**; `check_unity_secrets.sh` → names a missing secret in seconds, never printing a value (D-033) | `diagnostics-tests.log` (33 tests), `mutation-check.log` (9/9) |
+
+- **Verified here:** 33/33 diagnostics tests, 9/9 mutation check, 23/23 runner contract tests,
+  `headless_cs.py all` → compile OK / **143/143** EditMode tests / .NET Standard 2.1 profile OK /
+  29 Unity files parse, `pin_toolchain.py` idempotent on the committed pin.
+- **Verified by a real Unity run (owner-supplied log):** license activation, image existence,
+  package resolution, editor version/changeset, six assemblies compiling, one warning.
+- **Not verified:** the Input System repin (needs one dispatch), scene generation, the
+  PlayMode/EditMode suites in Unity, an APK, a device install. **No APK exists** — KI-006 and
+  the M0/M1/M2 gates are unchanged.
+- **Blocked:** the agent cannot dispatch the workflow (`403 Resource not accessible by
+  integration`, no `actions: write`) — KI-035. The owner runs **Actions → Android APK (free
+  cloud build) → Run workflow** and may select branch `arena/700fea1a-wayfinder`.
+
 ## Batch 2026-10-15-E — Free cloud build route (Implemented; never executed)
 
 Requirements touched: **BUILD-01** (narrowed, not closed), KI-006, new KI-033. No game
@@ -201,7 +230,8 @@ FINISH-01 (Implemented definitions; credits flow coded).
 
 ## Next dependency-ordered batch
 
-1. **Owner**: install Unity 6.3 LTS + Android module; run `Tools/Build/pin_toolchain.py`; open project; `Tools → Wayfinder → Setup Project` (now also copies campaign content to `Resources/Content` and builds the world-coordinate VerticalSlice); commit generated scenes/meta/lock (KI-002/004/005).
+1. **Owner, ~10 minutes**: dispatch **Actions → Android APK (free cloud build) → Run workflow** on branch `arena/700fea1a-wayfinder` (KI-035 — the agent's token lacks `actions: write`). That single run compiles the four remaining Unity-facing assemblies (KI-034), runs `ProjectSetup.Setup` and, if it gets there, produces `Wayfinder-dev.apk` as an artifact. Any failure now self-reports as annotations (D-033), so no log paste is needed. Then commit `Packages/packages-lock.json` from the `Unity-logs` artifact (KI-002).
+   *Local alternative:* install Unity 6.3 LTS + Android module, open the project, `Tools → Wayfinder → Setup Project`, commit generated scenes/meta (KI-004/005).
 2. Fix any UnityEngine API drift in the 24 parse-checked files — first the new campaign glue (KI-026); run EditMode tests **in Unity** (expect 109/109) and the 9 PlayMode tests; play Title → New → VerticalSlice and attach logs/screens to `Docs/evidence/`.
 3. M2 follow-ups that are dependency-ready without Unity: `VehicleController.ApplyEffectiveStats` seam so researched grip/suspension/torque reach physics (KI-025); camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028); expose repair-kit/tire-patch use and selling in the session.
 4. M3 batch: `ScatterPlacer` (§7.6) + pure `WorldStreamer` planner with handle-leak tests (KI-017, QA case 12); slice terrain bake so the 1,024 m area has real relief (KI-027).

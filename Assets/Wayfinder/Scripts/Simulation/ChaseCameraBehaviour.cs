@@ -76,10 +76,10 @@ namespace Wayfinder.Simulation
             }
 
             Quaternion orbit = Quaternion.Euler(_pitchOffset, target.eulerAngles.y + _yawOffset, 0f);
-            Vector3 desiredPosition = target.position + orbit * new Vector3(0f, 0f, -distance) + Vector3.up * height;
+            Vector3 desiredPosition = target.position + orbit * new Vector3(0f, 0f, -EffectiveDistance) + Vector3.up * height;
 
             // Obstruction: spherecast from target toward camera; shorten immediately, recover slowly.
-            float desiredDistance = distance;
+            float desiredDistance = EffectiveDistance;
             Vector3 castOrigin = target.position + Vector3.up * (height * 0.5f);
             Vector3 castDir = (desiredPosition - castOrigin).normalized;
             float castDist = Vector3.Distance(castOrigin, desiredPosition);
@@ -131,20 +131,27 @@ namespace Wayfinder.Simulation
             }
         }
 
-        /// <summary>Photo mode: bounded orbit within 20 m; no map reveal or trigger activation (§3.4).</summary>
-        public void SetPhotoMode(bool photoMode)
-        {
-            if (photoMode)
-            {
-                _photoMode = true;
-                distance = Mathf.Min(distance, 20f);
-            }
-            else
-            {
-                _photoMode = false;
-            }
-        }
+        /// <summary>Photo mode orbit bound (§3.4): never farther than 20 m from the vehicle.</summary>
+        public const float PhotoModeMaxDistance = 20f;
 
         bool _photoMode;
+
+        /// <summary>True while photo mode bounds the orbit (§3.4). Read by the camera update every frame.</summary>
+        public bool PhotoMode => _photoMode;
+
+        /// <summary>
+        /// Photo mode: bounded orbit within 20 m; no map reveal or trigger activation (§3.4).
+        /// The bound is applied per frame instead of mutating the authored <see cref="distance"/>,
+        /// so leaving photo mode restores the tuned distance exactly.
+        /// </summary>
+        public void SetPhotoMode(bool photoMode)
+        {
+            if (_photoMode == photoMode) return;
+            _photoMode = photoMode;
+            NotifyCameraInput();
+        }
+
+        /// <summary>Authored distance, clamped to the photo-mode bound while photo mode is active.</summary>
+        float EffectiveDistance => _photoMode ? Mathf.Min(distance, PhotoModeMaxDistance) : distance;
     }
 }

@@ -1,0 +1,253 @@
+# Curated excerpt of GitHub Actions run 38754979851, step "Unity 1 of 2: Setup Project".
+# Workflow: .github/workflows/android-cloud-build.yml at commit 61cfc2e (main), 2026-10-15.
+# Source: the full step log (1,996 lines) supplied by the repository owner; excerpts are kept
+# verbatim except that a truncated Unity access-token prefix is redacted. GitHub had already
+# masked UNITY_EMAIL / UNITY_PASSWORD / UNITY_LICENSE as *** in the original.
+#
+# What this proves:
+#   - the GameCI image unityci/editor for 6000.3.26f1 (android, image version 3) exists and runs;
+#   - a Unity Personal license activated from the repository secrets;
+#   - Unity 6000.3.26f1 (de8167e7440c) imported this project and compiled all six engine-free
+#     Wayfinder assemblies, with exactly one warning (ChaseCameraBehaviour CS0414);
+#   - the build then aborted on ONE compile error, inside Unity's own Input System package
+#     (com.unity.inputsystem 1.12.0 vs BuildTarget.ReservedCFE) - not in Wayfinder code.
+# What it does not prove: no APK, no scene generation, no PlayMode run, no device result.
+
+----- original log lines 1-42 -----
+﻿2026-10-15T14:52:44.7911202Z ##[group]Run game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45
+2026-10-15T14:52:44.7911462Z with:
+2026-10-15T14:52:44.7911584Z   unityVersion: 6000.3.26f1
+2026-10-15T14:52:44.7911731Z   targetPlatform: Android
+2026-10-15T14:52:44.7911897Z   buildMethod: Wayfinder.Editor.ProjectSetup.Setup
+2026-10-15T14:52:44.7912079Z   versioning: None
+2026-10-15T14:52:44.7912201Z   allowDirtyBuild: true
+2026-10-15T14:52:44.7912330Z   cliVersion: latest
+2026-10-15T14:52:44.7912458Z   useHostNetwork: false
+2026-10-15T14:52:44.7912599Z   androidExportType: androidPackage
+2026-10-15T14:52:44.7912772Z   androidSymbolType: none
+2026-10-15T14:52:44.7912915Z   providerStrategy: local
+2026-10-15T14:52:44.7913048Z   runAsHostUser: false
+2026-10-15T14:52:44.7913183Z   dockerIsolationMode: default
+2026-10-15T14:52:44.7913346Z   containerRegistryRepository: unityci/editor
+2026-10-15T14:52:44.7913531Z   containerRegistryImageVersion: 3
+2026-10-15T14:52:44.7913697Z   cacheUnityInstallationOnMac: false
+2026-10-15T14:52:44.7913893Z   dockerWorkspacePath: /github/workspace
+2026-10-15T14:52:44.7914053Z   skipActivation: false
+2026-10-15T14:52:44.7914374Z   linux64RemoveExecutableExtension: false
+2026-10-15T14:52:44.7914551Z   enableBuildRetry: false
+2026-10-15T14:52:44.7914691Z   localCacheEnabled: false
+2026-10-15T14:52:44.7914829Z   localCacheLibrary: true
+2026-10-15T14:52:44.7914964Z   localCacheLfs: false
+2026-10-15T14:52:44.7915091Z   localCacheMode: tar
+2026-10-15T14:52:44.7915213Z env:
+2026-10-15T14:52:44.7915326Z   UNITY_VERSION: 6000.3.26f1
+2026-10-15T14:52:44.7915461Z   UNITY_LICENSE: 
+2026-10-15T14:52:44.7915719Z   UNITY_EMAIL: ***
+2026-10-15T14:52:44.7915855Z   UNITY_PASSWORD: ***
+2026-10-15T14:52:44.7915979Z ##[endgroup]
+2026-10-15T14:52:45.4276213Z Cache hit for: game-ci-cli-v0.1.72-linux-x64
+2026-10-15T14:52:46.6419367Z Received 25273514 of 37856426 (66.8%), 24.1 MBs/sec
+2026-10-15T14:52:47.6419701Z Received 33662122 of 37856426 (88.9%), 16.1 MBs/sec
+2026-10-15T14:52:47.9305843Z Received 37856426 of 37856426 (100.0%), 15.8 MBs/sec
+2026-10-15T14:52:47.9307637Z Cache Size: ~36 MB (37856426 B)
+2026-10-15T14:52:47.9335095Z [command]/usr/bin/tar -xf /home/runner/work/_temp/8d82d3be-10e0-488f-aa80-60d2589a5211/cache.tzst -P -C /home/runner/work/Wayfinder/Wayfinder --use-compress-program unzstd
+2026-10-15T14:52:48.0563719Z Cache restored successfully
+2026-10-15T14:52:48.0584442Z Restored game-ci CLI v0.1.72 from cache
+2026-10-15T14:52:48.0590437Z [command]/tmp/game-ci-cli-cache/v0.1.72/game-ci build --targetPlatform=Android --engineVersion=6000.3.26f1 --buildMethod=Wayfinder.Editor.ProjectSetup.Setup --versioningStrategy=None --androidExportType=androidPackage --androidSymbolType=none --dockerIsolationMode=default --containerRegistryRepository=unityci/editor --containerRegistryImageVersion=3 --dockerWorkspacePath=/github/workspace --allowDirtyBuild
+2026-10-15T14:52:48.3661495Z [INFO] Versioning strategy: None
+2026-10-15T14:52:48.3661907Z [INFO] Version of this build: none
+
+----- original log lines 130-175 -----
+2026-10-15T14:55:53.5386566Z [===                                    ] 8% Computing updates...               
+2026-10-15T14:55:53.5387025Z [===                                    ] 10% Computing updates...              
+2026-10-15T14:55:53.5391021Z                                                                                 
+2026-10-15T14:55:53.5393398Z [===                                    ] 10% Computing updates...              
+2026-10-15T14:55:53.5393955Z Warning: Failed to find package 'platforms;android-'
+2026-10-15T14:55:53.5688964Z Updated Android SDK.
+2026-10-15T14:55:53.5689468Z Running as root
+2026-10-15T14:55:53.5691155Z GIT_CONFIG_EXTENSIONS unset skipping
+2026-10-15T14:55:53.5691694Z ---------- git config --list -------------
+2026-10-15T14:55:53.5792950Z filter.lfs.clean=git-lfs clean -- %f
+2026-10-15T14:55:53.5794585Z filter.lfs.smudge=git-lfs smudge -- %f
+2026-10-15T14:55:53.5795469Z filter.lfs.process=git-lfs filter-process
+2026-10-15T14:55:53.5795903Z filter.lfs.required=true
+2026-10-15T14:55:53.5796166Z ---------- git config --list --show-origin -------------
+2026-10-15T14:55:53.5823131Z file:/etc/gitconfig	filter.lfs.clean=git-lfs clean -- %f
+2026-10-15T14:55:53.5825996Z file:/etc/gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+2026-10-15T14:55:53.5826497Z file:/etc/gitconfig	filter.lfs.process=git-lfs filter-process
+2026-10-15T14:55:53.5826754Z file:/etc/gitconfig	filter.lfs.required=true
+2026-10-15T14:55:53.5834868Z GIT_PRIVATE_TOKEN unset skipping
+2026-10-15T14:55:53.5836187Z ---------- git config --list -------------
+2026-10-15T14:55:53.5851332Z filter.lfs.clean=git-lfs clean -- %f
+2026-10-15T14:55:53.5851860Z filter.lfs.smudge=git-lfs smudge -- %f
+2026-10-15T14:55:53.5852228Z filter.lfs.process=git-lfs filter-process
+2026-10-15T14:55:53.5853393Z filter.lfs.required=true
+2026-10-15T14:55:53.5855463Z ---------- git config --list --show-origin -------------
+2026-10-15T14:55:53.5876585Z file:/etc/gitconfig	filter.lfs.clean=git-lfs clean -- %f
+2026-10-15T14:55:53.5877362Z file:/etc/gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+2026-10-15T14:55:53.5878392Z file:/etc/gitconfig	filter.lfs.process=git-lfs filter-process
+2026-10-15T14:55:53.5878605Z file:/etc/gitconfig	filter.lfs.required=true
+2026-10-15T14:55:53.5892532Z Changing to "/github/workspace/_activate-license~" directory.
+2026-10-15T14:55:53.5894702Z /github/workspace/_activate-license~ /github/workspace
+2026-10-15T14:55:53.5905502Z Licensing method: personal
+2026-10-15T14:55:53.5907815Z Requesting activation (personal license via Unity account)
+2026-10-15T14:55:53.9656372Z Trying to activate all seats ...
+2026-10-15T14:55:56.4417852Z Activation processed successfully.
+2026-10-15T14:55:56.4418180Z 
+2026-10-15T14:55:56.4418279Z Seat ID: 13469985507107-UnityPersonal
+2026-10-15T14:55:56.4418761Z Status: [200] ASSIGN_SEAT
+2026-10-15T14:55:56.4418860Z 
+2026-10-15T14:55:56.4418864Z 
+2026-10-15T14:55:56.4418937Z Trying to update entitlement license file ...
+2026-10-15T14:55:57.6334784Z Successfully updated UnityEntitlementLicense.xml!
+2026-10-15T14:55:57.7975045Z Activation complete.
+2026-10-15T14:55:57.7976488Z /github/workspace
+2026-10-15T14:55:57.7976892Z Using project path "/github/workspace/.".
+2026-10-15T14:55:57.7977552Z Using build name "Android".
+
+----- original log lines 245-280 -----
+2026-10-15T14:55:58.0783908Z     "clientHandshakeTimeoutSec": 10,
+2026-10-15T14:55:58.0784086Z     "clientResolveEntitlementsTimeoutSec": 30,
+2026-10-15T14:55:58.0784435Z     "clientUpdateLicenseTimeoutSec": 30,
+2026-10-15T14:55:58.0784618Z     "licensingServiceBaseUrl": "",
+2026-10-15T14:55:58.0784782Z     "enableProxyAutoconfig": "false"
+2026-10-15T14:55:58.0784890Z 
+2026-10-15T14:55:58.0784967Z Unity Editor version:    6000.3.26f1 (de8167e7440c)
+2026-10-15T14:55:58.0785141Z Branch:                  6000.3/staging
+2026-10-15T14:55:58.0785296Z Build type:              Release
+2026-10-15T14:55:58.0785440Z Batch mode:              YES
+2026-10-15T14:55:58.0785581Z System name:             Linux
+2026-10-15T14:55:58.0785766Z Distro version:          #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026
+2026-10-15T14:55:58.0785995Z Kernel version:          6.17.0-1022-azure
+2026-10-15T14:55:58.0786209Z Architecture:            x86_64
+2026-10-15T14:55:58.0786417Z Available memory:        15989 MB
+2026-10-15T14:55:58.0786634Z Date:                    2026-10-15T14:55:58Z
+2026-10-15T14:55:58.0826756Z VBCSCompilerServerWatchdog: watching VBCSCompiler (PID 186)
+2026-10-15T14:55:58.0841940Z [Licensing::Module] Trying to connect to existing licensing client channel...
+2026-10-15T14:55:58.0842592Z [Licensing::IpcConnector] Channel LicenseClient-root doesn't exist
+2026-10-15T14:55:58.0843058Z [Licensing::Module] Successfully launched the LicensingClient (PId: 189)
+2026-10-15T14:55:58.0935716Z Selected window backend: (null) 
+2026-10-15T14:55:58.3050743Z Desktop is 1280 x 1024 @ 60 Hz
+2026-10-15T14:55:58.3051133Z Initialize udev device monitor.
+2026-10-15T14:55:58.3051494Z CreateDirectory '/root/.cache/unity3d' failed:  (current dir: /github/workspace)
+2026-10-15T14:55:58.3064657Z 
+2026-10-15T14:55:58.3065248Z COMMAND LINE ARGUMENTS:
+2026-10-15T14:55:58.3065523Z /opt/unity/Editor/Unity
+2026-10-15T14:55:58.3066228Z -batchmode
+2026-10-15T14:55:58.3066675Z -logfile
+2026-10-15T14:55:58.3066911Z /dev/stdout
+2026-10-15T14:55:58.3067084Z -quit
+2026-10-15T14:55:58.3067280Z -customBuildName
+2026-10-15T14:55:58.3067471Z Android
+2026-10-15T14:55:58.3067645Z -projectPath
+2026-10-15T14:55:58.3067848Z /github/workspace/.
+2026-10-15T14:55:58.3068041Z -buildTarget
+
+----- original log lines 360-380 -----
+2026-10-15T14:55:58.4729963Z   Correlation Id:          e27992910c41f45e6b8151295c854bfd
+2026-10-15T14:55:58.4730411Z   External correlation Id: 4347229657909101207
+2026-10-15T14:55:58.4730867Z   Machine Id:              D7nTUnjNAmtsUMcnoyrqkgIbYdM=
+2026-10-15T14:55:58.4731699Z [Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-root" (connect: 0.25s, validation: 0.14s, handshake: 0.00s)
+2026-10-15T14:55:58.4736521Z [Licensing::IpcConnector] Successfully connected to: "LicenseClient-root-notifications" at "2026-10-15T14:55:58.472218Z"
+2026-10-15T14:55:58.4737819Z [Licensing::Module] Connected to LicensingClient (PId: 189, launch time: 0.00, total connection time: 0.39s)
+2026-10-15T14:55:58.4738485Z [Licensing::Module] Error: Access token is unavailable; failed to update
+2026-10-15T14:55:58.5353307Z [Licensing::Client] Successfully resolved entitlement details
+2026-10-15T14:55:58.5364384Z [Licensing::Module] License group:
+2026-10-15T14:55:58.5365604Z   Id: 13469985507107-UnityPersXXXX
+2026-10-15T14:55:58.5366054Z   Product: Unity Personal
+2026-10-15T14:55:58.5366384Z   Type: Assigned
+2026-10-15T14:55:58.5366687Z   Expiration: Unlimited
+2026-10-15T14:55:58.5621859Z [Licensing::Client] Successfully updated license, isAsync: True, time: 0.03
+2026-10-15T14:55:58.5705280Z [Licensing::Client] Successfully resolved entitlement details
+2026-10-15T14:55:58.5716626Z [Licensing::Module] Licensing Background thread has ended after 0.49s
+2026-10-15T14:55:58.5916504Z [Package Manager] Connected to IPC stream "Upm-180" after 0.2 seconds.
+2026-10-15T14:55:58.5927175Z [Licensing::Client] Successfully resolved entitlement details
+2026-10-15T14:55:58.5938207Z Library Redirect Path: Library/
+2026-10-15T14:55:58.5939438Z Rebuilding Library because the asset database could not be found!
+2026-10-15T14:55:58.6180849Z [Physics::Module] Selected backend.
+
+----- original log lines 1865-1900 -----
+2026-10-15T14:56:44.8488544Z running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+2026-10-15T14:56:44.8489130Z [563/817    0s] ILPostProcess Library/Bee/artifacts/1300b0aE.dag/post-processed/Unity.RenderPipelines.Core.ShaderLibrary.dll (+pdb)
+2026-10-15T14:56:44.8489961Z Processing assembly Library/Bee/artifacts/1300b0aE.dag/Unity.RenderPipelines.Core.ShaderLibrary.dll, with 149 defines and 260 references
+2026-10-15T14:56:44.8490707Z processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+2026-10-15T14:56:44.8491192Z running Unity.Jobs.CodeGen.JobsILPostProcessor
+2026-10-15T14:56:44.8491525Z running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+2026-10-15T14:56:44.8492152Z [564/817    0s] ILPostProcess Library/Bee/artifacts/1300b0aE.dag/post-processed/Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll (+pdb)
+2026-10-15T14:56:44.8493099Z Processing assembly Library/Bee/artifacts/1300b0aE.dag/Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll, with 149 defines and 260 references
+2026-10-15T14:56:44.8493905Z processor## Script Compilation Error for: Csc Library/Bee/artifacts/1300b0aE.dag/Unity.InputSystem.dll (+2 others)
+2026-10-15T14:56:44.8495357Z ## CmdLine: "/opt/unity/Editor/Data/NetCoreRuntime/dotnet" exec "/opt/unity/Editor/Data/DotNetSdkRoslyn/csc.dll" /nostdlib /noconfig /shared "@Library/Bee/artifacts/1300b0aE.dag/Unity.InputSystem.rsp" "@Library/Bee/artifacts/1300b0aE.dag/Unity.InputSystem.rsp2"
+2026-10-15T14:56:44.8496724Z ## Output:
+2026-10-15T14:56:44.8497357Z Library/PackageCache/com.unity.inputsystem@920b46832575/InputSystem/Editor/InputSystemPluginControl.cs(47,25): error CS0117: 'BuildTarget' does not contain a definition for 'ReservedCFE'
+2026-10-15T14:56:44.8497992Z 
+2026-10-15T14:56:44.8498117Z Total cache size 12877612
+2026-10-15T14:56:44.8513635Z Total cache size after purge 12877612, took 00:00:00.0380896
+2026-10-15T14:56:44.8537247Z Assets/Wayfinder/Scripts/Simulation/ChaseCameraBehaviour.cs(148,14): warning CS0414: The field 'ChaseCameraBehaviour._photoMode' is assigned but its value is never used
+2026-10-15T14:56:44.8541912Z Library/PackageCache/com.unity.inputsystem@920b46832575/InputSystem/Editor/InputSystemPluginControl.cs(47,25): error CS0117: 'BuildTarget' does not contain a definition for 'ReservedCFE'
+2026-10-15T14:56:44.8604511Z AssetDatabase: script compilation time: 24.958529s
+2026-10-15T14:56:44.9611349Z Scripts have compiler errors.
+2026-10-15T14:56:44.9611658Z 
+2026-10-15T14:56:44.9611762Z Aborting batchmode due to failure:
+2026-10-15T14:56:44.9612018Z Scripts have compiler errors.
+2026-10-15T14:56:44.9612167Z 
+2026-10-15T14:56:44.9616161Z 
+2026-10-15T14:56:44.9616746Z SDL leaked 2 allocations
+2026-10-15T14:56:44.9808356Z VBCSCompilerServerWatchdog: requested VBCSCompiler shutdown
+2026-10-15T14:56:45.0087560Z [40m[32minfo[39m[22m[49m: Microsoft.Hosting.Lifetime[0]
+2026-10-15T14:56:45.0088317Z       Application is shutting down...
+2026-10-15T14:56:45.0186398Z [40m[32minfo[39m[22m[49m: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+2026-10-15T14:56:45.0195315Z       ALC ILPP context 1 is unloading
+2026-10-15T14:56:45.0335693Z Build failed, with exit code 1
+2026-10-15T14:56:45.2741756Z 
+2026-10-15T14:56:45.2742325Z ###########################
+2026-10-15T14:56:45.2742671Z #       Build output      #
+2026-10-15T14:56:45.2742876Z ###########################
+2026-10-15T14:56:45.2743014Z 
+
+----- original log lines 1930-1950 -----
+2026-10-15T14:56:45.9709040Z     "disableUserLogin": false,
+2026-10-15T14:56:45.9709216Z     "entitlementCacheTimeoutInSeconds": 60,
+2026-10-15T14:56:45.9709400Z     "clientConnectTimeoutSec": 5,
+2026-10-15T14:56:45.9709563Z     "clientHandshakeTimeoutSec": 10,
+2026-10-15T14:56:45.9709743Z     "clientResolveEntitlementsTimeoutSec": 30,
+2026-10-15T14:56:45.9709931Z     "clientUpdateLicenseTimeoutSec": 30,
+2026-10-15T14:56:45.9710103Z     "licensingServiceBaseUrl": "",
+2026-10-15T14:56:45.9710268Z     "enableProxyAutoconfig": "false"
+2026-10-15T14:56:45.9710376Z 
+2026-10-15T14:56:45.9710456Z Unity Editor version:    6000.3.26f1 (de8167e7440c)
+2026-10-15T14:56:45.9710640Z Branch:                  6000.3/staging
+2026-10-15T14:56:45.9710803Z Build type:              Release
+2026-10-15T14:56:45.9710953Z Batch mode:              YES
+2026-10-15T14:56:45.9711101Z System name:             Linux
+2026-10-15T14:56:45.9711291Z Distro version:          #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026
+2026-10-15T14:56:45.9711499Z Kernel version:          6.17.0-1022-azure
+2026-10-15T14:56:45.9711682Z Architecture:            x86_64
+2026-10-15T14:56:45.9711836Z Available memory:        15989 MB
+2026-10-15T14:56:45.9711996Z Date:                    2026-10-15T14:56:45Z
+2026-10-15T14:56:45.9735312Z VBCSCompilerServerWatchdog: watching VBCSCompiler (PID 3752)
+2026-10-15T14:56:46.7762793Z User *** logged in successfully
+
+----- original log lines 1975-1996 -----
+2026-10-15T14:56:48.8722814Z ###########################
+2026-10-15T14:56:48.8723248Z #         Failure         #
+2026-10-15T14:56:48.8723507Z ###########################
+2026-10-15T14:56:48.8723647Z 
+2026-10-15T14:56:48.8723786Z Please note that the exit code is not very descriptive.
+2026-10-15T14:56:48.8724193Z Most likely it will not help you solve the issue.
+2026-10-15T14:56:48.8725254Z 
+2026-10-15T14:56:48.8725368Z To find the reason for failure: please search for errors in the log above.
+2026-10-15T14:56:48.8725636Z 
+2026-10-15T14:56:51.7158106Z ##[endgroup]
+2026-10-15T14:56:51.7174866Z [ERROR] Error: Unity aborted before completing: Scripts have compiler errors.
+2026-10-15T14:56:51.7175142Z 
+2026-10-15T14:56:51.7175279Z This is a failure inside the Unity Editor itself (commonly script
+2026-10-15T14:56:51.7175581Z compiler errors, a missing package, or a crash during startup) - not a
+2026-10-15T14:56:51.7175845Z docker/game-ci infrastructure problem. The full Unity log is above.
+2026-10-15T14:56:51.7176100Z     at run (/$bunfs/root/game-ci:14782:24)
+2026-10-15T14:56:51.7176301Z     at async <anonymous> (/$bunfs/root/game-ci:230152:27)
+2026-10-15T14:56:51.7176509Z     at async <anonymous> (/$bunfs/root/game-ci:223851:24)
+2026-10-15T14:56:51.7176712Z     at async execute (/$bunfs/root/game-ci:230148:22)
+2026-10-15T14:56:51.7176898Z     at async run (/$bunfs/root/game-ci:231553:45)
+2026-10-15T14:56:51.7177095Z     at processTicksAndRejections (native:7:39)
+2026-10-15T14:56:51.7291521Z ##[error]Build failed with exit code 1
+
