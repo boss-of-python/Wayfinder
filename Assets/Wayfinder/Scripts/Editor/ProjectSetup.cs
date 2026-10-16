@@ -34,9 +34,16 @@ namespace Wayfinder.Editor
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
-            PlayerSettings.SetScriptingBackend(NamedBuildTarget.iOS, ScriptingImplementation.IL2CPP);
             SetDefaultIdentifier(NamedBuildTarget.Android);
-            SetDefaultIdentifier(NamedBuildTarget.iOS);
+
+            // The free CI build uses a Linux Android-only Unity image. Do not ask that editor
+            // to configure the iOS backend unless its iOS build support is actually installed.
+            // Local/macOS editors with iOS support still receive the intended setting.
+            if (BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.iOS, BuildTarget.iOS))
+            {
+                PlayerSettings.SetScriptingBackend(NamedBuildTarget.iOS, ScriptingImplementation.IL2CPP);
+                SetDefaultIdentifier(NamedBuildTarget.iOS);
+            }
 
             // Preserve the authored input file as the single source; build a loadable TextAsset copy.
             Directory.CreateDirectory(Path.GetDirectoryName(ControlsOutputPath));
