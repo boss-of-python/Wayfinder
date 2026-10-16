@@ -9,15 +9,17 @@ Status legend used here: **VERIFIED** (ran in this repo/environment) vs **UNVERI
 For a Moto G45, see [MOTO_G45_BUILD_AND_TEST.md](MOTO_G45_BUILD_AND_TEST.md). You
 still need an installed/licensed Unity desktop (borrowed or cloud); the phone can
 control it and install its APK. The optional workflow is manual and self-hosted,
-not a GitHub-hosted editor or a phone-only compiler. The latest domain suite passes
-109/109 tests (Batch C); earlier 59/55/49 counts below are historical snapshots.
+not a GitHub-hosted editor or a phone-only compiler. The latest headless domain suite
+passes 164/164 tests (Batch G); older counts below are historical snapshots.
 
 ## Free cloud build route (GameCI, GitHub-hosted runner)
 
-**EXECUTED — five owner dispatches on 2026-10-15, all failed for one reason, now fixed; the fix
-itself has not been run yet (KI-036).** `.github/workflows/android-cloud-build.yml` builds a
-development APK on GitHub's own machines; no local Unity install, no self-hosted runner and no
-machine of yours has to compile anything.
+**Executed, but no APK yet.** Five owner dispatches on 2026-10-15 reached Unity and exposed the
+Input System 1.12.0 `BuildTarget.ReservedCFE` compile error; the manifest was repinned to 1.20.1,
+but that fix is still unverified (KI-036). The latest run, [38858427636](https://github.com/boss-of-python/Wayfinder/actions/runs/38858427636)
+on 2026-10-16, stopped before Unity because repository secret `UNITY_LICENSE` was missing. The
+workflow now checks secrets and the editor pin before the multi-minute disk cleanup. It builds a
+development APK on GitHub's own machines; no local Unity install or self-hosted runner is required.
 
 Run it: **Actions tab → "Android APK (free cloud build)" → Run workflow** (manual only —
 `workflow_dispatch`, never on `pull_request`). You can pick the branch; the agent cannot
@@ -37,20 +39,23 @@ What it does, in order:
 
 | Step | Action | Result |
 |---|---|---|
-| 1 | `jlumbroso/free-disk-space` | frees disk for the ~9 GB Unity Android image |
-| 2 | `actions/checkout` (`persist-credentials: false`) | source at the selected ref |
-| 3 | `bash Tools/Build/check_unity_secrets.sh` | names a missing `UNITY_*` secret in seconds, before the image pull; never prints a value |
-| 4 | `python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"` | **verifies** the committed `ProjectSettings/ProjectVersion.txt` still matches (idempotent, D-032); nothing is committed |
-| 5 | `actions/cache` | reuses the `Library` import cache between runs |
-| 6 | GameCI `unity-builder` → `Wayfinder.Editor.ProjectSetup.Setup` | generates scenes, URP asset, quality tiers, player settings, campaign `Resources/Content` |
-| 7 | GameCI `unity-builder` → `Wayfinder.Editor.BuildCommands.BuildAndroidDev` | `Builds/Android/Wayfinder-dev.apk` (unsigned development build) |
-| 8 | `bash Tools/Build/report_unity_failure.sh` (`if: always()`) | turns the real cause into **check-run annotations** |
-| 9 | `actions/upload-artifact` ×2 | `Wayfinder-dev-APK` and `Unity-logs` (Editor.log + **`Packages/packages-lock.json`**), 7-day retention |
+| 1 | `actions/checkout` (`persist-credentials: false`) | source at the selected ref |
+| 2 | `bash Tools/Build/check_unity_secrets.sh` | names missing `UNITY_*` secrets without printing values; runs before expensive setup |
+| 3 | `python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"` | **verifies** the committed `ProjectSettings/ProjectVersion.txt` still matches (idempotent, D-032); nothing is committed |
+| 4 | `jlumbroso/free-disk-space` | frees disk for the ~9 GB Unity Android image |
+| 5 | `mkdir -p Library Logs Builds/Logs` | prepares cold cache and diagnostic log directories |
+| 6 | `actions/cache` | reuses the `Library` import cache between runs |
+| 7 | GameCI `unity-builder` → `Wayfinder.Editor.ProjectSetup.Setup` | generates scenes, URP asset, quality tiers, player settings, campaign `Resources/Content` |
+| 8 | GameCI `unity-builder` → `Wayfinder.Editor.BuildCommands.BuildAndroidDev` | `Builds/Android/Wayfinder-dev.apk` (unsigned development build) |
+| 9 | `bash Tools/Build/report_unity_failure.sh` (only if Unity was attempted) | turns Unity's real failure into **check-run annotations**; preflight failures no longer get a misleading missing-log notice |
+| 10 | `actions/upload-artifact` (logs) | `Unity-logs` (Editor.log + **`Packages/packages-lock.json`**), 7-day retention |
+| 11 | `actions/upload-artifact` (APK) | `Wayfinder-dev-APK`, 7-day retention; fails if the APK is missing |
 
-Before the first run the repository owner must add these repository secrets
-(**Settings → Secrets and variables → Actions**): `UNITY_LICENSE`, `UNITY_EMAIL`,
-`UNITY_PASSWORD` (a Unity Personal license, activated for `6000.3.26f1`) — **already done; they
-activated successfully on 2026-10-15.**
+The repository owner must add/restore these repository secrets under
+**Settings → Secrets and variables → Actions**: `UNITY_LICENSE`, `UNITY_EMAIL`,
+`UNITY_PASSWORD` (a Unity Personal license activated for `6000.3.26f1`). An earlier run activated
+the license on 2026-10-15, but latest run 38858427636 reported `UNITY_LICENSE` missing; the APK
+route cannot proceed until that secret is present again.
 
 ### Reading a failure without opening the log
 
@@ -63,17 +68,19 @@ gh api repos/boss-of-python/Wayfinder/check-runs/<job-id>/annotations \
   --jq '.[] | "\(.annotation_level) \(.path):\(.start_line) \(.message)"'
 ```
 
-You get up to ten `error CS` annotations with file/line/column, the batchmode abort reason,
-editor exceptions, package-resolution failures, warnings in `Assets/Wayfinder`, which Wayfinder
-assemblies Unity compiled, and the APK size. The step always exits 0 and is
-`continue-on-error: true`, so it can never change the build's verdict. 33 tests plus a 9/9
-mutation check cover it (`python3 Tools/Build/test_build_diagnostics.py`).
+When Unity has been attempted, you get up to ten `error CS` annotations with file/line/column,
+the batchmode abort reason, editor exceptions, package-resolution failures, warnings in
+`Assets/Wayfinder`, which Wayfinder assemblies Unity compiled, and the APK size. The step exits 0
+and is `continue-on-error: true`, so it can never change the build's verdict. The current
+mocked workflow/diagnostics and pipeline suite is 60/60 (`python3 -m unittest discover -s
+Tools/Build -p 'test_*.py' -v`); these tests do not execute Unity.
 
 Limits to know up front:
 
 - The repo is **public**, so the standard `ubuntu-latest` runner is free; the 180-minute
-  timeout can be exceeded by the first image pull plus an IL2CPP Android build. A failing run
-  costs about 7 minutes.
+  timeout can be exceeded by the first image pull plus an IL2CPP Android build. The secret and
+  editor-pin preflights now fail before disk cleanup/image pull; a Unity-stage failure may still
+  cost several minutes.
 - `unity-builder` v6 ignores its `unityVersion` input and reads the version from the
   checked-out `ProjectSettings/ProjectVersion.txt` — that file is now committed and step 4 only
   verifies it.

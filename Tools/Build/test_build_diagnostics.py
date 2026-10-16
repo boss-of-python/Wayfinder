@@ -250,11 +250,21 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         end = rest.index("- name: ")
         return self.text[start:start + len(f"- name: {name}") + end]
 
-    def test_diagnostics_step_always_runs_and_cannot_change_the_verdict(self):
+    def test_diagnostics_run_after_unity_attempts_and_cannot_change_the_verdict(self):
         step = self.step_block("Report the real Unity failure as annotations")
-        self.assertIn("if: always()", step)
+        self.assertIn(
+            "if: ${{ always() && (steps.unity_setup.outcome == 'success' || "
+            "steps.unity_setup.outcome == 'failure' || steps.unity_setup.outcome == 'cancelled' || "
+            "steps.unity_build.outcome == 'success' || steps.unity_build.outcome == 'failure' || "
+            "steps.unity_build.outcome == 'cancelled') }}",
+            step,
+        )
         self.assertIn("continue-on-error: true", step)
         self.assertIn("bash Tools/Build/report_unity_failure.sh", step)
+        setup = self.step_block('"Unity 1 of 2: Setup Project (scenes, URP, player settings)"')
+        build = self.step_block('"Unity 2 of 2: Build the development APK"')
+        self.assertIn("id: unity_setup", setup)
+        self.assertIn("id: unity_build", build)
 
     def test_log_upload_step_also_always_runs_and_cannot_change_the_verdict(self):
         step = self.step_block("Upload Unity logs and the resolved package lock (for offline diagnosis)")
@@ -269,11 +279,18 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         # It must not echo them into a later step's environment or the log.
         self.assertNotIn("echo \"$UNITY", step)
 
-    def test_secret_check_runs_after_checkout_and_before_unity(self):
-        self.assertLess(self.text.index("- name: Check out the code"),
-                        self.text.index("- name: Check the Unity license secrets exist"))
-        self.assertLess(self.text.index("- name: Check the Unity license secrets exist"),
-                        self.text.index("- name: \"Unity 1 of 2"))
+    def test_preflight_runs_before_expensive_runner_setup(self):
+        checkout = self.text.index("- name: Check out the code")
+        secret_check = self.text.index("- name: Check the Unity license secrets exist")
+        pin = self.text.index("- name: Pin the Unity version for this build only")
+        disk_cleanup = self.text.index("- name: Free disk space")
+        cache = self.text.index("- name: Reuse Unity's import cache from earlier runs")
+        unity_setup = self.text.index("- name: \"Unity 1 of 2")
+        self.assertLess(checkout, secret_check)
+        self.assertLess(secret_check, pin)
+        self.assertLess(pin, disk_cleanup)
+        self.assertLess(disk_cleanup, cache)
+        self.assertLess(cache, unity_setup)
 
     def test_both_unity_steps_still_target_the_verified_editor_and_methods(self):
         self.assertIn("UNITY_VERSION: 6000.3.26f1", self.text)

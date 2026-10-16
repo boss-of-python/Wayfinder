@@ -24,6 +24,24 @@ jobs:
     runs-on: ubuntu-latest # standard runner = free on public repositories
     timeout-minutes: 180
     steps:
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # This script needs the checkout. Run it before free-disk cleanup (which takes minutes)
+      # and before pulling the Unity image, so missing license secrets fail quickly. Never prints a value.
+      - name: Check the Unity license secrets exist (values are never printed)
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: bash Tools/Build/check_unity_secrets.sh
+
+      # Idempotent: the committed version is authoritative. Fail before expensive runner setup on mismatch.
+      - name: Pin the Unity version for this build only (nothing is committed)
+        run: python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"
+
       - name: Free disk space (the Unity Android image is about 9 GB)
         uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:
@@ -33,25 +51,6 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: false
-
-      - name: Check out the code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      # Runs after checkout (it needs this script) but before the ~9 GB Unity image is pulled,
-      # so a missing secret fails in seconds instead of minutes. Never prints a value.
-      - name: Check the Unity license secrets exist (values are never printed)
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        run: bash Tools/Build/check_unity_secrets.sh
-
-      # Idempotent: ProjectSettings/ProjectVersion.txt is committed and authoritative, so this
-      # only verifies that it still matches UNITY_VERSION (it exits 1 on a deliberate mismatch).
-      - name: Pin the Unity version for this build only (nothing is committed)
-        run: python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"
 
       # GameCI writes the Editor log in the mounted workspace when -logFile is supplied below.
       # Pre-create Library so a cold cache is a normal empty cache, not a missing-path warning.
@@ -67,6 +66,7 @@ jobs:
             Library-Android-${{ env.UNITY_VERSION }}-
 
       - name: "Unity 1 of 2: Setup Project (scenes, URP, player settings)"
+        id: unity_setup
         uses: game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45 # v6.0.0
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -81,6 +81,7 @@ jobs:
           allowDirtyBuild: true
 
       - name: "Unity 2 of 2: Build the development APK"
+        id: unity_build
         uses: game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45 # v6.0.0
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
@@ -97,8 +98,9 @@ jobs:
       # Unity's own exit code is famously undescriptive ("Build failed with exit code 1").
       # This turns the real cause into check-run annotations, which are readable from the
       # GitHub API (repos/.../check-runs/{id}/annotations) without downloading the raw log.
+      # Only run after at least one Unity step was attempted; preflight failures have no Editor.log.
       - name: Report the real Unity failure as annotations
-        if: always()
+        if: ${{ always() && (steps.unity_setup.outcome == 'success' || steps.unity_setup.outcome == 'failure' || steps.unity_setup.outcome == 'cancelled' || steps.unity_build.outcome == 'success' || steps.unity_build.outcome == 'failure' || steps.unity_build.outcome == 'cancelled') }}
         continue-on-error: true
         run: bash Tools/Build/report_unity_failure.sh
 
