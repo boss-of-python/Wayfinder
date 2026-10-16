@@ -17,9 +17,11 @@ passes 164/164 tests (Batch G); older counts below are historical snapshots.
 **Executed, but no APK yet.** Five owner dispatches on 2026-10-15 reached Unity and exposed the
 Input System 1.12.0 `BuildTarget.ReservedCFE` compile error; the manifest was repinned to 1.20.1,
 but that fix is still unverified (KI-036). The latest run, [38858427636](https://github.com/boss-of-python/Wayfinder/actions/runs/38858427636)
-on 2026-10-16, stopped before Unity because repository secret `UNITY_LICENSE` was missing. The
-workflow now checks secrets and the editor pin before the multi-minute disk cleanup. It builds a
-development APK on GitHub's own machines; no local Unity install or self-hosted runner is required.
+on 2026-10-16, stopped at an over-strict preflight that required `UNITY_LICENSE`. The earlier
+successful activation log shows GameCI activated the Personal license with `UNITY_EMAIL` and
+`UNITY_PASSWORD` while `UNITY_LICENSE` was empty. The preflight now accepts either method and
+runs before multi-minute disk cleanup. This builds a development APK on GitHub's machines; no
+local Unity install or self-hosted runner is required.
 
 Run it: **Actions tab → "Android APK (free cloud build)" → Run workflow** (manual only —
 `workflow_dispatch`, never on `pull_request`). You can pick the branch; the agent cannot
@@ -40,7 +42,7 @@ What it does, in order:
 | Step | Action | Result |
 |---|---|---|
 | 1 | `actions/checkout` (`persist-credentials: false`) | source at the selected ref |
-| 2 | `bash Tools/Build/check_unity_secrets.sh` | names missing `UNITY_*` secrets without printing values; runs before expensive setup |
+| 2 | `bash Tools/Build/check_unity_secrets.sh` | requires either `UNITY_LICENSE` or both account secrets; prints no values and runs before expensive setup |
 | 3 | `python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"` | **verifies** the committed `ProjectSettings/ProjectVersion.txt` still matches (idempotent, D-032); nothing is committed |
 | 4 | `jlumbroso/free-disk-space` | frees disk for the ~9 GB Unity Android image |
 | 5 | `mkdir -p Library Logs Builds/Logs` | prepares cold cache and diagnostic log directories |
@@ -51,11 +53,20 @@ What it does, in order:
 | 10 | `actions/upload-artifact` (logs) | `Unity-logs` (Editor.log + **`Packages/packages-lock.json`**), 7-day retention |
 | 11 | `actions/upload-artifact` (APK) | `Wayfinder-dev-APK`, 7-day retention; fails if the APK is missing |
 
-The repository owner must add/restore these repository secrets under
-**Settings → Secrets and variables → Actions**: `UNITY_LICENSE`, `UNITY_EMAIL`,
-`UNITY_PASSWORD` (a Unity Personal license activated for `6000.3.26f1`). An earlier run activated
-the license on 2026-10-15, but latest run 38858427636 reported `UNITY_LICENSE` missing; the APK
-route cannot proceed until that secret is present again.
+### Unity authentication secrets
+
+In **Settings → Secrets and variables → Actions**, configure either:
+
+- **Account-based Personal activation (the proven route for this repo):** `UNITY_EMAIL` and
+  `UNITY_PASSWORD`, from the Unity account that has an eligible Unity Personal license. You do
+  **not** need to create a `.ulf` or `UNITY_LICENSE` secret for this route. The 2026-10-15 run
+  activated successfully with `UNITY_LICENSE` empty.
+- **License-file authentication:** `UNITY_LICENSE` containing the license file contents, if you
+  prefer that method.
+
+Never put the account password or license content in chat or source control. The latest run
+38858427636 stopped because the preflight incorrectly required all three secrets; it did not show
+that the Unity account activation was invalid. The updated preflight accepts either method.
 
 ### Reading a failure without opening the log
 
@@ -72,7 +83,7 @@ When Unity has been attempted, you get up to ten `error CS` annotations with fil
 the batchmode abort reason, editor exceptions, package-resolution failures, warnings in
 `Assets/Wayfinder`, which Wayfinder assemblies Unity compiled, and the APK size. The step exits 0
 and is `continue-on-error: true`, so it can never change the build's verdict. The current
-mocked workflow/diagnostics and pipeline suite is 60/60 (`python3 -m unittest discover -s
+mocked workflow/diagnostics and pipeline suite is 62/62 (`python3 -m unittest discover -s
 Tools/Build -p 'test_*.py' -v`); these tests do not execute Unity.
 
 Limits to know up front:

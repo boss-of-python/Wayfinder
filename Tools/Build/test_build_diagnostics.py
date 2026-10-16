@@ -206,13 +206,24 @@ class CheckUnitySecretsTests(unittest.TestCase):
     def test_all_present_passes(self):
         result = run(SECRETS, env=self.env_with(UNITY_LICENSE="lic", UNITY_EMAIL="a@b.c", UNITY_PASSWORD="pw"))
         self.assertEqual(0, result.returncode)
-        self.assertIn("All three Unity license secrets are present", result.stdout)
+        self.assertIn("Unity license-file authentication is configured", result.stdout)
 
-    def test_missing_secret_names_it_and_fails(self):
+    def test_account_credentials_pass_without_license_file(self):
+        # This reproduces the successful cloud activation in run 38754979851: UNITY_LICENSE was blank.
         result = run(SECRETS, env=self.env_with(UNITY_EMAIL="a@b.c", UNITY_PASSWORD="pw"))
+        self.assertEqual(0, result.returncode)
+        self.assertIn("Unity account credentials are configured for Personal-license activation", result.stdout)
+
+    def test_license_file_passes_without_account_credentials(self):
+        result = run(SECRETS, env=self.env_with(UNITY_LICENSE="license-file-content"))
+        self.assertEqual(0, result.returncode)
+        self.assertIn("Unity license-file authentication is configured", result.stdout)
+
+    def test_missing_supported_auth_method_fails_with_actionable_message(self):
+        result = run(SECRETS, env=self.env_with(UNITY_EMAIL="a@b.c"))
         self.assertEqual(1, result.returncode)
-        self.assertIn("::error title=Unity secrets missing::Missing repository secret(s): UNITY_LICENSE",
-                      result.stdout)
+        self.assertIn("Provide either UNITY_LICENSE or both UNITY_EMAIL and UNITY_PASSWORD", result.stdout)
+        self.assertIn("Missing account secret(s): UNITY_PASSWORD", result.stdout)
 
     def test_padded_secret_warns_but_passes(self):
         result = run(SECRETS, env=self.env_with(UNITY_LICENSE=" lic\n", UNITY_EMAIL="a@b.c", UNITY_PASSWORD="pw"))
@@ -271,8 +282,8 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         self.assertIn("if: always()", step)
         self.assertIn("continue-on-error: true", step)
 
-    def test_secret_check_step_passes_the_three_secrets_and_nothing_else(self):
-        step = self.step_block("Check the Unity license secrets exist (values are never printed)")
+    def test_auth_preflight_passes_all_auth_options_without_printing_values(self):
+        step = self.step_block("Check Unity authentication secrets exist (values are never printed)")
         for secret in ["UNITY_LICENSE", "UNITY_EMAIL", "UNITY_PASSWORD"]:
             self.assertIn(f"{secret}: ${{{{ secrets.{secret} }}}}", step)
         self.assertIn("bash Tools/Build/check_unity_secrets.sh", step)
@@ -281,7 +292,7 @@ class CloudBuildWorkflowTests(unittest.TestCase):
 
     def test_preflight_runs_before_expensive_runner_setup(self):
         checkout = self.text.index("- name: Check out the code")
-        secret_check = self.text.index("- name: Check the Unity license secrets exist")
+        secret_check = self.text.index("- name: Check Unity authentication secrets exist")
         pin = self.text.index("- name: Pin the Unity version for this build only")
         disk_cleanup = self.text.index("- name: Free disk space")
         cache = self.text.index("- name: Reuse Unity's import cache from earlier runs")

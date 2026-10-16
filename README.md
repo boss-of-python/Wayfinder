@@ -57,21 +57,20 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
 ## Android development APK status (16 Oct 2026)
 
 The latest cloud-build attempt, [run 38858427636](https://github.com/boss-of-python/Wayfinder/actions/runs/38858427636),
-stopped in the Unity-secret preflight: its check-run annotation names missing repository secret
-`UNITY_LICENSE`. **Unity did not start and no APK was produced.** The run spent about 4½ minutes
-on disk cleanup before reaching that check; the workflow has now been reordered to validate the
-license secrets and committed editor pin immediately after checkout, before expensive cleanup.
-Unity-log reporting is also skipped when neither Unity step ran, avoiding a misleading “missing
-Editor.log” annotation for preflight failures.
+stopped in preflight because it incorrectly required `UNITY_LICENSE`. The earlier successful
+Unity run (38754979851) activated the Personal license using `UNITY_EMAIL` and `UNITY_PASSWORD`
+while `UNITY_LICENSE` was empty. **The failure was in our preflight check, not proof that Unity
+activation is broken.** The check now accepts either the account credentials or a license-file
+secret, and runs before expensive disk cleanup. Unity-log reporting is skipped when neither Unity
+step ran. No APK was produced by the latest run.
 
-The earlier 15 Oct Unity run (38754979851) reached Unity and exposed a package compile error:
-Input System 1.12.0 referenced `BuildTarget.ReservedCFE`, which Unity 6000.3 removed. The manifest
-is repinned to 1.20.1, but the latest run never reached package resolution, so that fix is still
-unverified (KI-036). Once the owner restores `UNITY_LICENSE` under **Settings → Secrets and
-variables → Actions**, a new cloud run is needed to verify package resolution, compile Unity glue,
-and produce the unsigned development APK. The agent cannot dispatch the workflow without
-`actions: write` (KI-035). See [build instructions](Docs/BUILD_AND_RUN.md) for the route and
-remaining gates.
+The earlier 15 Oct Unity run also exposed a package compile error: Input System 1.12.0 referenced
+`BuildTarget.ReservedCFE`, removed in Unity 6000.3. The manifest is repinned to 1.20.1, but that
+fix is still unverified (KI-036). The existing account-based secrets should be enough; no `.ulf`
+file or `UNITY_LICENSE` secret needs to be created if `UNITY_EMAIL` and `UNITY_PASSWORD` are
+configured. A new cloud run is needed to verify package resolution, compile Unity glue, and produce
+the unsigned development APK. The agent cannot dispatch the workflow without `actions: write`
+(KI-035). See [build instructions](Docs/BUILD_AND_RUN.md) for the route and remaining gates.
 
 ## Exploration map, field supplies and research wiring (15 Oct 2026, Batch D)
 
@@ -142,7 +141,7 @@ run the supported desktop Unity Editor itself. A manual, dedicated-Windows-runne
 APK workflow is prepared in `.github/workflows/android-phone-build.yml`; it has
 not been run and requires secure owner setup, not a phone-only or free hosted build.
 
-Latest executed checks (16 Oct): **164/164** headless C# tests and **60/60** mocked Python
+Latest executed checks (16 Oct): **164/164** headless C# tests and **62/62** mocked Python
 build/pipeline tests pass. The mobile pause/focus and authored-water wiring remain Unity-unverified;
 no real APK or device result exists.
 

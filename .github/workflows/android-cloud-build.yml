@@ -29,9 +29,9 @@ jobs:
         with:
           persist-credentials: false
 
-      # This script needs the checkout. Run it before free-disk cleanup (which takes minutes)
-      # and before pulling the Unity image, so missing license secrets fail quickly. Never prints a value.
-      - name: Check the Unity license secrets exist (values are never printed)
+      # Accept either UNITY_LICENSE or both Unity account credentials; the latter activated this
+      # project's Personal license in run 38754979851. Check before costly cleanup; never print values.
+      - name: Check Unity authentication secrets exist (values are never printed)
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}

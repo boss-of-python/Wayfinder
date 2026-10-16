@@ -9,18 +9,19 @@ API-profile check, and executed under NUnit outside Unity (D-014). It is not a U
 ## Latest Android APK workflow attempt — 2026-10-16
 
 The latest cloud run [38858427636](https://github.com/boss-of-python/Wayfinder/actions/runs/38858427636)
-failed in the repository-secret preflight: `UNITY_LICENSE` was absent. Unity, package resolution,
-scene generation and APK building were all skipped; no artifact exists from this attempt. The
-workflow previously spent about 4½ minutes in free-disk cleanup before checking this, so the
-workflow now checks the license secrets and committed editor pin immediately after checkout and
-before cleanup. Its Unity-log reporter is skipped unless a Unity step was attempted.
+failed in preflight because the check incorrectly required `UNITY_LICENSE`. The earlier successful
+Unity log shows Personal-license activation through `UNITY_EMAIL`/`UNITY_PASSWORD` with
+`UNITY_LICENSE` empty. Unity, package resolution, scene generation and APK building were skipped;
+no artifact exists from this attempt. The workflow now accepts either the license-file secret or
+both account secrets, verifies the editor pin, and does so before disk cleanup. Its Unity-log
+reporter is skipped unless a Unity step was attempted.
 
-The missing secret is owner-controlled and cannot be supplied by source changes. Restore
-`UNITY_LICENSE` under repository Actions secrets, then dispatch again. The Input System 1.20.1
-repin remains unverified until that next run reaches package resolution/compilation (KI-036).
-Latest local checks are **164/164** headless C# tests, **60/60** mocked Python build/pipeline
-tests, content validation, formula checks and economy simulation — none substitute for the
-Unity/APK/device gates.
+For the established account-based path, no `.ulf` or `UNITY_LICENSE` secret needs to be created;
+keep the Unity email/password secrets configured, then dispatch the updated branch. The Input
+System 1.20.1 repin remains unverified until that run reaches package resolution/compilation
+(KI-036). Latest local checks are **164/164** headless C# tests, **62/62** mocked Python
+build/pipeline tests, content validation, formula checks and economy simulation — none substitute
+for the Unity/APK/device gates.
 
 ## Batch 2026-10-16-G — Scatter placement + chunk streaming planner (M3, headless-verified; Unity host not yet written)
 
