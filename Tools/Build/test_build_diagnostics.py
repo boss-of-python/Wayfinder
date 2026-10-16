@@ -206,13 +206,24 @@ class CheckUnitySecretsTests(unittest.TestCase):
     def test_all_present_passes(self):
         result = run(SECRETS, env=self.env_with(UNITY_LICENSE="lic", UNITY_EMAIL="a@b.c", UNITY_PASSWORD="pw"))
         self.assertEqual(0, result.returncode)
-        self.assertIn("All three Unity license secrets are present", result.stdout)
+        self.assertIn("Unity license-file authentication is configured", result.stdout)
 
-    def test_missing_secret_names_it_and_fails(self):
+    def test_account_credentials_pass_without_license_file(self):
+        # This reproduces the successful cloud activation in run 38754979851: UNITY_LICENSE was blank.
         result = run(SECRETS, env=self.env_with(UNITY_EMAIL="a@b.c", UNITY_PASSWORD="pw"))
+        self.assertEqual(0, result.returncode)
+        self.assertIn("Unity account credentials are configured for Personal-license activation", result.stdout)
+
+    def test_license_file_passes_without_account_credentials(self):
+        result = run(SECRETS, env=self.env_with(UNITY_LICENSE="license-file-content"))
+        self.assertEqual(0, result.returncode)
+        self.assertIn("Unity license-file authentication is configured", result.stdout)
+
+    def test_missing_supported_auth_method_fails_with_actionable_message(self):
+        result = run(SECRETS, env=self.env_with(UNITY_EMAIL="a@b.c"))
         self.assertEqual(1, result.returncode)
-        self.assertIn("::error title=Unity secrets missing::Missing repository secret(s): UNITY_LICENSE",
-                      result.stdout)
+        self.assertIn("Provide either UNITY_LICENSE or both UNITY_EMAIL and UNITY_PASSWORD", result.stdout)
+        self.assertIn("Missing account secret(s): UNITY_PASSWORD", result.stdout)
 
     def test_padded_secret_warns_but_passes(self):
         result = run(SECRETS, env=self.env_with(UNITY_LICENSE=" lic\n", UNITY_EMAIL="a@b.c", UNITY_PASSWORD="pw"))
@@ -250,30 +261,47 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         end = rest.index("- name: ")
         return self.text[start:start + len(f"- name: {name}") + end]
 
-    def test_diagnostics_step_always_runs_and_cannot_change_the_verdict(self):
+    def test_diagnostics_run_after_unity_attempts_and_cannot_change_the_verdict(self):
         step = self.step_block("Report the real Unity failure as annotations")
-        self.assertIn("if: always()", step)
+        self.assertIn(
+            "if: ${{ always() && (steps.unity_setup.outcome == 'success' || "
+            "steps.unity_setup.outcome == 'failure' || steps.unity_setup.outcome == 'cancelled' || "
+            "steps.unity_build.outcome == 'success' || steps.unity_build.outcome == 'failure' || "
+            "steps.unity_build.outcome == 'cancelled') }}",
+            step,
+        )
         self.assertIn("continue-on-error: true", step)
         self.assertIn("bash Tools/Build/report_unity_failure.sh", step)
+        setup = self.step_block('"Unity 1 of 2: Setup Project (scenes, URP, player settings)"')
+        build = self.step_block('"Unity 2 of 2: Build the development APK"')
+        self.assertIn("id: unity_setup", setup)
+        self.assertIn("id: unity_build", build)
 
     def test_log_upload_step_also_always_runs_and_cannot_change_the_verdict(self):
         step = self.step_block("Upload Unity logs and the resolved package lock (for offline diagnosis)")
         self.assertIn("if: always()", step)
         self.assertIn("continue-on-error: true", step)
 
-    def test_secret_check_step_passes_the_three_secrets_and_nothing_else(self):
-        step = self.step_block("Check the Unity license secrets exist (values are never printed)")
+    def test_auth_preflight_passes_all_auth_options_without_printing_values(self):
+        step = self.step_block("Check Unity authentication secrets exist (values are never printed)")
         for secret in ["UNITY_LICENSE", "UNITY_EMAIL", "UNITY_PASSWORD"]:
             self.assertIn(f"{secret}: ${{{{ secrets.{secret} }}}}", step)
         self.assertIn("bash Tools/Build/check_unity_secrets.sh", step)
         # It must not echo them into a later step's environment or the log.
         self.assertNotIn("echo \"$UNITY", step)
 
-    def test_secret_check_runs_after_checkout_and_before_unity(self):
-        self.assertLess(self.text.index("- name: Check out the code"),
-                        self.text.index("- name: Check the Unity license secrets exist"))
-        self.assertLess(self.text.index("- name: Check the Unity license secrets exist"),
-                        self.text.index("- name: \"Unity 1 of 2"))
+    def test_preflight_runs_before_expensive_runner_setup(self):
+        checkout = self.text.index("- name: Check out the code")
+        secret_check = self.text.index("- name: Check Unity authentication secrets exist")
+        pin = self.text.index("- name: Pin the Unity version for this build only")
+        disk_cleanup = self.text.index("- name: Free disk space")
+        cache = self.text.index("- name: Reuse Unity's import cache from earlier runs")
+        unity_setup = self.text.index("- name: \"Unity 1 of 2")
+        self.assertLess(checkout, secret_check)
+        self.assertLess(secret_check, pin)
+        self.assertLess(pin, disk_cleanup)
+        self.assertLess(disk_cleanup, cache)
+        self.assertLess(cache, unity_setup)
 
     def test_both_unity_steps_still_target_the_verified_editor_and_methods(self):
         self.assertIn("UNITY_VERSION: 6000.3.26f1", self.text)

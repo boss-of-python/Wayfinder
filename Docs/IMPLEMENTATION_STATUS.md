@@ -6,6 +6,23 @@ Last updated: 2026-10-16. Status values: **Not started / In progress / Implement
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
 
+## Latest Android APK workflow attempt — 2026-10-16
+
+The latest cloud run [38858427636](https://github.com/boss-of-python/Wayfinder/actions/runs/38858427636)
+failed in preflight because the check incorrectly required `UNITY_LICENSE`. The earlier successful
+Unity log shows Personal-license activation through `UNITY_EMAIL`/`UNITY_PASSWORD` with
+`UNITY_LICENSE` empty. Unity, package resolution, scene generation and APK building were skipped;
+no artifact exists from this attempt. The workflow now accepts either the license-file secret or
+both account secrets, verifies the editor pin, and does so before disk cleanup. Its Unity-log
+reporter is skipped unless a Unity step was attempted.
+
+For the established account-based path, no `.ulf` or `UNITY_LICENSE` secret needs to be created;
+keep the Unity email/password secrets configured, then dispatch the updated branch. The Input
+System 1.20.1 repin remains unverified until that run reaches package resolution/compilation
+(KI-036). Latest local checks are **164/164** headless C# tests, **62/62** mocked Python
+build/pipeline tests, content validation, formula checks and economy simulation — none substitute
+for the Unity/APK/device gates.
+
 ## Batch 2026-10-16-G — Scatter placement + chunk streaming planner (M3, headless-verified; Unity host not yet written)
 
 Milestone **M3 World pipeline**. Requirements: GEN-03 (§7.6 scatter), ARCH-03 / PERF-01 (§18.3 streaming planner),

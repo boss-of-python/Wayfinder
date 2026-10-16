@@ -39,8 +39,8 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   no deadlocks and no arbitrage. See `Docs/EVIDENCE_M0.md`.
 - **Verified without Unity (headless C#):** the non-Unity assemblies (Core, pure Simulation
   math, World, Progression, Persistence) compile with a real Roslyn C# 9 compiler at warning level 4
-  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 143 EditMode NUnit tests
-  pass** (59 before the Batch C campaign layer, 109 before Batch D) (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
+  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 164 EditMode NUnit tests
+  pass** (59 before Batch C, 109 before Batch D, 143 before Batch G) (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
   write-ups in `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/UNITY_HANDOFF.md`). Running them found and fixed a save-checksum bug that
   would have blocked every save (KI-013), a water-stall re-drain (KI-014) and an inventory stack bug
   (KI-015).
@@ -54,43 +54,23 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   device builds, touch play, thermal performance. **No APK exists yet** (KI-006). Nothing here
   claims a build log, APK, IPA, screenshot or device measurement that does not exist.
 
-## One dispatch away from a testable APK (15 Oct 2026, Batch F)
+## Android development APK status (16 Oct 2026)
 
-The free cloud build route had been run **five times and failed every time** with Unity's
-undescriptive `Build failed with exit code 1`. The owner-supplied log of run 38754979851 shows
-one cause — and it is **not** Wayfinder code:
+The latest cloud-build attempt, [run 38858427636](https://github.com/boss-of-python/Wayfinder/actions/runs/38858427636),
+stopped in preflight because it incorrectly required `UNITY_LICENSE`. The earlier successful
+Unity run (38754979851) activated the Personal license using `UNITY_EMAIL` and `UNITY_PASSWORD`
+while `UNITY_LICENSE` was empty. **The failure was in our preflight check, not proof that Unity
+activation is broken.** The check now accepts either the account credentials or a license-file
+secret, and runs before expensive disk cleanup. Unity-log reporting is skipped when neither Unity
+step ran. No APK was produced by the latest run.
 
-```
-Library/PackageCache/com.unity.inputsystem@920b46832575/InputSystem/Editor/
-InputSystemPluginControl.cs(47,25): error CS0117: 'BuildTarget' does not contain a
-definition for 'ReservedCFE'
-```
-
-`com.unity.inputsystem` **1.12.0** uses an enum member Unity 6000.3 removed; upstream drops it
-from **1.13.1** on. Repinned to **1.20.1** (D-031), the newest 1.x and the first built for the
-Unity 6 stream.
-
-That run is also this repository's **first real Unity evidence**, so it retired two long-standing
-blockers: `ProjectSettings/ProjectVersion.txt` now commits the verified pin
-`6000.3.26f1 (de8167e7440c)` read from the editor's own banner (D-032), and the license/image/
-package-resolution assumptions behind KI-002/KI-006 are proven rather than hoped for.
-
-Because Unity's exit code says nothing, the workflow now **self-reports**: step 8 converts the
-surviving `Editor.log` into check-run annotations (compile errors with file/line/column, the
-batchmode abort reason, exceptions, package-resolution failures, warnings in `Assets/Wayfinder`,
-which assemblies Unity compiled, the APK size), readable with
-`gh api repos/boss-of-python/Wayfinder/check-runs/<job-id>/annotations` — no log download needed
-(D-033, 33 tests + 9/9 mutation check).
-
-**What is needed next, and only this:** the owner dispatches **Actions → "Android APK (free cloud
-build)" → Run workflow**, choosing branch `arena/700fea1a-wayfinder`. The agent cannot: its token
-gets `403 Resource not accessible by integration` on the dispatch endpoint (KI-035). A failing
-attempt costs ~7 minutes; a successful one uploads `Wayfinder-dev-APK` (installable, unsigned,
-development build) plus `Unity-logs` containing the `Packages/packages-lock.json` to commit.
-Until that run happens, **no APK exists** and the Input System fix is reasoned, not executed
-(KI-036). The next risk is KI-034: the four Input System-dependent assemblies have never been
-compiled by Unity, so the first real compile may surface API drift — which the annotations will
-now name precisely.
+The earlier 15 Oct Unity run also exposed a package compile error: Input System 1.12.0 referenced
+`BuildTarget.ReservedCFE`, removed in Unity 6000.3. The manifest is repinned to 1.20.1, but that
+fix is still unverified (KI-036). The existing account-based secrets should be enough; no `.ulf`
+file or `UNITY_LICENSE` secret needs to be created if `UNITY_EMAIL` and `UNITY_PASSWORD` are
+configured. A new cloud run is needed to verify package resolution, compile Unity glue, and produce
+the unsigned development APK. The agent cannot dispatch the workflow without `actions: write`
+(KI-035). See [build instructions](Docs/BUILD_AND_RUN.md) for the route and remaining gates.
 
 ## Exploration map, field supplies and research wiring (15 Oct 2026, Batch D)
 
@@ -146,8 +126,8 @@ compiled/executed by Unity.** The full campaign, saves/UI integration and stream
 remain unfinished.
 
 See **[Unity handoff and one-command smoke pipeline](Docs/UNITY_HANDOFF.md)** for
-Windows/macOS/Linux instructions, the 59 passing headless C# tests and 23 passing
-Python runner tests. On a computer with an installed/licensed editor:
+Windows/macOS/Linux instructions and the latest headless checks: 164 C# tests and 60
+mocked Python build/pipeline tests pass. On a computer with an installed/licensed editor:
 
 ```bash
 python3 Tools/Build/unity_pipeline.py smoke --unity "PATH_TO_INSTALLED_UNITY_EDITOR"
@@ -161,9 +141,9 @@ run the supported desktop Unity Editor itself. A manual, dedicated-Windows-runne
 APK workflow is prepared in `.github/workflows/android-phone-build.yml`; it has
 not been run and requires secure owner setup, not a phone-only or free hosted build.
 
-Latest continuation: tested pause/focus gate, authored-water stall wiring (Unity
-unverified), mobile 30 FPS target with a 30/60 toggle. **59/59** headless C# tests and
-**23/23** mocked Python runner tests pass; no real APK or device result exists.
+Latest executed checks (16 Oct): **164/164** headless C# tests and **62/62** mocked Python
+build/pipeline tests pass. The mobile pause/focus and authored-water wiring remain Unity-unverified;
+no real APK or device result exists.
 
 ## Quick start (owner machine)
 
@@ -174,7 +154,7 @@ python3 Tools/Build/pin_toolchain.py --editor-version 6000.3.<patch>f1
 # 3. Open this folder in Unity → menu Tools → Wayfinder → Setup Project
 #    then play: Title → slot "New" → VerticalSlice (greybox campaign slice)
 # 4. Run headless checks any time (no Unity needed):
-python3 Tools/Build/headless_cs.py all           # real C# 9 compile + 109 EditMode NUnit tests
+python3 Tools/Build/headless_cs.py all           # real C# 9 compile + 164 EditMode NUnit tests
 python3 Tools/Validation/validate_content.py
 python3 Tools/Validation/formula_checks.py
 python3 Tools/Balance/economy_sim.py
