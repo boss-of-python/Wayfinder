@@ -318,6 +318,19 @@ class ReportUnityFailureTests(unittest.TestCase):
         self.assertNotIn("::error title=Unity editor log missing::", result.stdout)
 
 
+class ReporterMissingLogMessageTests(unittest.TestCase):
+    def test_missing_explicit_log_does_not_blame_the_same_job(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"PATH": "/usr/bin:/bin", "UNITY_BUILD_OUTCOME": "failure",
+                   "GITHUB_STEP_SUMMARY": str(Path(tmp) / "summary.md")}
+            result = subprocess.run(["bash", str(REPORT), tmp, "Logs/unity-job-log.txt"],
+                                    capture_output=True, text=True, env=env, cwd=tmp)
+            self.assertEqual(0, result.returncode)
+            self.assertIn("::error title=Unity editor log missing::", result.stdout)
+            self.assertIn("fetch_job_log.sh downloads it", result.stdout)
+            self.assertNotIn("Explain the Unity result", result.stdout)
+
+
 class FetchJobLogTests(unittest.TestCase):
     """fetch_job_log.sh orchestration, with `gh` replaced by a recording stub.
 
