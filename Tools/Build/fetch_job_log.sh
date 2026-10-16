@@ -58,18 +58,28 @@ if [ -z "$job_id" ]; then
   exit 1
 fi
 
+errfile="$(mktemp 2>/dev/null || echo "${output}.err")"
+last_error=""
 for attempt in $(seq 1 "$attempts"); do
-  # The archive can lag a few seconds behind the job's completion; retry before giving up.
-  if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$output" 2>/dev/null && [ -s "$output" ]; then
+  # The API answers with a redirect to a short-lived signed blob URL, and the archive can lag a
+  # few seconds behind the job's completion; retry before giving up. gh's own stderr is kept:
+  # run 38880573866 reported only "could not download", which hid the actual cause.
+  if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$output" 2>"$errfile" && [ -s "$output" ]; then
     lines="$(wc -l <"$output" | tr -d ' ')"
     bytes="$(wc -c <"$output" | tr -d ' ')"
+    rm -f "$errfile"
     echo "Downloaded job $job_id log: $lines lines, $bytes bytes -> $output"
     echo "::notice title=Unity job log::Job \"$job_name\" ($job_id): $lines lines, $bytes bytes downloaded for diagnosis."
     exit 0
   fi
+  # Keep the last non-empty line of gh's error, with the signed query string removed.
+  last_error="$(grep -v '^[[:space:]]*$' "$errfile" 2>/dev/null | tail -1 | cut -c1-300 \
+    | sed -E 's/\?[^" ]*/?<redacted>/g')"
   [ "$attempt" -lt "$attempts" ] && sleep "$pause"
 done
 
-rm -f "$output"
-echo "::notice title=Unity job log::Could not download the log of job $job_id (needs actions: read). Open the run in the Actions tab instead."
+rm -f "$output" "$errfile"
+detail="${last_error:-no error text from gh}"
+echo "gh api repos/$repository/actions/jobs/$job_id/logs failed $attempts times: $detail"
+echo "::notice title=Unity job log::Could not download the log of job $job_id after $attempts attempts: $detail. Needs actions: read; open the run in the Actions tab instead."
 exit 1

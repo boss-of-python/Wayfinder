@@ -102,7 +102,10 @@ namespace Wayfinder.Editor
         static void ConfigureInputBackend()
         {
             // No public PlayerSettings setter exists for Active Input Handling in this editor stream.
-            var settings = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset")[0]);
+            var projectSettings = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset");
+            if (projectSettings.Length == 0)
+                throw new BuildFailedException("ProjectSettings/ProjectSettings.asset did not load; cannot set Active Input Handling.");
+            var settings = new SerializedObject(projectSettings[0]);
             var handler = settings.FindProperty("activeInputHandler");
             if (handler == null)
                 throw new BuildFailedException("Cannot find Active Input Handling. Select Input System Package (New) in Player Settings and rerun setup.");

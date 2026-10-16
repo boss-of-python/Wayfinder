@@ -164,7 +164,7 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" Logs/unity-job-log.txt
+        run: bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" Logs/unity-job-log.txt 12 10
 
       - name: Report the real Unity result as annotations
         continue-on-error: true

@@ -274,7 +274,13 @@ done
 # ---- 8. never be silent about a failure --------------------------------------------------
 if [ "$step_failed" = yes ] && [ "$editor_log" = no ]; then
   say "- **No editor log was available.** game-ci runs \`unity-editor -logfile /dev/stdout\`, so Unity's log is the job log, not a workspace file."
-  missing="A Unity step failed but no editor log was inspected ($inspected). game-ci runs unity-editor with -logfile /dev/stdout, so the editor log is the job log; the \"Explain the Unity result\" job downloads it from the Actions API and reruns this script over it."
+  if [ -n "$(for l in $logs; do [ -f "$l" ] || echo "$l"; done)" ]; then
+    # An explicit log was requested but could not be read: it was not downloaded. Say that,
+    # instead of pointing the reader back at this same job.
+    missing="A Unity step failed and the Unity job log could not be read ($inspected). fetch_job_log.sh downloads it; its \"Unity job log\" notice in the diagnose job gives the gh error."
+  else
+    missing="A Unity step failed but no editor log was inspected ($inspected). game-ci runs unity-editor with -logfile /dev/stdout, so the editor log is the job log; the \"Explain the Unity result\" job downloads it from the Actions API and reruns this script over it."
+  fi
   if [ "$errors_emitted" -gt 0 ]; then
     # A cause was already reported (e.g. our own breadcrumb file): context, not the headline.
     echo "::notice title=Unity editor log missing::$missing"
