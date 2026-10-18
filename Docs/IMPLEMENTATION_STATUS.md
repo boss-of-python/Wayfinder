@@ -1,6 +1,6 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-16. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-18. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
@@ -8,30 +8,34 @@ API-profile check, and executed under NUnit outside Unity (D-014). It is not a U
 
 ## Latest Android APK workflow attempt — 2026-10-16
 
-The latest cloud run [38875757162](https://github.com/boss-of-python/Wayfinder/actions/runs/38875757162)
-(dispatched on `main` at `45e4dbe`) got **past preflight and into Unity**: activation succeeded, the
-editor ran for about five minutes and printed ~7,500 job-log lines — roughly four times the
-2026-10-15 run, so it went far beyond the line where Input System 1.12.0 used to abort — then
-*Unity 1 of 2: Setup Project* failed with `Build failed with exit code 1`.
+The latest cloud run [38880573866](https://github.com/boss-of-python/Wayfinder/actions/runs/38880573866),
+attempt 2 on `main` at source SHA `8db1c304`, passed preflight and runner setup but failed in
+*Unity 1 of 2: Setup Project* after about six minutes. The APK step was skipped. Its only
+annotation naming a Unity failure cause was GameCI's generic `Build failed with exit code 1`;
+the build reporter also noted that it inspected four shader-compiler logs but found no editor log
+or `wayfinder-editor-failure.log`.
 
-**Why that still did not tell us anything, and what changed (D-035).** The run's only annotations
-were GameCI's generic banner and GitHub's `ubuntu-latest` → Ubuntu 26 migration notice. The
-diagnostics step produced nothing, because game-ci launches `unity-editor -logfile /dev/stdout`
-*before* appending `customParameters`: Unity's editor log is the **job log**, never
-`Logs/Unity-Setup.log`, and the reporter was globbing Unity's auxiliary worker logs instead
-(KI-039). The workflow now has a second job, *Explain the Unity result*, which downloads the
-finished build job's log through the Actions API and annotates from it; the reporter can no
-longer be silent (it names every file it inspected, flags a missing editor log, and emits a log
-tail for an unexplained failure); `ProjectSetup.Setup` and the `BuildCommands` entry points write
-`Logs/wayfinder-editor-failure.log` before rethrowing; the dead `-logFile` override is gone and
-the runner is pinned to `ubuntu-24.04` before the 2026-10-19 label migration. Evidence:
+The *Explain the Unity result* job found the build job but could not download the raw job log. The
+old fetcher emitted only a generic `needs actions: read` notice; the workflow had already declared
+that permission, so this does not prove it was the cause. PR #12 merged immediately before the
+rerun, but GitHub re-ran the original SHA `8db1c304`, not the new merge commit `0edcb11`. The
+rerun therefore did not test the follow-up longer retries, preserved `gh` error details, or the
+ProjectSettings lookup guard. The Unity failure itself remains unknown (KI-041).
+
+This work also closes a remaining diagnostics gap from that run: if the editor log cannot be
+retrieved and only worker logs survive, the reporter now emits a clearly labeled workspace-log
+tail instead of treating “editor log missing” as a cause and suppressing all context. The manual
+APK workflow now pre-creates `error_logs/apk-build-errors.log`, preserves the raw job log and
+fetch transcript there, and uploads them with the diagnostic report in `Wayfinder-APK-error-logs`.
+The reporting code is regression-tested, but a fresh owner dispatch is still needed to verify it
+and to identify the Unity failure. No APK exists yet. Evidence and the API-derived run details:
 `Docs/evidence/cloud-build-2026-10-16/`.
 
-Keep the Unity email/password secrets configured and dispatch the branch: **one run** now names
-the Unity failure (KI-041) and confirms or refutes the Input System 1.20.1 repin (KI-036). Latest
-local checks are **164/164** headless C# tests, **86/86** mocked Python build/pipeline tests,
-**17/17** mutations caught, content validation, formula checks and economy simulation — none
-substitute for the Unity/APK/device gates.
+Keep the Unity email/password secrets configured and dispatch the current branch
+`arena/474c9658-wayfinder` after these changes are available. Latest local checks are **164/164**
+headless C# tests (last run 16 Oct), **90/90** mocked Python build/pipeline tests and **22/22**
+mutations caught; content validation, formula checks and economy simulation are earlier checks.
+None substitute for the Unity/APK/device gates.
 
 ## Batch 2026-10-16-H — The cloud build explains itself (BUILD-01; fixes KI-039, opens KI-040/041)
 
@@ -50,11 +54,13 @@ the upstream game-ci invocation, 86/86 tests, 17/17 mutation check, headless re-
 - **Verified here:** 86/86 Python tests (63 diagnostics + 23 pipeline), 17/17 mutations caught,
   `headless_cs.py all` → compile OK / **164/164** EditMode / .NET Standard 2.1 profile OK / 30
   Unity files parse, `bash -n` on both shell scripts, four annotation shapes reproduced by hand.
-- **Not verified:** everything that needs CI. No part of the new job, the breadcrumb or the
-  reporter has run on a real runner; **no APK**; the Unity failure of run 38875757162 is still
-  unidentified (KI-041). M0/M1/M2 gates unchanged.
+- **CI follow-up:** run 38880573866 attempt 2 did execute the Batch H reporter and diagnose job
+  on the PR #11 source. Setup still failed; the reporter found only worker logs and the diagnose
+  job could not fetch the raw editor log. No APK or Unity root cause resulted. The later PR #12
+  fetcher changes, ProjectSettings guard and this worker-tail fallback still need a fresh dispatch.
+  M0/M1/M2 gates remain unchanged.
 - **Blocked:** dispatching the workflow (403, no `actions: write` — KI-035). One owner dispatch of
-  `arena/fab430e0-wayfinder` resolves KI-041 and KI-036.
+  `arena/474c9658-wayfinder` resolves KI-041 and KI-036.
 
 ## Batch 2026-10-16-G — Scatter placement + chunk streaming planner (M3, headless-verified; Unity host not yet written)
 

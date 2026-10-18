@@ -1,0 +1,27 @@
+# Verification run: 2026-10-18 (Asia/Calcutta)
+$ python3 Docs/evidence/cloud-build-2026-10-16/mutation_check.py
+N1: caught - let an unexplained failure pass without an annotation (the 38875757162 silence)
+N2: caught - stop reporting that no editor log was available
+N3: caught - accept Unity's worker logs as if they were the editor log
+N4: caught - ignore the Unity step outcomes the workflow passes in
+N5: caught - stop saying which log files were inspected
+N6: caught - emit the log tail without encoding its newlines (breaks the workflow command)
+N7: caught - stop grepping for the editor entry point's failure breadcrumb
+N8: caught - stop detecting an unresolvable -executeMethod build method
+N9: caught - download whichever job happens to be first instead of the build job
+N10: caught - keep an empty downloaded log and call it a success
+N11: caught - go back to the ubuntu-latest label that migrates to Ubuntu 26 on 2026-10-19
+N12: caught - let the diagnosis job run without waiting for the build job
+N13: caught - reinstate the -logFile custom parameter that delivers no editor log
+N14: caught - stop telling the in-job reporter how the Unity steps ended
+N15: caught - rename the C# breadcrumb marker so the shell pattern no longer matches it
+N16: caught - swallow the editor exception instead of rethrowing it (build would go green)
+N17: caught - run Setup without the failure recorder again
+N18: caught - suppress the fallback tail when only Unity worker logs survive
+N19: caught - skip pre-creating the APK error-log destination before preflight
+N20: caught - stop publishing the dedicated APK error-log artifact
+N21: caught - stop extracting raw Unity error lines into the report file
+N22: caught - allow the reporting-only diagnose job to fail the workflow
+
+22/22 mutations caught.
+Files restored; suite green again.

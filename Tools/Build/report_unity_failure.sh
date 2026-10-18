@@ -57,10 +57,13 @@ escape() {
     { gsub(/%/, "%25"); gsub(/\r/, "%0D"); if (NR > 1) printf "%%0A"; printf "%s", $0 }'
 }
 
-errors_emitted=0
+causes_emitted=0
 emit_error() { # emit_error <annotation-body>
   printf '::error %s\n' "$1"
-  errors_emitted=$((errors_emitted + 1))
+}
+emit_cause() { # emit_cause <annotation-body> — a matched cause, unlike missing-log context
+  emit_error "$1"
+  causes_emitted=$((causes_emitted + 1))
 }
 
 # A Unity step that was attempted and did not succeed, as reported by the workflow.
@@ -132,13 +135,13 @@ if [ "$error_count" -gt 0 ]; then
     lineno="$(printf '%s' "$line" | sed -E 's/^(.*)\(([0-9]+),([0-9]+)\): error CS[0-9]+:.*$/\2/')"
     column="$(printf '%s' "$line" | sed -E 's/^(.*)\(([0-9]+),([0-9]+)\): error CS[0-9]+:.*$/\3/')"
     message="$(printf '%s' "$line" | sed -E 's/^[^(]*\([0-9]+,[0-9]+\): //')"
-    emit_error "file=$file,line=$lineno,col=$column,title=Unity compile error::$message"
+    emit_cause "file=$file,line=$lineno,col=$column,title=Unity compile error::$message"
     reported=$((reported + 1))
   done <<EOF
 $error_lines
 EOF
   if [ "$error_count" -gt "$reported" ]; then
-    emit_error "title=Unity compile errors::$error_count unique compile errors; $reported reported here, all of them are in the Unity log."
+    emit_cause "title=Unity compile errors::$error_count unique compile errors; $reported reported here, all of them are in the Unity log."
   fi
 fi
 
@@ -149,7 +152,7 @@ if [ -n "$abort_reasons" ]; then
   while IFS= read -r reason; do
     [ -z "$reason" ] && continue
     say "- Unity aborted batchmode: $reason"
-    emit_error "title=Unity aborted batchmode::$reason"
+    emit_cause "title=Unity aborted batchmode::$reason"
   done <<EOF
 $abort_reasons
 EOF
@@ -158,7 +161,7 @@ fi
 aborted="$(grep -hoE 'Unity aborted before completing: .*' $logs 2>/dev/null | detimestamp | sort -u | head -1)"
 if [ -n "$aborted" ]; then
   say "- GameCI: $aborted"
-  emit_error "title=Unity aborted::$aborted"
+  emit_cause "title=Unity aborted::$aborted"
 fi
 
 # An -executeMethod that Unity cannot resolve (renamed/uncompiled Editor assembly) aborts
@@ -170,7 +173,7 @@ if [ -n "$method_errors" ]; then
   while IFS= read -r line; do
     [ -z "$line" ] && continue
     say "- Build method unresolved: $line"
-    emit_error "title=Unity build method not found::$line"
+    emit_cause "title=Unity build method not found::$line"
   done <<EOF
 $method_errors
 EOF
@@ -186,7 +189,7 @@ if [ -n "$resolution" ]; then
   say '```'
   while IFS= read -r line; do
     [ -z "$line" ] && continue
-    emit_error "title=Unity package resolution::$line"
+    emit_cause "title=Unity package resolution::$line"
   done <<EOF
 $resolution
 EOF
@@ -212,7 +215,7 @@ if [ -n "$breadcrumbs" ]; then
   while IFS= read -r line; do
     [ -z "$line" ] && continue
     say "- $line"
-    emit_error "title=Wayfinder editor method failed::$line"
+    emit_cause "title=Wayfinder editor method failed::$line"
   done <<EOF
 $breadcrumbs
 EOF
@@ -226,7 +229,7 @@ if [ -n "$exceptions" ]; then
   say '```'
   while IFS= read -r line; do
     [ -z "$line" ] && continue
-    emit_error "title=Unity exception::$line"
+    emit_cause "title=Unity exception::$line"
   done <<EOF
 $exceptions
 EOF
@@ -281,7 +284,7 @@ if [ "$step_failed" = yes ] && [ "$editor_log" = no ]; then
   else
     missing="A Unity step failed but no editor log was inspected ($inspected). game-ci runs unity-editor with -logfile /dev/stdout, so the editor log is the job log; the \"Explain the Unity result\" job downloads it from the Actions API and reruns this script over it."
   fi
-  if [ "$errors_emitted" -gt 0 ]; then
+  if [ "$causes_emitted" -gt 0 ]; then
     # A cause was already reported (e.g. our own breadcrumb file): context, not the headline.
     echo "::notice title=Unity editor log missing::$missing"
   else
@@ -289,29 +292,35 @@ if [ "$step_failed" = yes ] && [ "$editor_log" = no ]; then
   fi
 fi
 
-if [ "$step_failed" = yes ] && [ "$errors_emitted" -eq 0 ]; then
-  # Unrecognised failure: publish the end of the biggest log so the cause is still readable
-  # from the annotations API instead of leaving an empty "Build failed with exit code 1".
+if [ "$step_failed" = yes ] && [ "$causes_emitted" -eq 0 ]; then
+  # Missing-editor-log is context, not an explanation. If worker logs survived, publish their
+  # tail as well; this is the exact fallback needed when the Actions API cannot return the job log.
   biggest=""
   biggest_size=0
   for log in $logs; do
     [ -f "$log" ] || continue
     size="$(wc -c <"$log" 2>/dev/null | tr -d ' ')"
-    if [ "${size:-0}" -ge "$biggest_size" ]; then
+    if [ "${size:-0}" -gt "$biggest_size" ]; then
       biggest="$log"
       biggest_size="$size"
     fi
   done
-  tail_text=""
   if [ -n "$biggest" ]; then
     tail_text="$(grep -v '^[[:space:]]*$' "$biggest" 2>/dev/null | detimestamp | tail -40 | cut -c1-200)"
+    say "- **Failure with no recognised cause.** Tail of ${biggest#"$workspace"/}:"
+    say '```'
+    printf '%s\n' "$tail_text" >>"$summary"
+    say '```'
+    emit_error "title=Unity failure not explained::A Unity step failed but no compile error, abort reason, package failure or exception matched in: $inspected. The log tail is in the next annotation and in the job summary."
+    if [ "$editor_log" = yes ]; then
+      echo "::notice title=Unity log tail::$(escape "$tail_text")"
+    else
+      echo "::notice title=Unity workspace log tail::$(escape "$tail_text")"
+    fi
+  else
+    say "- **Failure with no recognised cause.** No workspace log was available to include a tail."
+    emit_error "title=Unity failure not explained::A Unity step failed but no diagnostic cause matched in: $inspected. No workspace log was available for a tail; see the Unity job-log download notice."
   fi
-  say "- **Failure with no recognised cause.** Tail of ${biggest#"$workspace"/}:"
-  say '```'
-  printf '%s\n' "$tail_text" >>"$summary"
-  say '```'
-  emit_error "title=Unity failure not explained::A Unity step failed but no compile error, abort reason, package failure or exception matched in: $inspected. The log tail is in the next annotation and in the job summary."
-  echo "::notice title=Unity log tail::$(escape "$tail_text")"
 fi
 
 if [ "$error_count" -eq 0 ] && [ -z "$aborted" ]; then
