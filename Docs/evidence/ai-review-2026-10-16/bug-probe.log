@@ -1,0 +1,32 @@
+probe compile: exit 0, 0 error(s), 0 warning(s)
+NUnitLite 3.13.3 (.NET Standard 2.0)
+Copyright (c) 2022 Charlie Poole, Rob Prouse
+
+Runtime Environment
+   OS Version: Linux 6.1.158+ #1 SMP PREEMPT_DYNAMIC Mon May 11 18:48:24 UTC 2026
+  CLR Version: 3.1.23
+
+Test Files
+    /tmp/wayfinder-bug-probe-9f7p7sja/BugProbe.dll
+
+Test Discovery
+  Start time: 2026-10-16 12:46:08Z
+    End time: 2026-10-16 12:46:08Z
+    Duration: 0.019 seconds
+
+Run Settings
+    Number of Test Workers: 1
+    Work Directory: /home/user/Wayfinder
+    Internal Trace: Off
+
+Test Run Summary
+  Overall result: Passed
+  Test Count: 15, Passed: 15, Failed: 0, Warnings: 0, Inconclusive: 0, Skipped: 0
+  Start time: 2026-10-16 12:46:08Z
+    End time: 2026-10-16 12:46:14Z
+    Duration: 6.883 seconds
+
+Results (nunit3) saved as /tmp/wayfinder-bug-probe-9f7p7sja/BugProbe.xml
+
+result xml head: <test-run id="2" name="BugProbe.dll" fullname="/tmp/wayfinder-bug-probe-9f7p7sja/BugProbe.dll" testcasecount="15" result="Passed" start-time="2026-10-16T12:46:08.0461674Z" end-time="2026-10-16T12:46:14.9287993Z" duration="6.882603" total="15" passed="15" failed="0" inconclusive="0" skipped="0" warnings="0" asserts="47" random-seed="30171779">
+probe workdir: /tmp/wayfinder-bug-probe-9f7p7sja
