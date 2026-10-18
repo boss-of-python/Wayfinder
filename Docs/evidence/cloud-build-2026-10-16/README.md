@@ -60,7 +60,7 @@ it makes the next run say so.
 | New `Assets/Wayfinder/Scripts/Editor/EditorFailureLog.cs`; `ProjectSetup.Setup` and the four `BuildCommands` entry points run through it | An exception in an `-executeMethod` entry point is appended to `Logs/wayfinder-editor-failure.log` (a workspace file, uploaded in `Unity-logs`) and rethrown, so Unity still fails the build |
 | The dead `customParameters: -logFile ...` is removed; `runs-on` pinned to `ubuntu-24.04` | No advertised diagnostic path that does not work; the 2026-10-19 `ubuntu-latest` → Ubuntu 26 migration cannot change the host OS under a 9 GB Unity build without a commit |
 
-## 4. Verification run here (no Unity, no Docker, no network to Unity)
+## 4. Initial verification snapshot for Batch H (no Unity, no Docker, no network to Unity)
 
 | Check | Result | File |
 |---|---|---|
@@ -74,13 +74,43 @@ The 2026-10-15 mutation check still runs, but two of its nine mutations
 lines; it now reports 7/9 + 2 stale. The script in this folder supersedes it and re-pins both
 behaviours (N5, N14 and the workflow assertions).
 
-## 5. What this does **not** prove
+## 5. What this did **not** prove at the time
 
-- **No APK, and no Unity result of any kind.** Nothing here was executed by Unity; the new job
-  and the breadcrumb have never run in CI.
-- The cause of run 38875757162's Unity failure is **still unknown** (KI-041). It is readable from
-  the next dispatch without a log paste.
+- **No APK and no successful Unity result.** The Batch H changes were locally tested, not proven
+  by a successful editor or Android build. The later failed workflow rerun is recorded below.
+- At that point, the cause of run 38875757162's Unity failure was **still unknown** (KI-041).
+  Follow-up run 38880573866 also failed without exposing the cause (see below).
 - `Packages/packages-lock.json` is still not committed (KI-002).
+
+## Follow-up run 38880573866 — attempt 2 (2026-10-16)
+
+The latest Actions run was [38880573866](https://github.com/boss-of-python/Wayfinder/actions/runs/38880573866),
+**attempt 2**, on `main` at `8db1c304` (PR #11's source). The build job passed authentication,
+toolchain pinning, disk cleanup and cache setup, then failed in *Unity 1 of 2: Setup Project*
+after about six minutes. The APK step was skipped. The only annotation that named a Unity
+failure cause was GameCI's generic `Build failed with exit code 1`; the other annotations reported
+that the editor log was missing and listed the worker logs inspected.
+
+The in-job reporter did inspect four shader-compiler logs, but no editor log or
+`wayfinder-editor-failure.log` survived. The diagnose job found build job `116976406468`, but
+could not download its raw log; the old fetch script emitted only `Could not download the log …
+(needs actions: read)`. The workflow already declared `actions: read`, so that message does **not**
+prove a permission problem. The separate log/artifact storage hosts are not reachable from this
+workspace, so the actual Unity exception or compiler error remains unknown.
+
+Although attempt 2 started just after PR #12 merged, GitHub reruns a workflow against the original
+run's SHA (`8db1c304`), not the new merge commit (`0edcb11`). It therefore did **not** exercise
+PR #12's longer retry window, preserved `gh` error text, or guarded ProjectSettings lookup. Those
+fixes are in the current source but still need a fresh owner dispatch. This follow-up also exposed
+one remaining reporter gap: a missing editor log counted as an error and suppressed the tail of
+surviving worker logs. The reporter now distinguishes a missing log from a recognized cause and
+emits a clearly labeled workspace-log tail when that is all that survived; its regression test
+reproduces this run's worker-log-only shape.
+
+Local verification after that change: `python3 -m unittest discover -s Tools/Build -p 'test_*.py' -v`
+passes **89/89** (`diagnostics-tests-followup.log`), and the updated mutation check catches
+**18/18** regressions (`mutation-check-followup.log`). This does not identify the Unity failure or
+verify a successful APK; KI-041 stays open until the updated source runs in Unity.
 
 ## 6. Next run — read it with
 
@@ -91,3 +121,24 @@ gh api repos/boss-of-python/Wayfinder/actions/runs/$run/jobs --jq '.jobs[] | "\(
 gh api repos/boss-of-python/Wayfinder/check-runs/<job id>/annotations \
   --jq '.[] | "[\(.annotation_level)] \(.title): \(.message)"'
 ```
+
+## APK error-log artifact update (2026-10-18)
+
+The existing manual `android-cloud-build.yml` workflow now creates `error_logs/apk-build-errors.log`
+right after checkout and before preflight. The `apk` job appends Unity step outcomes and in-job
+reporter output there; the `diagnose` job pre-creates the same report alongside the raw job log
+(`unity-job-log.txt`) and fetch transcript (`job-log-download.txt`). It appends reporter output
+and matching Unity error lines, then uploads all files as **`Wayfinder-APK-error-logs`** with
+seven-day retention. Generated logs are ignored by Git, while `error_logs/.gitkeep` keeps the
+folder present in the checkout. No second dispatchable workflow was added.
+
+The separate `diagnose` job has job-level `continue-on-error: true`; fetch, report, extraction and
+upload steps also have step-level guards. Commands retain their actual exit status, while the
+reporting-only job cannot change the APK job's verdict or fail the overall workflow.
+
+Verification on the updated source: **90/90** Python tests and **22/22** mutations caught;
+workflow YAML parsed successfully, all six multiline `run` blocks passed `bash -n`, helper shell
+scripts passed `bash -n`, and `git diff --check` passed. See
+`diagnostics-tests-apk-error-logs.log` and `mutation-check-apk-error-logs.log`. This is local
+verification only: no Unity dispatch was made, no APK was produced, and KI-041 remains open pending
+a fresh owner dispatch of the current source.

@@ -5,6 +5,8 @@
 /[Bb]uild/
 /[Bb]uilds/
 /[Ll]ogs/
+/error_logs/*
+!/error_logs/.gitkeep
 /[Uu]ser[Ss]ettings/
 /[Mm]emoryCaptures/
 /[Rr]ecordings/

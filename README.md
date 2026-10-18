@@ -56,13 +56,14 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
 
 ## Android development APK status (16 Oct 2026)
 
-The latest cloud-build attempt, [run 38858427636](https://github.com/boss-of-python/Wayfinder/actions/runs/38858427636),
-stopped in preflight because it incorrectly required `UNITY_LICENSE`. The earlier successful
-Unity run (38754979851) activated the Personal license using `UNITY_EMAIL` and `UNITY_PASSWORD`
-while `UNITY_LICENSE` was empty. **The failure was in our preflight check, not proof that Unity
-activation is broken.** The check now accepts either the account credentials or a license-file
-secret, and runs before expensive disk cleanup. Unity-log reporting is skipped when neither Unity
-step ran. No APK was produced by the latest run.
+The latest cloud-build attempt, [run 38880573866](https://github.com/boss-of-python/Wayfinder/actions/runs/38880573866)
+(attempt 2), passed preflight but failed in *Unity 1 of 2: Setup Project* with GameCI's generic
+`Build failed with exit code 1`; no APK was produced. Its diagnose job could not retrieve the
+Unity job log, so the Unity failure remains unknown (KI-041). GitHub reran the original source
+SHA `8db1c30`, so it did not test the follow-up changes merged at `0edcb11`. The current fetcher
+retries longer and preserves its actual error; the reporter now includes a labeled workspace-log
+tail when only worker logs survive. A fresh dispatch is still required to diagnose Unity and
+produce an APK.
 
 The earlier 15 Oct Unity run also exposed a package compile error: Input System 1.12.0 referenced
 `BuildTarget.ReservedCFE`, removed in Unity 6000.3. The manifest is repinned to 1.20.1, but that
@@ -141,13 +142,14 @@ run the supported desktop Unity Editor itself. A manual, dedicated-Windows-runne
 APK workflow is prepared in `.github/workflows/android-phone-build.yml`; it has
 not been run and requires secure owner setup, not a phone-only or free hosted build.
 
-Latest executed checks (16 Oct): **164/164** headless C# tests and **86/86** mocked Python
-build/pipeline tests pass. The free cloud build was dispatched again on 16 Oct
-([38875757162](https://github.com/boss-of-python/Wayfinder/actions/runs/38875757162)): Unity ran
-for five minutes and failed in *Setup Project* without reporting a cause, so the diagnostics were
-rebuilt to read Unity's log from the Actions job log and to never stay silent (D-035,
-`Docs/evidence/cloud-build-2026-10-16/`). The mobile pause/focus and authored-water wiring remain
-Unity-unverified; no real APK or device result exists.
+Latest local checks: **90/90** mocked Python build/pipeline tests and **22/22** mutation checks
+pass; the last headless C# run (16 Oct) passed **164/164** tests. The latest cloud run
+([38880573866](https://github.com/boss-of-python/Wayfinder/actions/runs/38880573866)) failed in
+*Setup Project* without the editor log; it was rerun from the original SHA and did not exercise
+the follow-up diagnostics. The current workflow preserves a clearly labeled worker-log tail,
+pre-creates `error_logs/apk-build-errors.log`, and publishes the raw log and report as
+`Wayfinder-APK-error-logs` (`Docs/evidence/cloud-build-2026-10-16/`). The mobile pause/focus and
+authored-water wiring remain Unity-unverified; no real APK or device result exists.
 
 ## Quick start (owner machine)
 

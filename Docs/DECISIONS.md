@@ -219,8 +219,10 @@ contract and the secret handling below still stand.*
   `permissions: actions: read`) runs `Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk"`,
   which downloads that finished job's plain-text log from
   `GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs`, and reruns
-  `Tools/Build/report_unity_failure.sh` over it. The log is also uploaded as the `Unity-job-log`
-  artifact. The dead `customParameters: -logFile …` override is removed from both Unity steps.
+  `Tools/Build/report_unity_failure.sh` over it. The current workflow uploads the raw log at
+  `error_logs/unity-job-log.txt` in the `Wayfinder-APK-error-logs` artifact (renamed from the
+  earlier `Unity-job-log` artifact). The dead `customParameters: -logFile …` override is removed
+  from both Unity steps.
 - **`report_unity_failure.sh` is never silent.** It always annotates which files it inspected and
   their sizes; it distinguishes a real editor log from Unity's auxiliary worker logs and says so;
   it is told how the Unity steps ended (`UNITY_SETUP_OUTCOME`/`UNITY_BUILD_OUTCOME`/

@@ -9,9 +9,11 @@ readable from the GitHub API, because Unity's exit code is not descriptive.
 Run 38875757162 (2026-10-16) then failed a second way: the diagnostics said *nothing at all*.
 game-ci starts Unity with `-logfile /dev/stdout`, so the editor log is the job log; the
 workspace only held Unity's auxiliary worker logs, which match none of the patterns. The whole
-8-minute build produced one annotation, "Build failed with exit code 1". The tests below pin
-the two fixes: the reporter is never silent, and a second job downloads the finished job log
-(Tools/Build/fetch_job_log.sh) and annotates from it.
+8-minute build produced one annotation, "Build failed with exit code 1". A later rerun (38880573866,
+attempt 2) exposed a related gap: when only worker logs survived, the "editor log missing" error
+suppressed the fallback log tail. The tests below pin the fixes: the reporter distinguishes missing
+log context from a diagnosed cause and still publishes a labeled worker-log tail, while a second
+job downloads the finished job log (Tools/Build/fetch_job_log.sh) and annotates from it.
 
 Stdlib only (no PyYAML): the workflow checks below are structural text assertions.
 """
@@ -230,13 +232,19 @@ class ReportUnityFailureTests(unittest.TestCase):
                       result.stdout)
         self.assertIn("bytes); editor log recognised: no.", result.stdout)
 
-    def test_worker_logs_only_are_reported_as_a_missing_editor_log_not_as_silence(self):
+    def test_worker_logs_only_include_a_tail_when_the_editor_log_is_missing(self):
         # The exact 2026-10-16 shape: Unity ran and failed, Logs/ holds only worker logs.
-        self.write_log(WORKER_LOG, relative="Logs/AssetImportWorker0.log")
+        # A missing-editor-log annotation is not itself the cause; include surviving context
+        # when the separate Actions API download also fails.
+        self.write_log(WORKER_LOG + "Fallback context marker: worker-tail-visible\n",
+                       relative="Logs/AssetImportWorker0.log")
         self.write_log("Cmd: compileSnippet\n", relative="Logs/shadercompiler-UnityShaderCompiler-0.log")
         result = run(REPORT, self.root, self.failing_env())
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("::error title=Unity editor log missing::", result.stdout)
+        self.assertIn("::error title=Unity failure not explained::", result.stdout)
+        self.assertIn("::notice title=Unity workspace log tail::", result.stdout)
+        self.assertIn("worker-tail-visible", result.stdout)
         self.assertIn("-logfile /dev/stdout", result.stdout)
         self.assertIn("AssetImportWorker0.log", result.stdout)
 
@@ -426,7 +434,7 @@ esac
 
     def test_workflow_gives_the_log_a_longer_retry_window(self):
         diagnose = WORKFLOW.read_text()
-        self.assertIn("fetch_job_log.sh \"Build Wayfinder-dev.apk\" Logs/unity-job-log.txt 12 10",
+        self.assertIn("fetch_job_log.sh \"Build Wayfinder-dev.apk\" error_logs/unity-job-log.txt 12 10",
                       diagnose)
 
     def test_missing_run_context_is_reported_not_crashed(self):
@@ -589,6 +597,22 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         self.assertIn("mkdir -p Library Logs Builds/Logs", self.text[prepare:cache])
         self.assertIn("hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**')", self.text)
 
+    def test_error_log_directory_and_file_are_created_before_preflight(self):
+        prepare = self.step_block("Pre-create APK error log")
+        secrets = self.text.index("- name: Check Unity authentication secrets exist")
+        self.assertLess(self.text.index("- name: Pre-create APK error log"), secrets)
+        self.assertIn("mkdir -p error_logs", prepare)
+        self.assertIn("error_logs/apk-build-errors.log", prepare)
+        self.assertIn("GITHUB_RUN_ID", prepare)
+        self.assertIn("GITHUB_SHA", prepare)
+        reporter = self.step_block("Report the real Unity failure as annotations")
+        self.assertIn("tee -a error_logs/apk-build-errors.log", reporter)
+        root = TOOLS.parent.parent
+        self.assertTrue((root / "error_logs/.gitkeep").exists())
+        ignore = (root / ".gitignore").read_text()
+        self.assertIn("/error_logs/*", ignore)
+        self.assertIn("!/error_logs/.gitkeep", ignore)
+
     def job_block(self, name):
         """The YAML for exactly one job: from its key up to (not including) the next job key."""
         start = self.text.index(f"\n  {name}:\n")
@@ -609,6 +633,7 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         artifact = self.step_block("Upload Unity logs and the resolved package lock (for offline diagnosis)")
         self.assertIn("Logs/", artifact)
         self.assertIn("Builds/Logs/", artifact)
+        self.assertIn("error_logs/", artifact)
 
     def test_in_job_diagnostics_are_told_the_unity_step_outcomes(self):
         # Without the outcomes, a failure whose log says nothing looks exactly like a success.
@@ -622,13 +647,20 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         self.assertIn("if: always()", diagnose)
         self.assertIn("actions: read", diagnose)  # GET .../actions/jobs/{id}/logs
         self.assertIn("GH_TOKEN: ${{ github.token }}", diagnose)
-        self.assertIn(f'bash Tools/Build/fetch_job_log.sh "{BUILD_JOB_NAME}" Logs/unity-job-log.txt',
+        self.assertIn(f'bash Tools/Build/fetch_job_log.sh "{BUILD_JOB_NAME}" error_logs/unity-job-log.txt',
                       diagnose)
-        self.assertIn('bash Tools/Build/report_unity_failure.sh "$PWD" Logs/unity-job-log.txt',
+        self.assertIn('bash Tools/Build/report_unity_failure.sh "$PWD" error_logs/unity-job-log.txt',
                       diagnose)
+        self.assertIn("tee -a error_logs/apk-build-errors.log", diagnose)
+        self.assertIn("error_logs/job-log-download.txt", diagnose)
+        self.assertIn("grep -Ein", diagnose)
+        self.assertIn("name: Wayfinder-APK-error-logs", diagnose)
+        self.assertIn("path: error_logs/", diagnose)
         self.assertIn("UNITY_JOB_RESULT: ${{ needs.apk.result }}", diagnose)
-        # Reporting only: it must never turn a green build red or a red build green.
-        self.assertEqual(3, diagnose.count("continue-on-error: true"))
+        # The job-level guard prevents checkout/setup/upload failures in this reporting-only job
+        # from failing the workflow; its four failure-prone steps also keep running independently.
+        self.assertIn("    continue-on-error: true\n    runs-on: ubuntu-24.04", diagnose)
+        self.assertEqual(4, diagnose.count("        continue-on-error: true"))
 
     def test_the_diagnosis_job_downloads_the_job_it_is_named_after(self):
         # A rename of the build job would silently make the diagnosis download nothing.

@@ -16,11 +16,18 @@ passes 164/164 tests (Batch G); older counts below are historical snapshots.
 
 **Executed, but no APK yet.** Five owner dispatches on 2026-10-15 reached Unity and exposed the
 Input System 1.12.0 `BuildTarget.ReservedCFE` compile error; the manifest was repinned to 1.20.1.
-The latest run, [38875757162](https://github.com/boss-of-python/Wayfinder/actions/runs/38875757162)
-on 2026-10-16, authenticated, ran Unity for about five minutes — well past the point where 1.12.0
-used to abort — and then failed in *Unity 1 of 2: Setup Project*. **Its cause is still unknown**
-(KI-041): the diagnostics were reading the wrong files and reported nothing at all (KI-039, now
-fixed by D-035; see `Docs/evidence/cloud-build-2026-10-16/`). This builds a development APK on
+The latest run, [38880573866](https://github.com/boss-of-python/Wayfinder/actions/runs/38880573866),
+was a second attempt on the original `8db1c30` source. Preflight passed, then *Unity 1 of 2: Setup
+Project* failed after about six minutes with `Build failed with exit code 1`; the APK step was
+skipped. The build job had only worker/shader logs, and its diagnose job could not download the
+Unity job log. **The Unity failure is still unknown** (KI-041). That rerun did not exercise the
+follow-up changes merged at `0edcb11`: the fetcher now retries longer and preserves the real `gh`
+error, and ProjectSetup guards a missing settings asset. The workflow now pre-creates `error_logs/`
+and publishes `Wayfinder-APK-error-logs` with `unity-job-log.txt` plus `apk-build-errors.log`;
+the error report includes the fetch transcript, parsed annotations and matching Unity error lines.
+The reporter also emits a labeled tail when only worker logs survive. These changes need a fresh
+owner dispatch; see
+`Docs/evidence/cloud-build-2026-10-16/` for run details. This builds a development APK on
 GitHub's machines; no local Unity install or self-hosted runner is required.
 
 Run it: **Actions tab → "Android APK (free cloud build)" → Run workflow** (manual only —
@@ -42,28 +49,32 @@ What it does, in order:
 | Step | Action | Result |
 |---|---|---|
 | 1 | `actions/checkout` (`persist-credentials: false`) | source at the selected ref |
-| 2 | `bash Tools/Build/check_unity_secrets.sh` | requires either `UNITY_LICENSE` or both account secrets; prints no values and runs before expensive setup |
-| 3 | `python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"` | **verifies** the committed `ProjectSettings/ProjectVersion.txt` still matches (idempotent, D-032); nothing is committed |
-| 4 | `jlumbroso/free-disk-space` | frees disk for the ~9 GB Unity Android image |
-| 5 | `mkdir -p Library Logs Builds/Logs` | prepares cold cache and diagnostic log directories |
-| 6 | `actions/cache` | reuses the `Library` import cache between runs |
-| 7 | GameCI `unity-builder` → `Wayfinder.Editor.ProjectSetup.Setup` | generates scenes, URP asset, quality tiers, player settings, campaign `Resources/Content` |
-| 8 | GameCI `unity-builder` → `Wayfinder.Editor.BuildCommands.BuildAndroidDev` | `Builds/Android/Wayfinder-dev.apk` (unsigned development build) |
-| 9 | `bash Tools/Build/report_unity_failure.sh` (only if Unity was attempted) | annotates whatever survived in the workspace — Unity's worker logs and `Logs/wayfinder-editor-failure.log` — and says plainly when no editor log was available |
-| 10 | `actions/upload-artifact` (logs) | `Unity-logs` (workspace logs + **`Packages/packages-lock.json`**), 7-day retention |
-| 11 | `actions/upload-artifact` (APK) | `Wayfinder-dev-APK`, 7-day retention; fails if the APK is missing |
+| 2 | Pre-create `error_logs/apk-build-errors.log` | creates the destination and records the run, attempt and commit before preflight |
+| 3 | `bash Tools/Build/check_unity_secrets.sh` | requires either `UNITY_LICENSE` or both account secrets; prints no values and runs before expensive setup |
+| 4 | `python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"` | **verifies** the committed `ProjectSettings/ProjectVersion.txt` still matches (idempotent, D-032); nothing is committed |
+| 5 | `jlumbroso/free-disk-space` | frees disk for the ~9 GB Unity Android image |
+| 6 | `mkdir -p Library Logs Builds/Logs` | prepares the Unity cache and workspace log directories |
+| 7 | `actions/cache` | reuses the `Library` import cache between runs |
+| 8 | GameCI `unity-builder` → `Wayfinder.Editor.ProjectSetup.Setup` | generates scenes, URP asset, quality tiers, player settings, campaign `Resources/Content` |
+| 9 | GameCI `unity-builder` → `Wayfinder.Editor.BuildCommands.BuildAndroidDev` | `Builds/Android/Wayfinder-dev.apk` (unsigned development build) |
+| 10 | `bash Tools/Build/report_unity_failure.sh` (only if Unity was attempted) | annotates whatever survived in the workspace and tees the diagnostic output into `error_logs/apk-build-errors.log` |
+| 11 | Record Unity step outcomes | appends setup/build outcomes to `error_logs/apk-build-errors.log`, including if Unity never ran |
+| 12 | `actions/upload-artifact` (logs) | `Unity-logs` (workspace logs, `error_logs/`, and **`Packages/packages-lock.json`**), 7-day retention |
+| 13 | `actions/upload-artifact` (APK) | `Wayfinder-dev-APK`, 7-day retention; fails if the APK is missing |
 
 Then a second job, **Explain the Unity result** (`needs: apk`, `if: always()`), does the part that
 matters after a failure:
 
 | Step | Action | Result |
 |---|---|---|
-| 1 | `bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" Logs/unity-job-log.txt` | downloads the finished build job's plain-text log — **this is Unity's editor log**, because game-ci runs `unity-editor -logfile /dev/stdout` (D-035) |
-| 2 | `bash Tools/Build/report_unity_failure.sh "$PWD" Logs/unity-job-log.txt` | compile errors with file/line/column, the batchmode abort reason, an unresolvable `-executeMethod`, package-resolution failures, exceptions, our own failure breadcrumb — and, if nothing matches, an explicit "not explained" error plus a 40-line log tail |
-| 3 | `actions/upload-artifact` | `Unity-job-log`, so the full log is downloadable without the raw-log host |
+| 1 | `bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" error_logs/unity-job-log.txt` | downloads the finished build job's plain-text log — **this is Unity's editor log**, because game-ci runs `unity-editor -logfile /dev/stdout` (D-035); fetch output is also saved under `error_logs/` |
+| 2 | `bash Tools/Build/report_unity_failure.sh "$PWD" error_logs/unity-job-log.txt` | annotates compile errors, abort reasons, unresolved build methods, package failures and exceptions; its output is appended to `error_logs/apk-build-errors.log` |
+| 3 | Extract matching Unity error lines | appends compiler errors, exceptions, aborts and build failures to `error_logs/apk-build-errors.log`; if the raw log could not be downloaded, the report records that and the fetch diagnostic |
+| 4 | `actions/upload-artifact` | `Wayfinder-APK-error-logs` contains `error_logs/` (the full job log when available, fetch transcript and error report), 7-day retention |
 
-Both reporting steps are `continue-on-error: true` and the whole job is reporting-only: it can
-never turn a green build red or a red build green.
+The separate `diagnose` job has job-level `continue-on-error: true`; the fetch, report, error-line
+extraction and upload steps also have step-level guards. Commands retain their real exit statuses,
+but failures in this reporting-only job cannot fail the workflow or change the `apk` job result.
 
 ### Unity authentication secrets
 
@@ -76,7 +87,7 @@ In **Settings → Secrets and variables → Actions**, configure either:
 - **License-file authentication:** `UNITY_LICENSE` containing the license file contents, if you
   prefer that method.
 
-Never put the account password or license content in chat or source control. The latest run
+Never put the account password or license content in chat or source control. Earlier run
 38858427636 stopped because the preflight incorrectly required all three secrets; it did not show
 that the Unity account activation was invalid. The updated preflight accepts either method.
 
@@ -98,9 +109,9 @@ You get up to ten `error CS` annotations with file/line/column, the batchmode ab
 unresolvable `-executeMethod`, package-resolution failures, editor exceptions, the
 `[Wayfinder] Editor method failed: …` breadcrumb written by `EditorFailureLog`, warnings in
 `Assets/Wayfinder`, which Wayfinder assemblies Unity compiled, and the APK size. A failure that
-matches none of those is still reported, with the tail of the log attached — silence is a bug
-(KI-039), not a result. Every diagnostic step exits 0 and is `continue-on-error: true`, so it can
-never change the build's verdict. The mocked workflow/diagnostics and pipeline suite is 86/86
+matches none of those is still reported, with the tail of the editor log—or a clearly labeled
+workspace-log tail if only worker logs survived—attached. Silence is a bug (KI-039), not a result.
+The mocked workflow/diagnostics and pipeline suite is 90/90
 (`python3 -m unittest discover -s Tools/Build -p 'test_*.py' -v`); these tests do not execute
 Unity.
 
@@ -117,7 +128,8 @@ Limits to know up front:
   verifies it.
 - The result is a **development, unsigned** APK for on-device smoke testing only. It is
   never a store artifact; release AAB signing stays on the owner's machine (§4 below).
-- All actions are pinned to full commit SHAs and the job has `contents: read` only.
+- All actions are pinned to full commit SHAs. The APK job has `contents: read`; the reporting-only
+  diagnose job additionally has `actions: read` solely to fetch the completed build job's log.
 
 After a successful run: download `Packages/packages-lock.json` from the `Unity-logs` artifact
 and commit it (closes KI-002), then install the APK on the Moto G45

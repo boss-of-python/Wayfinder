@@ -33,6 +33,16 @@ jobs:
         with:
           persist-credentials: false
 
+      # Create the error-log destination before preflight so even an early failure has a report file.
+      - name: Pre-create APK error log
+        run: |
+          mkdir -p error_logs
+          {
+            printf 'Wayfinder Android APK build error log\n'
+            printf 'Run: %s (attempt %s)\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
+            printf 'Commit: %s\n\n' "$GITHUB_SHA"
+          } > error_logs/apk-build-errors.log
+
       # Accept either UNITY_LICENSE or both Unity account credentials; the latter activated this
       # project's Personal license in run 38754979851. Check before costly cleanup; never print values.
       - name: Check Unity authentication secrets exist (values are never printed)
@@ -114,7 +124,18 @@ jobs:
         env:
           UNITY_SETUP_OUTCOME: ${{ steps.unity_setup.outcome }}
           UNITY_BUILD_OUTCOME: ${{ steps.unity_build.outcome }}
-        run: bash Tools/Build/report_unity_failure.sh
+        run: bash Tools/Build/report_unity_failure.sh | tee -a error_logs/apk-build-errors.log
+
+      - name: Record Unity step outcomes in the APK error log
+        if: always()
+        env:
+          UNITY_SETUP_OUTCOME: ${{ steps.unity_setup.outcome }}
+          UNITY_BUILD_OUTCOME: ${{ steps.unity_build.outcome }}
+        run: |
+          {
+            printf '\nUnity setup outcome: %s\n' "${UNITY_SETUP_OUTCOME:-not-run}"
+            printf 'Unity APK build outcome: %s\n' "${UNITY_BUILD_OUTCOME:-not-run}"
+          } >> error_logs/apk-build-errors.log
 
       # packages-lock.json is what Unity really resolved (KI-002): download it from this
       # artefact and commit it, so the next build resolves the identical package set.
@@ -127,6 +148,7 @@ jobs:
           path: |
             Builds/Logs/
             Logs/
+            error_logs/
             Packages/packages-lock.json
           if-no-files-found: ignore
           retention-days: 7
@@ -143,11 +165,13 @@ jobs:
   # Once that job has finished, the Actions API serves it as plain text, so this job can publish
   # the real cause as annotations — readable with
   # `gh api repos/{owner}/{repo}/check-runs/{job-id}/annotations` from anywhere, without the
-  # raw-log host. Reporting only: it never fails the workflow and never touches the APK.
+  # raw-log host. Reporting only: job-level continue-on-error keeps even setup/upload failures
+  # from changing the workflow verdict; it never touches the APK.
   diagnose:
     name: Explain the Unity result
     needs: apk
     if: always()
+    continue-on-error: true
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -159,25 +183,65 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Pre-create the APK error-log folder and report file
+        env:
+          UNITY_JOB_RESULT: ${{ needs.apk.result }}
+        run: |
+          mkdir -p error_logs
+          {
+            printf 'Wayfinder Android APK build error log\n'
+            printf 'Run: %s (attempt %s)\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT"
+            printf 'Commit: %s\n' "$GITHUB_SHA"
+            printf 'Build job result: %s\n\n' "$UNITY_JOB_RESULT"
+          } > error_logs/apk-build-errors.log
+
       - name: Download the build job's log (Unity logs to stdout, not to the workspace)
         id: job_log
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" Logs/unity-job-log.txt 12 10
+        run: |
+          set +e
+          bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" error_logs/unity-job-log.txt 12 10 2>&1 \
+            | tee error_logs/job-log-download.txt
+          fetch_status=${PIPESTATUS[0]}
+          {
+            printf '\nJob-log download exit status: %s\n' "$fetch_status"
+            cat error_logs/job-log-download.txt
+          } >> error_logs/apk-build-errors.log
+          exit "$fetch_status"
 
-      - name: Report the real Unity result as annotations
+      - name: Report the real Unity result as annotations and save them to the error log
         continue-on-error: true
         env:
           UNITY_JOB_RESULT: ${{ needs.apk.result }}
-        run: bash Tools/Build/report_unity_failure.sh "$PWD" Logs/unity-job-log.txt
+        run: |
+          set +e
+          bash Tools/Build/report_unity_failure.sh "$PWD" error_logs/unity-job-log.txt \
+            | tee -a error_logs/apk-build-errors.log
+          report_status=${PIPESTATUS[0]}
+          exit "$report_status"
 
-      - name: Upload the build job log (plain text, no raw-log host needed)
+      - name: Append Unity error lines to the APK error log
+        if: always()
+        continue-on-error: true
+        run: |
+          {
+            printf '\n--- Unity error lines from job log ---\n'
+            if [ -s error_logs/unity-job-log.txt ]; then
+              grep -Ein 'error CS[0-9]+:|Exception:|Build failed|Aborting batchmode|Unity aborted before completing|Cannot perform upm operation|failed to resolve packages|^\[ERROR\]' \
+                error_logs/unity-job-log.txt || true
+            else
+              printf 'Unity job log unavailable. See job-log-download.txt for the fetch diagnostic.\n'
+            fi
+          } >> error_logs/apk-build-errors.log
+
+      - name: Upload the APK error logs (raw job log plus diagnostic report)
         if: always()
         continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: Unity-job-log
-          path: Logs/unity-job-log.txt
+          name: Wayfinder-APK-error-logs
+          path: error_logs/
           if-no-files-found: ignore
           retention-days: 7

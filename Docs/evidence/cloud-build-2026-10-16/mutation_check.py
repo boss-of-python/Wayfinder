@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Mutation check for the self-reporting cloud build (Batch H, 2026-10-16).
 
-Each mutation reverts one safeguard added after run 38875757162 produced a failed 8-minute
-build whose only annotation was "Build failed with exit code 1". Targets:
+Each mutation reverts one safeguard added after the cloud-build failures of 2026-10-16. Run
+38875757162 exposed the silent reporter; rerun 38880573866 exposed that a missing-editor-log
+error suppressed the surviving worker-log tail. Targets:
 Tools/Build/report_unity_failure.sh, Tools/Build/fetch_job_log.sh,
 .github/workflows/android-cloud-build.yml and Assets/Wayfinder/Scripts/Editor/EditorFailureLog.cs.
 
@@ -27,7 +28,7 @@ TESTS = ROOT / "Tools/Build/test_build_diagnostics.py"
 # (id, description, path, old, new)
 MUTATIONS = [
     ("N1", "let an unexplained failure pass without an annotation (the 38875757162 silence)",
-     REPORT, 'if [ "$step_failed" = yes ] && [ "$errors_emitted" -eq 0 ]; then',
+     REPORT, 'if [ "$step_failed" = yes ] && [ "$causes_emitted" -eq 0 ]; then',
      "if false; then"),
     ("N2", "stop reporting that no editor log was available",
      REPORT, 'if [ "$step_failed" = yes ] && [ "$editor_log" = no ]; then',
@@ -50,8 +51,8 @@ MUTATIONS = [
     ("N9", "download whichever job happens to be first instead of the build job",
      FETCH, '--jq ".jobs[] | select(.name == \\"$job_name\\") | .id"', '--jq ".jobs[] | .id"'),
     ("N10", "keep an empty downloaded log and call it a success",
-     FETCH, 'if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$output" 2>/dev/null && [ -s "$output" ]; then',
-     'if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$output" 2>/dev/null && [ -f "$output" ]; then'),
+     FETCH, 'if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$output" 2>"$errfile" && [ -s "$output" ]; then',
+     'if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$output" 2>"$errfile" && [ -f "$output" ]; then'),
     ("N11", "go back to the ubuntu-latest label that migrates to Ubuntu 26 on 2026-10-19",
      WORKFLOW, "    runs-on: ubuntu-24.04\n    timeout-minutes: 180",
      "    runs-on: ubuntu-latest\n    timeout-minutes: 180"),
@@ -71,6 +72,18 @@ MUTATIONS = [
     ("N17", "run Setup without the failure recorder again",
      SETUP, 'public static void Setup() => EditorFailureLog.Run("Wayfinder.Editor.ProjectSetup.Setup", RunSetup);',
      "public static void Setup() => RunSetup();"),
+    ("N18", "suppress the fallback tail when only Unity worker logs survive",
+     REPORT, 'if [ "$step_failed" = yes ] && [ "$causes_emitted" -eq 0 ]; then',
+     'if [ "$step_failed" = yes ] && [ "$editor_log" = yes ]; then'),
+    ("N19", "skip pre-creating the APK error-log destination before preflight",
+     WORKFLOW, "mkdir -p error_logs", "mkdir -p missing_error_logs"),
+    ("N20", "stop publishing the dedicated APK error-log artifact",
+     WORKFLOW, "name: Wayfinder-APK-error-logs", "name: Wayfinder-APK-log-disabled"),
+    ("N21", "stop extracting raw Unity error lines into the report file",
+     WORKFLOW, "grep -Ein", "grep -E"),
+    ("N22", "allow the reporting-only diagnose job to fail the workflow",
+     WORKFLOW, "    continue-on-error: true\n    runs-on: ubuntu-24.04",
+     "    runs-on: ubuntu-24.04"),
 ]
 
 
