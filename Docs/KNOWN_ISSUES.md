@@ -232,3 +232,25 @@ then the current one over **both** download paths, then an unsanitised control, 
 own source, not against a live Unity log; the asmdef fix is proven by reading the source, not by
 Unity compiling it. One owner dispatch now closes KI-041 either way — an APK, or file/line/col
 annotations for whatever fails next. KI-006/KI-033/KI-034 stay open and M0 is unchanged.
+
+
+---
+
+## KI-043 — Contract sockets are not placed in the world (open)
+
+`Content/contracts.json` names 35 rows (30 authored + 5 repeatable templates) and each row lists
+`contract_socket.*` targets. `Assets/Wayfinder/Content/sites.json` (added 2026-10-19) places every
+*mission* objective target, but no catalog places a contract socket, and `SliceFieldController`
+only considers vertical-slice sites. Accepting and completing a contract now works end to end
+(DEF-007), so the missing piece is the in-world geometry that drives the objectives, not the
+reward path. `validate_content.py` enforces reachability for mission objectives only — extending
+it to contract targets is the next step, and it is expected to fail until the sockets are authored.
+
+## KI-044 — The Unity-facing defect fixes are type-checked, not compiled (open,KI-034)
+
+DEF-005, DEF-006, DEF-013, DEF-014 and DEF-015 changed files Unity compiles and nothing else does
+(`VehicleController.cs`, `ChaseCameraBehaviour.cs`, `InputRouter.cs`, `VerticalSliceDriver.cs`).
+`Tools/Build/unity_type_check.py` compiles all 12 assemblies against hand-written engine stubs and
+reports 12/12 clean with 0 warnings, which removes the most likely class of KI-034 error. It is
+**not** a Unity compilation: the stubs were shaped by the errors this code produced, so they prove
+the absence of the errors they can see. One PlayMode or editor run is required to close this.

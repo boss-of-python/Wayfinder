@@ -78,7 +78,7 @@ namespace Wayfinder.Campaign
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown landmark '{landmarkId}'");
             if (Discovery.IsLandmarkDiscovered(landmarkId))
                 return CommandResult.Fail(FailureReason.AlreadyApplied, "already discovered");
-            if (!Discovery.TryDiscoverLandmark(landmarkId, speedKph, observedSeconds, out _))
+            if (!Discovery.TryDiscoverLandmark(landmarkId, speedKph, observedSeconds, out _, NextTransactionId()))
                 return CommandResult.Fail(FailureReason.WrongState, "slow below 15 km/h and observe for 2 s (§8.2)");
             Expedition.Stats.LandmarksDiscovered++;
             Notice(CampaignNoticeKind.LandmarkDiscovered,
@@ -115,7 +115,7 @@ namespace Wayfinder.Campaign
         public CommandResult InspectObject(string targetId)
         {
             if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
-            if (Content.Slice.FindSite(Content.Slice.InspectTargets, targetId) == null)
+            if (Content.FindSite(Content.Slice.InspectTargets, targetId) == null)
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"'{targetId}' is not an inspect target");
             if (ReportMission(MissionConditionType.InspectObject, targetId) == 0)
                 return CommandResult.Fail(FailureReason.PrerequisiteNotMet, "no active objective for this target");
@@ -186,7 +186,7 @@ namespace Wayfinder.Campaign
         public CommandResult CollectQuestItem(string siteId)
         {
             if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
-            var site = Content.Slice.FindSite(Content.Slice.QuestItemSites, siteId);
+            var site = Content.FindSite(Content.Slice.QuestItemSites, siteId);
             if (site == null) return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown quest site '{siteId}'");
             if (Missions.StateOf(site.MissionCode) != MissionState.Active)
                 return CommandResult.Fail(FailureReason.MissionNotAccepted, $"{site.MissionCode} is not active");
@@ -206,7 +206,7 @@ namespace Wayfinder.Campaign
         public CommandResult ActivateRelay(string relayId)
         {
             if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
-            var site = Content.Slice.FindSite(Content.Slice.Relays, relayId);
+            var site = Content.FindSite(Content.Slice.Relays, relayId);
             if (site == null) return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown relay '{relayId}'");
             if (Garage.HasInfrastructure(relayId)) return CommandResult.Fail(FailureReason.AlreadyApplied, "relay already active");
             if (!Inventory.ProtectedLedgerContains(site.ItemId))
@@ -226,7 +226,7 @@ namespace Wayfinder.Campaign
         public CommandResult EstablishCamp(string campId)
         {
             if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
-            if (Content.Slice.FindSite(Content.Slice.CampSockets, campId) == null)
+            if (Content.FindSite(Content.Slice.CampSockets, campId) == null)
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"no camp socket '{campId}' in this area");
             return RunCritical(() =>
             {
@@ -243,11 +243,16 @@ namespace Wayfinder.Campaign
             if (!Garage.IsCampActivated(campId)) return CommandResult.Fail(FailureReason.WrongState, "establish the camp first");
             return RunCritical(() =>
             {
-                int units = Inventory.QuantityOf(Cargo, ItemCatalog.SalvageBundle);
-                int escrow = Economy.EscrowedSalvage;
+                // DEF-017 (part 1): the notice is built from the wallet the transaction actually
+                // produced, not from state read before it ran — a rolled-back deposit could
+                // otherwise still toast "Deposited N Salvage".
+                int bankedBefore = Economy.BankedSalvage;
                 var result = Transactions.Execute(new BankCargo(NextTransactionId(), new ContentId(campId), Cargo, CampStorage));
                 if (result.Success)
-                    Notice(CampaignNoticeKind.Banked, $"Deposited: {units + escrow} Salvage banked", units + escrow, campId);
+                {
+                    int banked = Economy.BankedSalvage - bankedBefore;
+                    Notice(CampaignNoticeKind.Banked, $"Deposited: {banked} Salvage banked", banked, campId);
+                }
                 return result;
             });
         }

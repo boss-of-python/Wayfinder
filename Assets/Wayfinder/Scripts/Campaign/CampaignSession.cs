@@ -86,12 +86,15 @@ namespace Wayfinder.Campaign
             Vehicle = VehicleSpec.ScoutS1();
             Research = new ResearchService(code => Missions.IsCompletedCode(code));
             Discovery.BindEconomy(Economy);
+            // Land-only coverage from the first frame (DEF-008); a loaded save overrides it.
+            Discovery.BakeCountableMask();
             Transactions = new TransactionService(Economy, Inventory, new TransactionDependencies
             {
                 Research = Research,
                 Discovery = Discovery,
                 Garage = Garage,
-                Pickups = content
+                Pickups = content,
+                Contracts = Contracts
             });
             Transactions.OnCommitted += OnTransactionCommitted;
             ConfigureContainers();

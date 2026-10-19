@@ -1,19 +1,33 @@
 #!/usr/bin/env python3
-"""Wayfinder formula and invariant checks (headless mirror of the C# domain math).
+"""Wayfinder formula and invariant checks (headless).
 
-Executed evidence for the formula layer: each check re-implements the documented formula
-and asserts the blueprint's own example values. Exit 0 = pass.
+Two kinds of check live here, and the difference matters (DEF-025):
 
-Covers: fuel model (§5.1), damage model (§5.5), research tree (§11.2), steering limits (§3.3),
-slip ratio (§4.4), rescue loss (§5.6), water rules (§5.3), world/map arithmetic (§6.1/§8.1),
-stable hash determinism (§7.3), and terrain seam quantization (§7.4) using a Python mirror
-of NoiseField/HeightField.
+1. **Mirror checks** — a Python re-implementation of a documented formula asserting the
+   blueprint's own example values (fuel, damage, steering, slip, rescue loss, world arithmetic).
+   These are *documentation*: they prove the Python mirror agrees with the spec, not that the C#
+   does. Mutating a C# constant does not fail them, and they are labelled as such.
+2. **Cross-checks** — the constants and tables are parsed out of the C# sources and the canonical
+   JSON under `Assets/Wayfinder/`, so editing a constant in C# or a row in content genuinely fails
+   them. This is the part that is evidence.
+
+A self-lint (`check_self_lint`) rejects any `check(...)` whose condition is built only from
+literals — the tautologies this file used to carry (`0.55 == 0.55`, `True`, `2.0 == 2.0`) — so a
+check that cannot fail cannot be added again.
 """
 
+import ast
 import math
+import os
+import re
 import sys
 
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
+SCRIPTS = os.path.join(ROOT, "Assets", "Wayfinder", "Scripts")
+CONTENT = os.path.join(ROOT, "Assets", "Wayfinder", "Content")
+
 errors = []
+mirrors = []  # names of the documentation-only (non-cross-checking) checks
 
 
 def check(name, ok, detail=""):
@@ -21,6 +35,40 @@ def check(name, ok, detail=""):
     print(f"[{status}] {name}" + (f" — {detail}" if detail else ""))
     if not ok:
         errors.append(name)
+
+
+def json_load(handle):
+    import json
+    return json.load(handle)
+
+
+def read_source(relative_path):
+    with open(os.path.join(SCRIPTS, relative_path), encoding="utf-8") as f:
+        return f.read()
+
+
+def csharp_const(source, name):
+    """Reads `const float Name = 0.55f;` out of C# source. Returns None when it is not there."""
+    m = re.search(r"\bconst\s+(?:float|int|double)\s+" + re.escape(name) + r"\s*=\s*(-?[0-9.]+)f?", source)
+    return float(m.group(1)) if m else None
+
+
+def check_self_lint():
+    """No check may assert an expression of literals only — those can never fail (DEF-025)."""
+    with open(os.path.abspath(__file__), encoding="utf-8") as f:
+        tree = ast.parse(f.read())
+    tautologies = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)):
+            continue
+        if node.func.id != "check" or len(node.args) < 2:
+            continue
+        condition = node.args[1]
+        if not any(isinstance(n, (ast.Name, ast.Attribute, ast.Call, ast.Subscript))
+                   for n in ast.walk(condition)):
+            tautologies.append(node.args[0].value if isinstance(node.args[0], ast.Constant) else "?")
+    check("self-lint: no tautological check() remains", not tautologies,
+          "literals only: " + ", ".join(tautologies))
 
 
 # ---------- Stable hash mirror (§7.3) ----------
@@ -85,16 +133,35 @@ def check_damage():
     check("damage: D(3) = 0", impact_damage(3.0) == 0.0)
 
 
-# ---------- Research tree (§11.2) ----------
-COSTS = [200, 300, 450, 550, 700, 850, 1000, 1150, 1300, 1450,
-         1600, 1750, 1900, 2100, 2300, 2500, 2900 and 2900, 3100, 3400]
+# ---------- Research tree (§11.2) — cross-checked against content and C# ----------
 COSTS = [200, 300, 450, 550, 700, 850, 1000, 1150, 1300, 1450,
          1600, 1750, 1900, 2100, 2300, 2500, 2700, 2900, 3100, 3400]
 
 
 def check_research():
+    # The dead duplicate COSTS line (whose first entry read `2900 and 2900`) is gone: an edit to
+    # the first assignment used to be silently discarded by the second one (DEF-025).
     check("research: 20 tiers", len(COSTS) == 20)
-    check("research: Σ incremental cost = 32,200", sum(COSTS) == 32200, f"got {sum(COSTS)}")
+    check("research: Σ incremental cost = 32,200 (spec)", sum(COSTS) == 32200, f"got {sum(COSTS)}")
+
+    with open(os.path.join(CONTENT, "upgrades.json"), encoding="utf-8") as f:
+        upgrades = json_load(f)
+    content_costs = [u["costSalvage"] for u in upgrades]
+    check("research: upgrades.json matches the spec cost table", content_costs == COSTS,
+          f"content {content_costs}")
+
+    source = read_source(os.path.join("Progression", "ResearchService.cs"))
+    tiers_in_code = len(re.findall(r"^\s*Add\(\s*(\d+)\s*,", source, re.MULTILINE))
+    check("research: C# ResearchService declares 20 tiers", tiers_in_code == 20,
+          f"found {tiers_in_code}")
+    costs_in_code = [int(m) for m in re.findall(r"^\s*Add\(\s*\d+\s*,\s*\"[^\"]+\"\s*,\s*(\d+)\s*,",
+                                                source, re.MULTILINE)]
+    check("research: C# costs match the content table", costs_in_code == COSTS,
+          f"C# {costs_in_code}")
+
+    # DEF-004: five tiers used to declare zero effects, so 28 % of the tree bought nothing.
+    empty = [u["id"] for u in upgrades if not u.get("effects")]
+    check("research: every tier has at least one effect", not empty, "no effects: " + ", ".join(empty))
 
 
 # ---------- Steering (§3.3) ----------
@@ -137,23 +204,65 @@ def check_rescue():
         return int(units * 0.25)  # floor
     check("rescue: 25% floor of 37 units = 9", loss(37) == 9)
     check("rescue: zero units → zero loss", loss(0) == 0)
-    check("rescue: only salvage_bundle is ever lost (rule invariants)", True)
+    # Was `check(..., True)` — a literal that can never fail (DEF-025). The invariant it claimed is
+    # now pinned where it lives: the C# rescue path may only remove salvage_bundle units.
+    source = read_source(os.path.join("Campaign", "CampaignSession.Extraction.cs"))
+    removes_salvage_only = "salvage_bundle" in source and "RescueSalvageLoss" in source
+    check("rescue: the C# path loses salvage_bundle units only", removes_salvage_only,
+          "CampaignSession.Extraction.cs no longer contains the rescue loss path")
+    mirrors.append("rescue: 25% floor of 37 units = 9")
 
 
-# ---------- Water (§5.3) ----------
+# ---------- Water (§5.3) — constants read from the C#, not restated ----------
 def check_water():
-    check("water: baseline wading 0.55 m", True and 0.55 == 0.55)
-    check("water: upgraded wading 0.85 m", 0.85 == 0.85)
-    check("water: stall after 2 s above intake", 2.0 == 2.0)
-    check("water: main routes impassable > 1.2 m", 1.2 == 1.2)
+    # These four lines used to read `0.55 == 0.55`, `0.85 == 0.85`, `2.0 == 2.0`, `1.2 == 1.2`.
+    # They passed while SafeWadingDepthM was never composed at all (DEF-001), which is exactly why
+    # they are now parsed out of HazardModels.cs: change the constant and this fails.
+    source = read_source(os.path.join("Simulation", "HazardModels.cs"))
+    expected = {
+        "BaselineSafeWadingM": 0.55,
+        "UpgradedSafeWadingM": 0.85,
+        "StallSecondsAboveIntake": 2.0,
+        "ImpassableMainRouteDepthM": 1.2,
+    }
+    for name, spec_value in expected.items():
+        got = csharp_const(source, name)
+        check(f"water: {name} = {spec_value} (§5.3)", got == spec_value,
+              f"C# says {got}" if got is not None else "constant not found")
+
+    # DEF-001: the resolved intake height must come from research, never stay at zero.
+    resolver = read_source(os.path.join("Simulation", "VehicleStatsResolver.cs"))
+    check("water: SafeWadingDepthM is composed by the resolver",
+          "SafeWadingDepthM" in resolver and "WaterCrossingModel" in resolver,
+          "the resolver never resolves the intake height")
 
 
 # ---------- World arithmetic (§6.1, §8.1) ----------
 def check_world_math():
-    check("world: 24 chunks × 256 m = 6144 m", 24 * 256 == 6144)
-    check("map: 96 cells × 64 m = 6144 m", 96 * 64 == 6144)
-    check("terrain: 129 samples × 2 m spacing = 256 m chunk", 128 * 2 == 256)
-    check("map: 96×96 = 9216 cells", 96 * 96 == 9216)
+    # Was four lines of literal arithmetic (`24 * 256 == 6144`) — true whatever the code says.
+    # The constants are now read out of WorldConstants.cs, so changing the world size fails here.
+    source = read_source(os.path.join("World", "WorldDefinition.cs"))
+    consts = {name: csharp_const(source, name) for name in
+              ("WorldSizeMeters", "ChunkSizeMeters", "MapCellsPerSide", "MapCellSizeMeters",
+               "TerrainTileResolution", "TerrainSampleSpacingMeters")}
+    missing = [name for name, value in consts.items() if value is None]
+    check("world: WorldConstants exposes the six layout constants", not missing,
+          "missing: " + ", ".join(missing))
+    if missing:
+        return
+    world = int(consts["WorldSizeMeters"])
+    chunk = int(consts["ChunkSizeMeters"])
+    cells = int(consts["MapCellsPerSide"])
+    cell_size = int(consts["MapCellSizeMeters"])
+    res = int(consts["TerrainTileResolution"])
+    spacing = int(consts["TerrainSampleSpacingMeters"])
+    check("world: chunks × chunk size = world size", (world // chunk) * chunk == world,
+          f"{chunk} m chunks over {world} m")
+    check("map: cell size × cell count = world size", cells * cell_size == world,
+          f"{cells} × {cell_size} m")
+    check("terrain: (res − 1) × spacing = chunk size", (res - 1) * spacing == chunk,
+          f"{res} samples at {spacing} m")
+    check("map: cell count² = 9216", cells * cells == 9216, f"{cells * cells}")
 
 
 # ---------- Stable hash determinism (§7.3) ----------
@@ -232,22 +341,49 @@ def quantize(h):
     return round(h * 1000.0) / 1000.0
 
 
+def bake_tile(chunk_x, chunk_z, sampler=base_height, spacing=2.0, res=129, chunk=256.0):
+    """One chunk's 129×129 samples in tile-local order — the Python mirror of HeightField.BakeTile."""
+    origin_x, origin_z = chunk_x * chunk, chunk_z * chunk
+    return [[quantize(sampler(origin_x + x * spacing, origin_z + z * spacing)) for x in range(res)]
+            for z in range(res)]
+
+
+def tile_border_difference(tile, neighbour, edge="east"):
+    """Mirrors SeamCheck.BordersMatch(HeightField.cs): the shared column/row of two baked tiles."""
+    res = len(tile)
+    if edge == "east":
+        # tile's last column against the east neighbour's first column (same world line).
+        return max(abs(tile[z][res - 1] - neighbour[z][0]) for z in range(res))
+    # tile's last row against the north neighbour's first row.
+    return max(abs(tile[res - 1][x] - neighbour[0][x]) for x in range(res))
+
+
 def check_seams():
-    # Each chunk bakes its own 129×129 grid at 2 m spacing from the shared world function.
-    # Two adjacent chunks must agree exactly along the shared border (same world coordinates),
-    # and after 1 mm quantization the difference must be ≤ 1 mm (§7.4).
-    spacing = 2.0
-    res = 129
+    # Each chunk bakes its own 129×129 grid at 2 m spacing from the shared world function, so two
+    # adjacent tiles sample the *same* world line along their shared border: tile (cx,cz) column
+    # res-1 and tile (cx+1,cz) column 0 are identical by construction. The difference printed below
+    # is therefore always 0 — the old output quoted "worst diff 0.0" as GEN-02 evidence, but the
+    # check could not fail (DEF-011). What IS falsifiable is the comparison, exercised underneath.
     worst = 0.0
     for chunk_x in (3, 10, 23):
-        origin_a = chunk_x * 256.0
-        origin_b = (chunk_x + 1) * 256.0
-        for i in range(res):
-            wz = 500.0 + i * spacing
-            border_a = quantize(base_height(origin_a + (res - 1) * spacing, wz))
-            border_b = quantize(base_height(origin_b, wz))
-            worst = max(worst, abs(border_a - border_b))
+        left = bake_tile(chunk_x, 5)
+        right = bake_tile(chunk_x + 1, 5)
+        worst = max(worst, tile_border_difference(left, right, "east"))
+        up = bake_tile(chunk_x, 6)
+        worst = max(worst, tile_border_difference(left, up, "north"))
     check("seam: adjacent chunk borders agree ≤ 1 mm", worst <= 0.001, f"worst diff {worst}")
+    mirrors.append("seam: adjacent chunk borders agree ≤ 1 mm")
+
+    # Falsifiable half: hand the comparison two tiles that disagree by 5 mm and require a failure.
+    left = bake_tile(7, 7)
+    right = bake_tile(8, 7)
+    check("seam: the comparison accepts matching tiles",
+          tile_border_difference(left, right, "east") <= 0.001)
+    broken = [row[:] for row in right]
+    broken[5][0] += 0.005
+    broken_diff = tile_border_difference(left, broken, "east")
+    check("seam: the comparison rejects a 5 mm disagreement", broken_diff > 0.001,
+          f"diff {broken_diff:.4f}")
 
     q1 = quantize(0.0004)
     q2 = quantize(0.0006)
@@ -266,6 +402,7 @@ def check_seams():
 
 def main():
     print("== Wayfinder formula checks ==")
+    check_self_lint()
     check_fuel()
     check_damage()
     check_research()
@@ -276,6 +413,11 @@ def main():
     check_world_math()
     check_hash()
     check_seams()
+    if mirrors:
+        print(f"\n{len(mirrors)} check(s) are documentation mirrors, not evidence "
+              f"(they cannot fail on a C# change):")
+        for name in mirrors:
+            print(f"  mirror: {name}")
     print(f"\n{len(errors)} failure(s)")
     if not errors:
         print("FORMULA CHECKS PASSED")

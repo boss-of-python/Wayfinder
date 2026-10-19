@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Newtonsoft.Json.Linq;
 using Wayfinder.Progression;
+using Wayfinder.World;
 
 namespace Wayfinder.Campaign
 {
@@ -110,6 +111,19 @@ namespace Wayfinder.Campaign
         public readonly List<WorldPoint> Checkpoints = new List<WorldPoint>();
     }
 
+    /// <summary>One row of Content/contracts.json (§9.3 optional work).</summary>
+    public sealed class ContractDefinition
+    {
+        public string Id;
+        public string Biome;
+        public string Pattern;
+        public int RegionIndex;
+        public int RewardSalvage;
+        public string RewardKey;
+        public bool OneTime;
+        public readonly List<string> Targets = new List<string>();
+    }
+
     public sealed class GreyboxFeature
     {
         public string Kind;          // water | mud | hill
@@ -164,7 +178,7 @@ namespace Wayfinder.Campaign
         public static readonly string[] RequiredFiles =
         {
             "caches.json", "landmarks.json", "garages.json", "camps.json", "missions.json", "upgrades.json",
-            "vertical_slice.json"
+            "vertical_slice.json", "sites.json", "contracts.json"
         };
 
         readonly Dictionary<string, CacheDefinition> _caches = new Dictionary<string, CacheDefinition>(StringComparer.Ordinal);
@@ -174,12 +188,27 @@ namespace Wayfinder.Campaign
         readonly Dictionary<string, PickupContents> _pickups = new Dictionary<string, PickupContents>(StringComparer.Ordinal);
         readonly Dictionary<string, string> _missionNames = new Dictionary<string, string>(StringComparer.Ordinal);
         readonly Dictionary<string, string> _upgradeResults = new Dictionary<string, string>(StringComparer.Ordinal);
+        readonly Dictionary<string, SliceSite> _sites = new Dictionary<string, SliceSite>(StringComparer.Ordinal);
+        readonly Dictionary<string, SliceCheckpointRoute> _routes =
+            new Dictionary<string, SliceCheckpointRoute>(StringComparer.Ordinal);
+        readonly Dictionary<string, ContractDefinition> _contracts =
+            new Dictionary<string, ContractDefinition>(StringComparer.Ordinal);
 
         public VerticalSliceManifest Slice { get; private set; }
         public IReadOnlyDictionary<string, CacheDefinition> Caches => _caches;
         public IReadOnlyDictionary<string, LandmarkDefinition> Landmarks => _landmarks;
         public IReadOnlyDictionary<string, GarageDefinition> Garages => _garages;
         public IReadOnlyDictionary<string, CampDefinition> Camps => _camps;
+        /// <summary>
+        /// World sites (Content/sites.json) — the inspect targets, relays, quest-item and delivery
+        /// sites and visit volumes that missions outside the forest slice reference. The slice is
+        /// still checked first; this is the fallback that makes Q05–Q20 resolvable (DEF-003).
+        /// </summary>
+        public IReadOnlyDictionary<string, SliceSite> Sites => _sites;
+        /// <summary>Checkpoint routes outside the slice, keyed by route id.</summary>
+        public IReadOnlyDictionary<string, SliceCheckpointRoute> Routes => _routes;
+        /// <summary>Optional contracts (§9.3) — the board's catalogue. 35 rows (DEF-007).</summary>
+        public IReadOnlyDictionary<string, ContractDefinition> Contracts => _contracts;
 
         CampaignContent() { }
 
@@ -269,7 +298,26 @@ namespace Wayfinder.Campaign
             foreach (JObject u in JArray.Parse(files["upgrades.json"]))
                 content._upgradeResults[Str(u, "id")] = Str(u, "result");
 
+            foreach (JObject c in JArray.Parse(files["contracts.json"]))
+            {
+                var def = new ContractDefinition
+                {
+                    Id = Str(c, "id"),
+                    Biome = Str(c, "biome"),
+                    Pattern = Str(c, "pattern"),
+                    RegionIndex = c.Value<int?>("regionIndex") ?? 0,
+                    RewardSalvage = c.Value<int?>("rewardSalvage") ?? 0,
+                    RewardKey = Str(c, "rewardKey"),
+                    OneTime = c.Value<bool?>("oneTime") ?? true
+                };
+                if (c["targets"] is JArray targets)
+                    foreach (var t in targets) def.Targets.Add((string)t);
+                if (string.IsNullOrEmpty(def.RewardKey)) def.RewardKey = $"reward.contract.{def.Id}";
+                content._contracts[def.Id] = def;
+            }
+
             content.Slice = ParseSlice(JObject.Parse(files["vertical_slice.json"]));
+            content.ParseWorldSites(JArray.Parse(files["sites.json"]));
             content.ValidateSliceReferences();
             return content;
         }
@@ -327,6 +375,56 @@ namespace Wayfinder.Campaign
                         Size = Point(f["size"])
                     });
             return slice;
+        }
+
+        /// <summary>Parses Content/sites.json — the world sites no slice places (DEF-003).</summary>
+        void ParseWorldSites(JArray array)
+        {
+            foreach (JObject s in array)
+            {
+                var site = new SliceSite
+                {
+                    Id = Str(s, "id"),
+                    // A site several missions share lists all of them; MissionCode is the first.
+                    MissionCode = Str(s, "missionCode"),
+                    ItemId = Str(s, "itemId"),
+                    Position = Point(s["positionHint"]),
+                    RadiusMeters = s.Value<float?>("radiusMeters") ?? 12f
+                };
+                if (string.IsNullOrEmpty(site.MissionCode))
+                {
+                    var codes = (JArray)s["missionCodes"];
+                    if (codes != null && codes.Count > 0) site.MissionCode = (string)codes[0];
+                }
+                if (site.RadiusMeters <= 0f) throw new InvalidDataException($"site '{site.Id}': radius must be positive");
+                if (!WorldConstants.InBounds(site.Position.X, site.Position.Z))
+                    throw new InvalidDataException($"site '{site.Id}' lies outside the world");
+                if (_sites.ContainsKey(site.Id)) throw new InvalidDataException($"duplicate site id '{site.Id}'");
+                _sites[site.Id] = site;
+
+                if (s["checkpoints"] is JArray checkpoints)
+                {
+                    var route = new SliceCheckpointRoute
+                    {
+                        Id = site.Id,
+                        MissionCode = site.MissionCode,
+                        RadiusMeters = site.RadiusMeters
+                    };
+                    foreach (var cp in checkpoints) route.Checkpoints.Add(Point(cp));
+                    _routes[route.Id] = route;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Looks a site up: the vertical slice first (authored geometry the scene actually contains),
+        /// then the world site catalog. Slice sites win so a slice override keeps working (DEF-003).
+        /// </summary>
+        public SliceSite FindSite(List<SliceSite> sliceSites, string id)
+        {
+            var site = Slice.FindSite(sliceSites, id);
+            if (site != null) return site;
+            return string.IsNullOrEmpty(id) ? null : (_sites.TryGetValue(id, out var world) ? world : null);
         }
 
         static void ParseSites(JToken token, List<SliceSite> into)

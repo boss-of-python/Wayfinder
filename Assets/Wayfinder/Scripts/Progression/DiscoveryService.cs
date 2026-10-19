@@ -45,6 +45,85 @@ namespace Wayfinder.Progression
 
         public ClaimedRewardLedger RewardLedger => _rewardLedger;
 
+        /// <summary>
+        /// Marks ocean cells uncountable so map coverage is measured over land only (§8.1/§8.4).
+        /// <para>
+        /// DEF-008: the mask defaulted to "every cell counts" and was never refined — nothing in the
+        /// repo called it, and `CampaignSnapshot` wrote `countableMaskBase64 = ""` ("derived data,
+        /// never persisted"), so after a load the denominator silently reverted to all 9,216 cells
+        /// including ocean. The finale gate (60 % mainland coverage) and the §8.4 mapping rewards
+        /// were therefore measured against a different map before and after every save.
+        /// </para>
+        /// A cell counts when its centre is above sea level. Deterministic for a given seed, so the
+        /// result is memoized: the bake is ~9 k noise samples and never needs repeating.
+        /// </para>
+        /// </summary>
+        public void BakeCountableMask(NoiseField noise = null, int worldSeed = WorldConstants.CanonicalWorldSeed,
+            int generatorVersion = WorldConstants.GeneratorVersion)
+        {
+            if (TryCachedMask(worldSeed, generatorVersion, out var cached))
+            {
+                CountableMask = cached.Clone();
+                return;
+            }
+            noise = noise ?? new NoiseField(worldSeed, generatorVersion);
+            var mask = new BitGrid(WorldConstants.MapCellsPerSide, WorldConstants.MapCellsPerSide);
+            float half = WorldConstants.MapCellSizeMeters * 0.5f;
+            for (int z = 0; z < WorldConstants.MapCellsPerSide; z++)
+            for (int x = 0; x < WorldConstants.MapCellsPerSide; x++)
+            {
+                float wx = x * WorldConstants.MapCellSizeMeters + half;
+                float wz = z * WorldConstants.MapCellSizeMeters + half;
+                if (noise.BaseHeight(wx, wz) > WorldConstants.SeaLevelY) mask.Set(x, z, true);
+            }
+            CountableMask = mask;
+            Cache(mask, worldSeed, generatorVersion);
+        }
+
+        /// <summary>
+        /// Installs an authored mask — the seam WorldBaker needs. Until 2026-10-19 the baker had no
+        /// way to hand the refined mask over, so "excluding ocean/decorative cliffs (§8.1)" was only
+        /// a comment (DEF-008).
+        /// </summary>
+        public void SetCountableMask(BitGrid mask)
+        {
+            if (mask == null) throw new ArgumentNullException(nameof(mask));
+            if (mask.Width != WorldConstants.MapCellsPerSide || mask.Height != WorldConstants.MapCellsPerSide)
+                throw new ArgumentException(
+                    $"mask must be {WorldConstants.MapCellsPerSide}x{WorldConstants.MapCellsPerSide}, was {mask.Width}x{mask.Height}");
+            CountableMask = mask;
+        }
+
+        // Memoized per (seed, version): one entry per world, and the mask is immutable once baked.
+        static readonly object MaskCacheLock = new object();
+        static BitGrid _cachedMask;
+        static int _cachedSeed = int.MinValue;
+        static int _cachedVersion = int.MinValue;
+
+        static bool TryCachedMask(int seed, int version, out BitGrid mask)
+        {
+            lock (MaskCacheLock)
+            {
+                if (_cachedMask != null && _cachedSeed == seed && _cachedVersion == version)
+                {
+                    mask = _cachedMask;
+                    return true;
+                }
+            }
+            mask = null;
+            return false;
+        }
+
+        static void Cache(BitGrid mask, int seed, int version)
+        {
+            lock (MaskCacheLock)
+            {
+                _cachedMask = mask.Clone();
+                _cachedSeed = seed;
+                _cachedVersion = version;
+            }
+        }
+
         public int RevealedCountableCells => RevealedCells.CountSetInMask(CountableMask);
 
         public float MapCoveragePercent
@@ -116,7 +195,17 @@ namespace Wayfinder.Progression
         /// for 2 s. Pays 120 Salvage once, via escrow + reward key.
         /// </summary>
         public bool TryDiscoverLandmark(string landmarkId, float speedKph, float observedHoldSeconds,
-            out GameEvent discovered)
+            out GameEvent discovered) =>
+            TryDiscoverLandmark(landmarkId, speedKph, observedHoldSeconds, out discovered, default);
+
+        /// <summary>
+        /// Discovery with an explicit transaction id. §16.3 requires every permanent reward event to
+        /// carry the transaction that produced it so a replay is idempotent; until 2026-10-19 the
+        /// event was built with <c>default(TransactionId)</c>, and the ledger had to carry the
+        /// idempotency burden alone (DEF-019).
+        /// </summary>
+        public bool TryDiscoverLandmark(string landmarkId, float speedKph, float observedHoldSeconds,
+            out GameEvent discovered, TransactionId transactionId)
         {
             discovered = null;
             if (speedKph >= LandmarkDiscoveryMaxSpeedKph || observedHoldSeconds < LandmarkDiscoveryHoldSeconds)
@@ -129,7 +218,7 @@ namespace Wayfinder.Progression
             if (_rewardLedger.TryClaim(rewardKey))
                 _economy?.Escrow(LandmarkDiscoveryRewardSalvage);
 
-            discovered = new LandmarkDiscovered(default, new ContentId(landmarkId), rewardKey,
+            discovered = new LandmarkDiscovered(transactionId, new ContentId(landmarkId), rewardKey,
                 LandmarkDiscoveryRewardSalvage);
             return true;
         }
@@ -155,8 +244,12 @@ namespace Wayfinder.Progression
         {
             RevealedCells = BitGrid.FromBase64(WorldConstants.MapCellsPerSide, WorldConstants.MapCellsPerSide, revealedBase64);
             SurveyedCells = BitGrid.FromBase64(WorldConstants.MapCellsPerSide, WorldConstants.MapCellsPerSide, surveyedBase64);
+            // DEF-008: an empty payload means "save written before the mask was persisted" — keep the
+            // freshly baked mask rather than falling back to "every cell counts".
             if (!string.IsNullOrEmpty(countableMaskBase64))
                 CountableMask = BitGrid.FromBase64(WorldConstants.MapCellsPerSide, WorldConstants.MapCellsPerSide, countableMaskBase64);
+            else if (CountableMask == null || CountableMask.CountSet() == CountableMask.Width * CountableMask.Height)
+                BakeCountableMask();
             MappingRewardsPaidThroughCount = Math.Max(0, mappingRewardsPaidThroughCount);
 
             _discoveredLandmarks.Clear();
@@ -252,6 +345,19 @@ namespace Wayfinder.Progression
             return CommandResult.Ok();
         }
 
+        /// <summary>Marks a contract finished without touching the wallet. The reward is paid by the
+        /// CompleteContract transaction, which also escrows it (DEF-007).</summary>
+        public void MarkCompleted(string contractId)
+        {
+            _completed.Add(contractId);
+            _accepted.Remove(contractId);
+        }
+
+        /// <summary>
+        /// Legacy direct-pay path — superseded by the CompleteContract transaction. Retained for the
+        /// tests that pin it; gameplay must not use it, because it grants outside the idempotent
+        /// commit/rollback path and emits no event (DEF-007).
+        /// </summary>
         public CommandResult Complete(string contractId, EconomyService economy, ClaimedRewardLedger ledger,
             int rewardSalvage, string rewardKey)
         {

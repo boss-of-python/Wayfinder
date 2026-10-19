@@ -112,8 +112,8 @@ namespace Wayfinder.Progression
         /// BankCargo transaction (idempotent); this helper shares the exact same settlement code.
         /// </summary>
         public CargoSettlement.Outcome Deposit(InventoryService inventory, InventoryId cargoSource, InventoryId campStorage,
-            EconomyService economy) =>
-            CargoSettlement.Settle(inventory, economy, cargoSource, campStorage);
+            EconomyService economy, string campId = null) =>
+            CargoSettlement.Settle(inventory, economy, cargoSource, campStorage, campId);
     }
 
     /// <summary>

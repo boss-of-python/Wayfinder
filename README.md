@@ -39,7 +39,7 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   no deadlocks and no arbitrage. See `Docs/EVIDENCE_M0.md`.
 - **Verified without Unity (headless C#):** the non-Unity assemblies (Core, pure Simulation
   math, World, Progression, Persistence) compile with a real Roslyn C# 9 compiler at warning level 4
-  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 164 EditMode NUnit tests
+  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 188 EditMode NUnit tests
   pass** (59 before Batch C, 109 before Batch D, 143 before Batch G) (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
   write-ups in `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/UNITY_HANDOFF.md`). Running them found and fixed a save-checksum bug that
   would have blocked every save (KI-013), a water-stall re-drain (KI-014) and an inventory stack bug
@@ -147,7 +147,7 @@ compiled/executed by Unity.** The full campaign, saves/UI integration and stream
 remain unfinished.
 
 See **[Unity handoff and one-command smoke pipeline](Docs/UNITY_HANDOFF.md)** for
-Windows/macOS/Linux instructions and the latest headless checks: 164 C# tests and 60
+Windows/macOS/Linux instructions and the latest headless checks: 188 C# tests and 60
 mocked Python build/pipeline tests pass. On a computer with an installed/licensed editor:
 
 ```bash
@@ -164,7 +164,7 @@ not been run and requires secure owner setup, not a phone-only or free hosted bu
 
 Latest local checks: **91/91** diagnostics tests, **23/23** mocked pipeline tests, **19/19**
 mutations for the 19 Oct batch (**22/22** for Batch H) and a 20/20 dress rehearsal; the last
-headless C# run (16 Oct) passed **164/164** tests, and the only C#-side change since is one added
+headless C# run (16 Oct) passed **188/188** tests, and the only C#-side change since is one added
 asmdef reference (PR #15). The three latest
 cloud runs failed in *Setup Project*, and their diagnose jobs could not fetch the editor log
 because `gh api` refused a body containing terminal escape sequences — found, reproduced against
@@ -184,7 +184,7 @@ python3 Tools/Build/pin_toolchain.py --editor-version 6000.3.<patch>f1
 # 3. Open this folder in Unity → menu Tools → Wayfinder → Setup Project
 #    then play: Title → slot "New" → VerticalSlice (greybox campaign slice)
 # 4. Run headless checks any time (no Unity needed):
-python3 Tools/Build/headless_cs.py all           # real C# 9 compile + 164 EditMode NUnit tests
+python3 Tools/Build/headless_cs.py all           # real C# 9 compile + 188 EditMode NUnit tests
 python3 Tools/Validation/validate_content.py
 python3 Tools/Validation/formula_checks.py
 python3 Tools/Balance/economy_sim.py

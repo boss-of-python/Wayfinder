@@ -54,7 +54,16 @@ namespace Wayfinder.Persistence
         public int nextTransactionSequence;
     }
 
-    [Serializable] public sealed class WalletDto { public int salvage; public int escrowedSalvage; }
+    [Serializable]
+    public sealed class WalletDto
+    {
+        public int salvage;
+        public int escrowedSalvage;
+        /// <summary>Escrow only the matching hub may bank (DEF-017). Null on older saves.</summary>
+        public List<EscrowEntryDto> escrowByHub;
+    }
+    /// <summary>One hub's pending escrow (DEF-017). Additive: an older save simply has none.</summary>
+    [Serializable] public sealed class EscrowEntryDto { public string hubId; public int amount; }
     [Serializable] public sealed class ConditionDto { public int engine = 100; public int suspension = 100; public int tires = 100; public int body = 100; }
 
     [Serializable]

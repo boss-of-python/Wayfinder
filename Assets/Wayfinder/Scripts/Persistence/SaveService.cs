@@ -238,6 +238,20 @@ namespace Wayfinder.Persistence
             {
                 return new SaveResult(SaveResultStatus.FailedWrite, revision, ex.Message);
             }
+            // DEF-022: only IO and access failures were handled, so anything else — a corrupt-grid
+            // FormatException out of the verify step, a serialization error, a bad path — escaped
+            // Save() and took the calling frame with it. A save that cannot be written is a typed
+            // failure, never an exception.
+            // The filter is deliberately narrow: an exception thrown by the (test-only) StepHook
+            // stands for the process dying, which is not a save failure and must reach the caller.
+            catch (Exception ex) when (ex is FormatException || ex is Newtonsoft.Json.JsonException ||
+                                       ex is ArgumentException || ex is NotSupportedException ||
+                                       ex is InvalidOperationException || ex is ObjectDisposedException ||
+                                       ex is System.Security.SecurityException)
+            {
+                TryDelete(PathFor(slot, TempFileName));
+                return new SaveResult(SaveResultStatus.FailedWrite, revision, ex.GetType().Name + ": " + ex.Message);
+            }
         }
 
         /// <summary>Boot load: highest valid complete revision among current → backup1 → backup2.</summary>
@@ -264,6 +278,12 @@ namespace Wayfinder.Persistence
                     if (detail == "schema-too-new") sawNewerSchema = true;
                     continue; // incomplete/corrupt files are never trusted (§17.4 step 6)
                 }
+                // DEF-022: a save carries the slot it was written for. Without this check, a file
+                // copied or restored into another slot loads that slot's progress into a different
+                // one — three isolated save slots (§1.4) silently stop being isolated.
+                if (!string.IsNullOrEmpty(envelope.slotId) &&
+                    !string.Equals(envelope.slotId, slot.FileName, StringComparison.Ordinal))
+                    continue; // belongs to another slot: not a candidate for this one
                 if (envelope.revision > bestRevision)
                 {
                     bestRevision = envelope.revision;

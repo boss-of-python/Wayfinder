@@ -222,7 +222,10 @@ namespace Wayfinder.World
         {
             _accum += simulationDeltaSeconds;
             if (_accum < 1f / SimulationHz) return;
-            _accum = 0f;
+            // DEF-024: resetting the accumulator to zero dropped the overshoot, so a 60 Hz caller
+            // ticked at 1/60 s intervals late every second and weather drifted ~1 % per hour.
+            _accum -= 1f / SimulationHz;
+            TickCount++;
 
             // Simple deterministic markov-ish weather cycle; never hostile-random punishment (§9.4).
             if (_random.Chance(0.02))
@@ -239,5 +242,8 @@ namespace Wayfinder.World
 
         /// <summary>Surface wet multiplier source for SurfaceTable blends.</summary>
         public bool SurfaceWet => IsWet;
+
+        /// <summary>Number of 1 Hz ticks simulated so far — the observable that pins DEF-024.</summary>
+        public int TickCount { get; private set; }
     }
 }

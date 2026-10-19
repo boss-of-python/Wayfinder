@@ -35,6 +35,11 @@ namespace Wayfinder.Simulation
         public bool enableFovMotion = true;
         public bool enableHorizonStabilization = true;
         public bool enableRecenter = true;
+        /// <summary>
+        /// How far the camera rolls with the vehicle when horizon stabilisation is OFF (§3.5):
+        /// 0 = always level (identical to stabilisation), 1 = fully follows the chassis up vector.
+        /// </summary>
+        [Range(0f, 1f)] public float vehicleRollBlend = 0.75f;
 
         Camera _cam;
         float _yawOffset;
@@ -44,6 +49,7 @@ namespace Wayfinder.Simulation
         Vector3 _smoothedPosition;
         Vector3 _lookVelocity;
         Vector3 _smoothedLookPoint;
+        bool _lookInitialized;
         bool _initialized;
 
         public void NotifyCameraInput() => _lastCameraInputTime = Time.time;
@@ -113,17 +119,31 @@ namespace Wayfinder.Simulation
                 : 0f);
             Vector3 lookPoint = target.position + Vector3.up * 1.2f
                                 + target.forward * Mathf.Lerp(lookAheadMin, lookAheadMax, speed01);
-            _smoothedLookPoint = Vector3.Lerp(_smoothedLookPoint, lookPoint,
-                MathUtil.SmoothFactor(lookSmoothingSeconds, dt));
-
-            Quaternion lookRotation = Quaternion.LookRotation(_smoothedLookPoint - transform.position, Vector3.up);
-            if (enableHorizonStabilization)
+            // Initialised on the first frame: starting at the world origin made the camera swivel
+            // from (0,0,0) at start-up (DEF-013).
+            if (!_lookInitialized)
             {
-                // Damped roll only — keep horizon level without fighting slope context.
-                lookRotation = Quaternion.Slerp(lookRotation,
-                    Quaternion.LookRotation(_smoothedLookPoint - transform.position, Vector3.up), 1f);
+                _smoothedLookPoint = lookPoint;
+                _lookVelocity = Vector3.zero;
+                _lookInitialized = true;
             }
-            transform.rotation = lookRotation;
+            _smoothedLookPoint = Vector3.SmoothDamp(_smoothedLookPoint, lookPoint, ref _lookVelocity,
+                lookSmoothingSeconds, Mathf.Infinity, dt);
+
+            // DEF-013: until 2026-10-19 this built the stabilised and unstabilised rotations from the
+            // identical expression and slerped with t = 1f, so `enableHorizonStabilization` was a
+            // no-op and the camera was always horizon-locked — one of the four §3.5 motion
+            // accessibility toggles simply did not exist.
+            Vector3 lookDirection = _smoothedLookPoint - transform.position;
+            Vector3 lookUp = Vector3.up;                     // stabilised: the horizon stays level.
+            if (!enableHorizonStabilization && vehicleRollBlend > 0f)
+            {
+                // Unstabilised: follow the vehicle's own up so the horizon tilts with the slope.
+                // Guarded so a flipped or near-vertical chassis can never invert the view.
+                Vector3 vehicleUp = target.up.y > 0.2f ? target.up : Vector3.up;
+                lookUp = Vector3.Lerp(Vector3.up, vehicleUp, MathUtil.Clamp01(vehicleRollBlend)).normalized;
+            }
+            transform.rotation = Quaternion.LookRotation(lookDirection, lookUp);
 
             if (_cam != null && enableFovMotion)
             {

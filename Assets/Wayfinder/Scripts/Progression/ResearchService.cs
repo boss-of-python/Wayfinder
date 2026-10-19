@@ -56,8 +56,14 @@ namespace Wayfinder.Progression
                 (VehicleStatsResolver.Stat.GroundClearanceM, VehicleStatsResolver.Operation.Set, 0.27f));
             Add(6, "upgrade.scout.06.tank1", 850, "Q04", "upgrade.tank1.name",
                 (VehicleStatsResolver.Stat.FuelCapacityLiters, VehicleStatsResolver.Operation.Set, 30f));
-            Add(7, "upgrade.scout.07.lowRange", 1000, "Q05", "upgrade.lowRange.name");
-            Add(8, "upgrade.scout.08.mudTires", 1150, "Q06", "upgrade.mudTires.name");
+            // Tiers 7, 8, 12, 13 and 18 cost 9,100 Salvage (28 % of the tree) and declared no
+            // effects at all until 2026-10-19 (DEF-004): low range and diff lock had no Stat member
+            // to write, the raised intake's 0.85 m constant was never composed, and the two tire
+            // unlocks were left to callers that hardcoded `true,true,true` / `false,false,false`.
+            Add(7, "upgrade.scout.07.lowRange", 1000, "Q05", "upgrade.lowRange.name",
+                (VehicleStatsResolver.Stat.LowRange, VehicleStatsResolver.Operation.Set, 1f));
+            Add(8, "upgrade.scout.08.mudTires", 1150, "Q06", "upgrade.mudTires.name",
+                (VehicleStatsResolver.Stat.MudTires, VehicleStatsResolver.Operation.Set, 1f));
             Add(9, "upgrade.scout.09.radar1", 1300, "Q07", "upgrade.radar1.name",
                 (VehicleStatsResolver.Stat.SignalRadiusM, VehicleStatsResolver.Operation.Set, 140f));
             Add(10, "upgrade.scout.10.engineTune1", 1450, "Q08", "upgrade.engineTune1.name",
@@ -66,8 +72,11 @@ namespace Wayfinder.Progression
             Add(11, "upgrade.scout.11.reinforcedRack", 1600, "Q09", "upgrade.reinforcedRack.name",
                 (VehicleStatsResolver.Stat.CargoSlots, VehicleStatsResolver.Operation.Set, 16f),
                 (VehicleStatsResolver.Stat.PayloadKg, VehicleStatsResolver.Operation.Set, 180f));
-            Add(12, "upgrade.scout.12.raisedIntake", 1750, "Q10", "upgrade.raisedIntake.name");
-            Add(13, "upgrade.scout.13.diffLock", 1900, "Q11", "upgrade.diffLock.name");
+            Add(12, "upgrade.scout.12.raisedIntake", 1750, "Q10", "upgrade.raisedIntake.name",
+                (VehicleStatsResolver.Stat.SafeWadingDepthM, VehicleStatsResolver.Operation.Set,
+                    WaterCrossingModel.UpgradedSafeWadingM));
+            Add(13, "upgrade.scout.13.diffLock", 1900, "Q11", "upgrade.diffLock.name",
+                (VehicleStatsResolver.Stat.DiffLock, VehicleStatsResolver.Operation.Set, 1f));
             Add(14, "upgrade.scout.14.suspension2", 2100, "Q12", "upgrade.suspension2.name",
                 (VehicleStatsResolver.Stat.SuspensionTravelM, VehicleStatsResolver.Operation.Set, 0.40f),
                 (VehicleStatsResolver.Stat.GroundClearanceM, VehicleStatsResolver.Operation.Set, 0.30f));
@@ -79,7 +88,10 @@ namespace Wayfinder.Progression
             Add(17, "upgrade.scout.17.expeditionRack", 2700, "Q15", "upgrade.expeditionRack.name",
                 (VehicleStatsResolver.Stat.CargoSlots, VehicleStatsResolver.Operation.Set, 20f),
                 (VehicleStatsResolver.Stat.PayloadKg, VehicleStatsResolver.Operation.Set, 240f));
-            Add(18, "upgrade.scout.18.coldKit", 2900, "Q16", "upgrade.coldKit.name");
+            // §11.2 tier 18 "Cold-Weather Kit": unlock snow tires (the cold-start change is
+            // presentation only, so it carries no stat).
+            Add(18, "upgrade.scout.18.coldKit", 2900, "Q16", "upgrade.coldKit.name",
+                (VehicleStatsResolver.Stat.SnowTires, VehicleStatsResolver.Operation.Set, 1f));
             Add(19, "upgrade.scout.19.radar2", 3100, "Q17", "upgrade.radar2.name",
                 (VehicleStatsResolver.Stat.SignalRadiusM, VehicleStatsResolver.Operation.Set, 220f));
             Add(20, "upgrade.scout.20.expeditionCalibration", 3400, "Q19", "upgrade.expeditionCalibration.name",
@@ -152,13 +164,24 @@ namespace Wayfinder.Progression
         public bool CanSwapModuleOut(InventoryService inventory, InventoryId cargoId) =>
             inventory == null || !inventory.IsOverCapacity(cargoId);
 
-        /// <summary>Applies all researched effects to the shared resolver (garage == driving).</summary>
+        /// <summary>
+        /// Applies all researched effects to the shared resolver (garage == driving).
+        /// <para>
+        /// Iterates the tier table in authored tier order — not the researched set — so composition is
+        /// deterministic and a higher tier always overrides a lower one. Until 2026-10-19 this walked
+        /// the <see cref="_researched"/> HashSet, whose enumeration order is an implementation detail,
+        /// so <c>Operation.Set</c> stats (tank size, cargo slots, signal radius) could resolve to an
+        /// earlier tier's value after a save/load (DEF-002). The tier is also passed as the modifier
+        /// rank, so the ordering holds even if a caller applies effects out of order.
+        /// </para>
+        /// </summary>
         public void ApplyTo(VehicleStatsResolver resolver)
         {
-            foreach (var id in _researched)
+            for (int i = 0; i < _tiers.Count; i++)
             {
-                var def = ById(new ContentId(id));
-                resolver.AddUpgradeEffects(def.Effects, def.Id.Value);
+                var def = _tiers[i];
+                if (!_researched.Contains(def.Id.Value)) continue;
+                resolver.AddUpgradeEffects(def.Effects, def.Id.Value, def.Tier);
             }
         }
 

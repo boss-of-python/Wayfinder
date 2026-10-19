@@ -145,13 +145,18 @@ namespace Wayfinder.Presentation
                 SuspensionCondition = damage.SuspensionCondition,
                 TiresCondition = damage.TiresCondition,
                 BodyCondition = damage.BodyCondition,
-                Grounded = vehicle.State != VehicleState.Airborne,
-                RollDegrees = Mathf.DeltaAngle(0f, t.eulerAngles.z),
+                // Real measurements. Until 2026-10-19 Grounded was `State != Airborne` while the
+                // controller never assigned Airborne (always true), RollDegrees was a ZXY euler
+                // component (≈ true roll only near yaw 0/180°), and mud depth/clearance/tap were
+                // constants, so deep-mud hazards, the safe-pose gate and the §3.5 tap alternative
+                // were all inert (DEF-015).
+                Grounded = vehicle.AnyWheelGrounded,
+                RollDegrees = vehicle.CurrentBodyRollDegrees(),
                 InWater = vehicle.WaterDepthMeters > .05f,
-                InDeepMud = false,
-                ClearanceMeters = .3f,
+                InDeepMud = vehicle.MudDepthMeters > 0f,
+                ClearanceMeters = vehicle.GroundClearanceMeters,
                 InteractPressed = _interactTouch || input.InteractHeld,
-                TapToInteract = false
+                TapToInteract = input != null && input.InteractTapped
             };
         }
 

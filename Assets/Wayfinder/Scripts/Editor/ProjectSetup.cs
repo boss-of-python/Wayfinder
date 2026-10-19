@@ -27,10 +27,19 @@ namespace Wayfinder.Editor
         [MenuItem("Tools/Wayfinder/Setup Project")]
         public static void Setup() => EditorFailureLog.Run("Wayfinder.Editor.ProjectSetup.Setup", RunSetup);
 
+        /// <summary>
+        /// One line per setup phase. game-ci runs unity-editor with `-logfile /dev/stdout`, so these
+        /// land in the Actions job log: the last breadcrumb printed is where a failed run stopped,
+        /// which is the difference between "Build failed with exit code 1" and a file/line/col.
+        /// </summary>
+        static void Breadcrumb(string phase) => Debug.Log($"[Wayfinder] setup: {phase}");
+
         static void RunSetup()
         {
+            Breadcrumb("enter RunSetup (batchMode=" + Application.isBatchMode + ", unity " + Application.unityVersion + ")");
             if (!Application.isBatchMode && !UnityEditor.SceneManagement.EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                 return;
+            Breadcrumb("player settings");
             PlayerSettings.productName = "Wayfinder: The Quiet Frontier";
             if (string.IsNullOrWhiteSpace(PlayerSettings.companyName) || PlayerSettings.companyName == "DefaultCompany")
                 PlayerSettings.companyName = "Wayfinder";
@@ -53,6 +62,7 @@ namespace Wayfinder.Editor
                 SetDefaultIdentifier(NamedBuildTarget.iOS);
             }
 
+            Breadcrumb("input actions");
             // Preserve the authored input file as the single source; build a loadable TextAsset copy.
             Directory.CreateDirectory(Path.GetDirectoryName(ControlsOutputPath));
             // The Resources folder is generated, so Unity does not know about it yet; import it
@@ -60,12 +70,18 @@ namespace Wayfinder.Editor
             AssetDatabase.Refresh();
             File.Copy("Assets/Wayfinder/Content/Input/WayfinderControls.inputactions", ControlsOutputPath, true);
             AssetDatabase.ImportAsset(ControlsOutputPath, ImportAssetOptions.ForceSynchronousImport);
+            Breadcrumb("campaign content");
             CopyCampaignContent();
+            Breadcrumb("quality tiers");
             ConfigureQualityTiers();
+            Breadcrumb("URP asset");
             ConfigureUrp();
+            Breadcrumb("input backend");
             ConfigureInputBackend();
             Time.fixedDeltaTime = 0.02f;
+            Breadcrumb("scenes");
             SceneBuilder.BuildAll();
+            Breadcrumb("save assets");
             AssetDatabase.SaveAssets();
             Directory.CreateDirectory("Logs/unity-pipeline");
             File.WriteAllText("Logs/unity-pipeline/setup-complete.json",

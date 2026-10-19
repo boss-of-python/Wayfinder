@@ -54,6 +54,71 @@ namespace Wayfinder.Campaign
             });
         }
 
+        // ================================================================== contract board (§9.3)
+
+        /// <summary>
+        /// Contracts the board offers: at most <see cref="ContractService.MaxAvailableJobs"/>, never
+        /// one already accepted or completed. Deterministic order (content order, then id) so two
+        /// players at the same point see the same board (DEF-007).
+        /// </summary>
+        public List<ContractDefinition> AvailableContracts(string biome = null)
+        {
+            var offers = new List<ContractDefinition>();
+            foreach (var def in Content.Contracts.Values)
+            {
+                if (Contracts.IsAccepted(def.Id) || Contracts.IsCompleted(def.Id)) continue;
+                if (!string.IsNullOrEmpty(biome) && !string.Equals(def.Biome, biome, StringComparison.Ordinal)) continue;
+                offers.Add(def);
+            }
+            offers.Sort((a, b) => string.CompareOrdinal(a.Id, b.Id));
+            if (offers.Count > ContractService.MaxAvailableJobs)
+                offers.RemoveRange(ContractService.MaxAvailableJobs, offers.Count - ContractService.MaxAvailableJobs);
+            return offers;
+        }
+
+        /// <summary>Accepts a contract at a garage board. Free; the reward is escrowed on completion.</summary>
+        public CommandResult AcceptContract(string contractId)
+        {
+            if (!InGarage)
+                return CommandResult.Fail(FailureReason.WrongState, "contracts are accepted at a garage board (§9.3)");
+            if (string.IsNullOrEmpty(contractId) || !Content.Contracts.ContainsKey(contractId))
+                return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown contract '{contractId}'");
+            return RunCritical(() =>
+            {
+                var result = Transactions.Execute(new AcceptContract(NextTransactionId(), new ContentId(contractId)));
+                if (!result.Success) return result;
+                Notice(CampaignNoticeKind.ContractAccepted, $"Contract accepted: {contractId}", 0, contractId);
+                _autosave.MarkDirty();
+                return result;
+            });
+        }
+
+        /// <summary>
+        /// Completes an accepted contract. The reward goes to <b>escrow</b>, banked with the next
+        /// extraction — never straight to the wallet (§9.3, DEF-007).
+        /// </summary>
+        public CommandResult CompleteContract(string contractId, float validatedRouteLengthMeters = 0f)
+        {
+            if (!Expedition.IsActive && !InGarage)
+                return CommandResult.Fail(FailureReason.WrongState, "no expedition and no garage session");
+            if (string.IsNullOrEmpty(contractId) || !Content.Contracts.TryGetValue(contractId, out var def))
+                return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown contract '{contractId}'");
+            int reward = string.Equals(def.Pattern, "Repeatable", StringComparison.Ordinal)
+                ? ContractService.RepeatableReward(validatedRouteLengthMeters)
+                : def.RewardSalvage;
+            if (reward <= 0)
+                return CommandResult.Fail(FailureReason.ContentMissing, $"contract '{contractId}' has no reward");
+            return RunCritical(() =>
+            {
+                var result = Transactions.Execute(new CompleteContract(NextTransactionId(), new ContentId(contractId),
+                    reward, def.RewardKey));
+                if (!result.Success) return result;
+                Notice(CampaignNoticeKind.ContractCompleted, $"Contract complete: +{reward} Salvage pending", reward, contractId);
+                _autosave.MarkDirty();
+                return result;
+            });
+        }
+
         /// <summary>Garage storage → cargo (loadout planning, §2.3 Plan).</summary>
         public CommandResult LoadCargo(string itemId, int quantity) => MoveItems(GarageStorage, Cargo, itemId, quantity);
 
