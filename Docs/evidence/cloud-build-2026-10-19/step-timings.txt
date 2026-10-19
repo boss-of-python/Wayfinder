@@ -1,0 +1,41 @@
+# Step timings for the four most recent 'Unity 1 of 2: Setup Project' failures
+# Source: GET /repos/boss-of-python/Wayfinder/actions/runs/{run}/attempts/1/jobs (retrieved 2026-10-19)
+# Read: the Unity step dies 5-6 minutes in every time, and the Library cache restore is
+# 0.00-0.02 min, i.e. nothing usable is ever restored, so every run imports from scratch.
+
+## run 38880573866  (job 116906047709, failure)
+     1.87 min  success   Free disk space (the Unity Android image is about 9 GB)
+     0.00 min  success   Reuse Unity's import cache from earlier runs
+     6.08 min  failure   Unity 1 of 2: Setup Project (scenes, URP, player settings)
+     0.00 min  skipped   Unity 2 of 2: Build the development APK
+     0.00 min  success   Report the real Unity failure as annotations
+     0.02 min  success   Upload Unity logs and the resolved package lock (for offline diagnosis)
+     0.00 min  skipped   Post Reuse Unity's import cache from earlier runs
+
+## run 39139527909  (job 117710893755, failure)
+     3.48 min  success   Free disk space (the Unity Android image is about 9 GB)
+     0.00 min  success   Reuse Unity's import cache from earlier runs
+     6.52 min  failure   Unity 1 of 2: Setup Project (scenes, URP, player settings)
+     0.00 min  skipped   Unity 2 of 2: Build the development APK
+     0.00 min  success   Report the real Unity failure as annotations
+     0.03 min  success   Upload Unity logs and the resolved package lock (for offline diagnosis)
+     0.00 min  skipped   Post Reuse Unity's import cache from earlier runs
+
+## run 39141218150  (job 117715873675, failure)
+     2.70 min  success   Free disk space (the Unity Android image is about 9 GB)
+     0.02 min  success   Reuse Unity's import cache from earlier runs
+     6.13 min  failure   Unity 1 of 2: Setup Project (scenes, URP, player settings)
+     0.00 min  skipped   Unity 2 of 2: Build the development APK
+     0.00 min  success   Report the real Unity failure as annotations
+     0.02 min  success   Upload Unity logs and the resolved package lock (for offline diagnosis)
+     0.00 min  skipped   Post Reuse Unity's import cache from earlier runs
+
+## run 39141401948  (job 117718330570, failure)
+     3.53 min  success   Free disk space (the Unity Android image is about 9 GB)
+     0.02 min  success   Reuse Unity's import cache from earlier runs
+     5.35 min  failure   Unity 1 of 2: Setup Project (scenes, URP, player settings)
+     0.00 min  skipped   Unity 2 of 2: Build the development APK
+     0.02 min  success   Report the real Unity failure as annotations
+     0.00 min  success   Upload Unity logs and the resolved package lock (for offline diagnosis)
+     0.00 min  skipped   Post Reuse Unity's import cache from earlier runs
+

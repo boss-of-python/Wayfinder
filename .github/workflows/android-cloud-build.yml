@@ -222,6 +222,9 @@ jobs:
           report_status=${PIPESTATUS[0]}
           exit "$report_status"
 
+      # The log is now sanitised plain text (fetch_job_log.sh strips ANSI escapes and \r), so these
+      # greps match whole lines. Bounded on purpose: a failed Unity run can emit tens of thousands
+      # of shader-compiler lines, and this text is also tee'd into the job summary.
       - name: Append Unity error lines to the APK error log
         if: always()
         continue-on-error: true
@@ -229,8 +232,14 @@ jobs:
           {
             printf '\n--- Unity error lines from job log ---\n'
             if [ -s error_logs/unity-job-log.txt ]; then
-              grep -Ein 'error CS[0-9]+:|Exception:|Build failed|Aborting batchmode|Unity aborted before completing|Cannot perform upm operation|failed to resolve packages|^\[ERROR\]' \
-                error_logs/unity-job-log.txt || true
+              grep -Ein 'error CS[0-9]+:|Exception:|Build failed|Aborting batchmode|Unity aborted before completing|Cannot perform upm operation|failed to resolve packages|^\[ERROR\]|Crash!!!|Native stacktrace|Fatal Error!|Out of memory|Received signal SIG(SEGV|ABRT|BUS|ILL)|core dumped|Killed process|cgroup: out of memory|\[Licensing::Module\] Error|License.*checkout failed|No sufficient permissions|executeMethod.*(could not be found|not found)|Failed to (resolve|load) package|disk space|No space left on device' \
+                error_logs/unity-job-log.txt | head -400 | cut -c1-400 || true
+              printf '\n--- Last 400 lines of the Unity job log ---\n'
+              if [ -s error_logs/unity-job-log.txt.excerpt ]; then
+                cat error_logs/unity-job-log.txt.excerpt
+              else
+                grep -v '^[[:space:]]*$' error_logs/unity-job-log.txt | tail -400 | cut -c1-400
+              fi
             else
               printf 'Unity job log unavailable. See job-log-download.txt for the fetch diagnostic.\n'
             fi
@@ -242,6 +251,9 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: Wayfinder-APK-error-logs
+          # error_logs/ already holds everything this job produces: the fetched log, its
+          # .excerpt tail and the download diagnostic. The build job's own Logs/ go up in
+          # the Unity-logs artefact; this job never runs Unity, so its Logs/ would be empty.
           path: error_logs/
           if-no-files-found: ignore
           retention-days: 7

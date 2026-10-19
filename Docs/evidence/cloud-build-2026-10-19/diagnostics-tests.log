@@ -1,0 +1,23 @@
+# python3 Tools/Build/test_build_diagnostics.py -v  (2026-10-19, after the escape-sequence fix)
+test_gameci_custom_editor_log_path_is_scanned (test_build_diagnostics.ReportUnityFailureTests.test_gameci_custom_editor_log_path_is_scanned) ... ok
+test_missing_log_is_a_notice_not_a_failure (test_build_diagnostics.ReportUnityFailureTests.test_missing_log_is_a_notice_not_a_failure) ... ok
+test_native_crash_is_reported_as_the_cause (test_build_diagnostics.ReportUnityFailureTests.test_native_crash_is_reported_as_the_cause) ... ok
+test_never_exits_nonzero_even_with_a_broken_log_path (test_build_diagnostics.ReportUnityFailureTests.test_never_exits_nonzero_even_with_a_broken_log_path) ... ok
+test_overlapping_globs_list_each_log_once (test_build_diagnostics.ReportUnityFailureTests.test_overlapping_globs_list_each_log_once) ... ok
+test_recognised_failure_does_not_add_a_tail_annotation (test_build_diagnostics.ReportUnityFailureTests.test_recognised_failure_does_not_add_a_tail_annotation) ... ok
+test_reports_the_real_2026_10_15_compile_error_as_an_annotation (test_build_diagnostics.ReportUnityFailureTests.test_reports_the_real_2026_10_15_compile_error_as_an_annotation) ... ok
+test_resolved_packages_are_listed_against_the_manifest (test_build_diagnostics.ReportUnityFailureTests.test_resolved_packages_are_listed_against_the_manifest) ... ok
+test_the_diagnose_job_workspace_is_not_told_a_breadcrumb_is_missing (test_build_diagnostics.ReportUnityFailureTests.test_the_diagnose_job_workspace_is_not_told_a_breadcrumb_is_missing) ... ok
+test_timestamp_prefix_is_stripped_from_the_reported_path (test_build_diagnostics.ReportUnityFailureTests.test_timestamp_prefix_is_stripped_from_the_reported_path) ... ok
+test_unexplained_failure_publishes_a_log_tail_annotation (test_build_diagnostics.ReportUnityFailureTests.test_unexplained_failure_publishes_a_log_tail_annotation) ... ok
+test_unresolvable_build_method_is_reported (test_build_diagnostics.ReportUnityFailureTests.test_unresolvable_build_method_is_reported) ... ok
+test_unresolvable_package_version_is_reported (test_build_diagnostics.ReportUnityFailureTests.test_unresolvable_package_version_is_reported) ... ok
+test_warnings_in_wayfinder_code_are_reported (test_build_diagnostics.ReportUnityFailureTests.test_warnings_in_wayfinder_code_are_reported) ... ok
+test_warnings_outside_wayfinder_are_ignored (test_build_diagnostics.ReportUnityFailureTests.test_warnings_outside_wayfinder_are_ignored) ... ok
+test_worker_logs_only_include_a_tail_when_the_editor_log_is_missing (test_build_diagnostics.ReportUnityFailureTests.test_worker_logs_only_include_a_tail_when_the_editor_log_is_missing) ... ok
+test_missing_explicit_log_does_not_blame_the_same_job (test_build_diagnostics.ReporterMissingLogMessageTests.test_missing_explicit_log_does_not_blame_the_same_job) ... ok
+
+----------------------------------------------------------------------
+Ran 88 tests in 2.844s
+
+OK

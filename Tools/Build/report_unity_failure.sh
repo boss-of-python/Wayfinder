@@ -37,6 +37,8 @@ if [ "$#" -gt 0 ]; then
   logs="$*"
 else
   # The explicit Editor.log path and the *.log globs can match the same file; list each once.
+  # Logs/*.log includes this project's own breadcrumb, Logs/wayfinder-editor-failure.log, which
+  # EditorFailureLog writes before an editor entry point rethrows (D-035).
   logs="$(
     for candidate in \
       "$workspace/Builds/Logs/Editor.log" \
@@ -107,7 +109,10 @@ say "- Editor log recognised among them: **$editor_log**"
 echo "::notice title=Unity diagnostics::Inspected $inspected; editor log recognised: $editor_log."
 
 # Evidence of failure from the logs themselves, so this works without the workflow's outcomes.
-if grep -qhE 'Build failed, with exit code|Aborting batchmode due to failure|Unity aborted before completing|Scripts have compiler errors|error CS[0-9]+:' $logs 2>/dev/null; then
+# The kill/OOM alternatives are matched case-insensitively: the kernel and Unity capitalise them
+# differently, and both mean the editor died rather than reported an error.
+if grep -qhE 'Build failed, with exit code|Aborting batchmode due to failure|Unity aborted before completing|Scripts have compiler errors|error CS[0-9]+:|Fatal Error!|Crash!!!|SIG(SEGV|ABRT|BUS|ILL)' $logs 2>/dev/null \
+  || grep -qhiE 'out of memory|oom-killer|killed process [0-9]+' $logs 2>/dev/null; then
   step_failed=yes
 fi
 
@@ -235,7 +240,27 @@ $exceptions
 EOF
 fi
 
-# ---- 5. warnings in our own code (this repository holds itself to zero, D-014) ------------
+# ---- 5. hard stops: crash, OOM kill or fatal error ---------------------------------------
+# These kill the editor process, so no C# catch can run and EditorFailureLog writes no
+# breadcrumb; without this section such a stop is indistinguishable from "diagnostics found
+# nothing". Deliberately narrow: Unity also logs benign "Received signal SIGUSR1/SIGINT" and
+# "out of memory" retry lines, which must not be reported as the cause of a failure.
+crash_lines="$(grep -hoE 'Crash!!!.*|Native stacktrace:.*|\*\*\* Error in \`[^`]*\`\*\*\*.*|Received signal (SIGSEGV|SIGABRT|SIGBUS|SIGILL).*|SIG(SEGV|ABRT|BUS|ILL) \([0-9]+\)( Address not mapped to object.*)?|Fatal Error!.*|Out of memory!.*|[A-Za-z0-9._/+-]+ invoked oom-killer:.*|Unity ran out of memory.*|Aborted \(core dumped\).*|Killed process [0-9]+ \(.*|cgroup: out of memory.*|OutOfMemoryError:.*|No space left on device.*' $logs 2>/dev/null \
+  | detimestamp | sed -E 's/\(Address not mapped to object( at address)?[0-9x]*\)//' | sort -u | head -5)"
+if [ -n "$crash_lines" ]; then
+  say "- Editor hard stop (crash / out of memory / fatal error):"
+  say '```'
+  printf '%s\n' "$crash_lines" >>"$summary"
+  say '```'
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    emit_cause "title=Unity hard stop::$(printf '%s' "$line" | cut -c1-200)"
+  done <<EOF
+$crash_lines
+EOF
+fi
+
+# ---- 6. warnings in our own code (this repository holds itself to zero, D-014) ------------
 warning_lines="$(grep -hoE 'Assets/Wayfinder[^ ]*\([0-9]+,[0-9]+\): warning CS[0-9]+: .*' $logs 2>/dev/null | detimestamp | sort -u)"
 warning_count="$(printf '%s\n' "$warning_lines" | grep -c . || true)"
 say "- Compiler warnings in Assets/Wayfinder (unique): **$warning_count**"
@@ -251,7 +276,7 @@ $warning_lines
 EOF
 fi
 
-# ---- 6. what Unity actually compiled (proves which assemblies are Unity-verified) ---------
+# ---- 7. what Unity actually compiled (proves which assemblies are Unity-verified) ---------
 compiled="$(grep -hoE 'Csc Library/Bee/artifacts/[^ ]*/Wayfinder\.[A-Za-z.]+\.dll' $logs 2>/dev/null \
   | sed -E 's#.*/(Wayfinder\.[A-Za-z.]+)\.dll#\1#' | sort -u)"
 if [ -n "$compiled" ]; then
@@ -265,7 +290,7 @@ $compiled
 EOF
 fi
 
-# ---- 7. did the APK appear? --------------------------------------------------------------
+# ---- 8. did the APK appear? --------------------------------------------------------------
 for apk in "$workspace/Builds/Android/Wayfinder-dev.apk" "$workspace"/Builds/Android/*.apk "$workspace"/Builds/Android/*.aab; do
   if [ -f "$apk" ]; then
     size="$(stat -c %s "$apk" 2>/dev/null || stat -f %z "$apk" 2>/dev/null || echo '?')"
@@ -274,7 +299,19 @@ for apk in "$workspace/Builds/Android/Wayfinder-dev.apk" "$workspace"/Builds/And
   fi
 done
 
-# ---- 8. never be silent about a failure --------------------------------------------------
+# ---- 9. what the *absence* of our own breadcrumb rules out -------------------------------
+# EditorFailureLog writes Logs/wayfinder-editor-failure.log before an entry point rethrows, so a
+# failure with no breadcrumb did not come from a C# exception inside Setup/BuildAndroidDev: it is
+# either earlier (compile error, package resolution, licence, unresolvable -executeMethod) or a
+# hard process kill. Run 39141401948 was exactly this shape, and nothing said so.
+# Only stated where Unity actually ran: the diagnose job's fresh checkout has no Logs/ at all.
+breadcrumb_file="$workspace/Logs/wayfinder-editor-failure.log"
+if [ "$step_failed" = yes ] && [ -d "$workspace/Logs" ] && [ ! -f "$breadcrumb_file" ]; then
+  say "- No \`Logs/wayfinder-editor-failure.log\`: no Wayfinder editor entry point threw, so the cause is before our code ran, or the editor process was killed."
+  echo "::notice title=Wayfinder breadcrumb absent::A Unity step failed but Logs/wayfinder-editor-failure.log does not exist, so no C# exception was thrown inside the build method. The cause is earlier (compile error, package resolution, licence, unresolvable -executeMethod) or a hard process kill (see the Unity hard stop annotations and the job log)."
+fi
+
+# ---- 10. never be silent about a failure --------------------------------------------------
 if [ "$step_failed" = yes ] && [ "$editor_log" = no ]; then
   say "- **No editor log was available.** game-ci runs \`unity-editor -logfile /dev/stdout\`, so Unity's log is the job log, not a workspace file."
   if [ -n "$(for l in $logs; do [ -f "$l" ] || echo "$l"; done)" ]; then
@@ -319,7 +356,7 @@ if [ "$step_failed" = yes ] && [ "$causes_emitted" -eq 0 ]; then
     fi
   else
     say "- **Failure with no recognised cause.** No workspace log was available to include a tail."
-    emit_error "title=Unity failure not explained::A Unity step failed but no diagnostic cause matched in: $inspected. No workspace log was available for a tail; see the Unity job-log download notice."
+    emit_error "title=Unity failure not explained::A Unity step failed but no diagnostic cause matched in: $inspected. No workspace log was available for a tail; see the Unity job-log download notice, and error_logs/unity-job-log.txt.excerpt in the Wayfinder-APK-error-logs artefact for the end of Unity's own output."
   fi
 fi
 

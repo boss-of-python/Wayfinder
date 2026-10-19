@@ -50,9 +50,12 @@ MUTATIONS = [
      REPORT, "grep -hE 'executeMethod'", "grep -hE 'zzz-executeMethod'"),
     ("N9", "download whichever job happens to be first instead of the build job",
      FETCH, '--jq ".jobs[] | select(.name == \\"$job_name\\") | .id"', '--jq ".jobs[] | .id"'),
+    # Retargeted 2026-10-19: the download now lands in a temp file and is sanitised before it is
+    # judged, so the "is what we wrote usable?" guard moved inside the loop. Same intent as before
+    # (an empty download must never be reported as success), new line.
     ("N10", "keep an empty downloaded log and call it a success",
-     FETCH, 'if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$output" 2>"$errfile" && [ -s "$output" ]; then',
-     'if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$output" 2>"$errfile" && [ -f "$output" ]; then'),
+     FETCH, '    if [ -s "$output" ]; then',
+     '    if [ -f "$output" ]; then'),
     ("N11", "go back to the ubuntu-latest label that migrates to Ubuntu 26 on 2026-10-19",
      WORKFLOW, "    runs-on: ubuntu-24.04\n    timeout-minutes: 180",
      "    runs-on: ubuntu-latest\n    timeout-minutes: 180"),

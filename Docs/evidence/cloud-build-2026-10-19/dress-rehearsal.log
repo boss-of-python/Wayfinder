@@ -1,0 +1,29 @@
+== 1. the fetcher at base commit 8611c6c, against gh >= 2.63 ==
+gh api repos/boss-of-python/Wayfinder/actions/jobs/117718330570/logs failed 2 times: the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway
+::notice title=Unity job log::Could not download the log of job 117718330570 after 2 attempts: the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway. Needs actions: read; open the run in the Actions tab instead.
+PASS  the old fetcher reproduces the reported refusal
+PASS  the refusal text is the one from runs 39139527909/39141218150/39141401948
+PASS  the old fetcher left no log, so the reporter had nothing to read
+
+== 2. the current fetcher ==
+Downloaded job 117718330570 log: 6 lines, 512 bytes -> error_logs/unity-job-log.txt
+Stripped 39 bytes of escape sequences/carriage returns from 551 downloaded.
+gh accepted --allow-escape-sequences.
+::notice title=Unity job log::Job "Build Wayfinder-dev.apk" (117718330570): 6 lines, 512 bytes downloaded for diagnosis.
+PASS  the current fetcher downloads the log
+PASS  no escape sequence survives into the parsed log
+PASS  no carriage return survives
+PASS  the compile-error line survived sanitising intact, on one line
+PASS  the excerpt tail was written for the artefact
+
+== 3. the reporter over the downloaded log ==
+::notice title=Unity diagnostics::Inspected error_logs/unity-job-log.txt (512 bytes); editor log recognised: yes.
+::error file=Assets/Wayfinder/Scripts/Presentation/MapOverlayView.cs,line=212,col=31,title=Unity compile error::error CS1061: 'RectTransform' does not contain a definition for 'setSizeDelta'
+::error title=Unity aborted batchmode::Scripts have compiler errors.
+::error title=Unity aborted::Unity aborted before completing: Scripts have compiler errors.
+PASS  the compile error became a file/line/col annotation, readable from the API
+PASS  the downloaded log is recognised as an editor log
+PASS  the batchmode abort reason is annotated
+PASS  no 'failure not explained' fallback when a cause was matched
+
+DRESS REHEARSAL: all checks passed.

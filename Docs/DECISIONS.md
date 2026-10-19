@@ -247,3 +247,59 @@ case the API cannot: it survives in the workspace artifact even if the job log i
 **Status:** Approved; executed locally only. 86/86 Python tests and 17/17 mutations caught
 (`Docs/evidence/cloud-build-2026-10-16/`); **no part of it has run in CI yet** — the next owner
 dispatch is what proves it, and what finally names the Unity failure (KI-041).
+
+
+## 2026-10-19 — D-036 Fetch Unity's log past gh's escape-sequence guard, and treat absence as evidence
+
+**Decision:**
+- **Detect the CLI capability, don't assume it.** `fetch_job_log.sh` probes `gh api --help` once for
+  `--allow-escape-sequences` and passes it only when the installed `gh` supports it. gh ≥ 2.63
+  refuses a raw non-JSON body that carries terminal escape sequences — and redirecting stdout does
+  **not** bypass the guard (`bodyWriter != io.Discard` in `pkg/cmd/api/api.go`) — while on older
+  `gh` the flag is an unknown-flag hard error. A version-string comparison would guess; the help
+  probe asks.
+- **The saved log is sanitised plain text.** CSI/OSC sequences, lone `ESC` and `\r` are stripped
+  before anything parses the file: they split the exact lines the reporter greps for
+  (`error CS0117:`, `Aborting batchmode due to failure:`) and GitHub's workflow-command parser
+  rejects `ESC` in annotation text. The intermediate-byte class is `[ -/]` (space..slash), never
+  `[ -\/]` — a backslash is not an escape inside a POSIX bracket expression, so `[ -\/]` means
+  space..backslash and ate real log text (`ESC[KAborting…` → `orting…`).
+- **Report what sanitising removed, and keep the tail.** The byte delta is printed, so a sanitiser
+  that ever eats content is visible; a 400-line/400-char `.excerpt` rides up in
+  `Wayfinder-APK-error-logs`, because annotations carry a few hundred characters and the cause of a
+  hard stop is the last thing Unity said. The verbatim download stays in a temp file: a failing
+  Unity job log runs to tens of MB and uploading it twice buys nothing.
+- **A killed editor is a named cause.** New reporter patterns for `Crash!!!`, native stacktraces,
+  `Fatal Error!`, OOM-killer/`Killed process`/cgroup-OOM, fatal signals, core dumps and
+  `No space left on device` — deliberately narrow, because Unity also logs benign
+  `Received signal SIGUSR1` and "out of memory" retry lines that must not be mistaken for a cause.
+- **Absence is evidence.** `EditorFailureLog` writes `Logs/wayfinder-editor-failure.log` before an
+  entry point rethrows, so when a Unity step failed and that file does not exist, the reporter now
+  says so: no C# exception was thrown inside the build method, so the cause is earlier (compile
+  error, package resolution, licence, unresolvable `-executeMethod`) or the process was killed.
+  This is stated only where Unity actually ran (a `Logs/` directory exists) — never in the diagnose
+  job's fresh checkout, where it would be a statement about nothing.
+- **The refusal notice names a cause, not a scapegoat.** Its advice is now derived from the error
+  text: an escape-sequence refusal says to check the runner's `gh` version, a real
+  403/404/scope error mentions `actions: read`, and anything else points at the Actions tab. The
+  old blanket "Needs `actions: read`" is what sent three investigations after a permission the
+  workflow had already granted.
+- **Do not warm the `Library` cache yet.** `actions/cache@55cc834` declares `post-if: "success()"`,
+  so no `Library` cache can be saved until a run succeeds (KI-042). Saving one from a *failed*
+  import via `actions/cache/save` + `if: always()` was considered and rejected: it would introduce
+  an uncontrolled variable into a diagnosis that is not finished. Revisit after the first success.
+
+**Rationale:** runs 39139527909, 39141218150 and 39141401948 each failed identically and each
+diagnose job printed the same refusal twelve times. D-035 built the right mechanism and its tests
+stubbed a permissive `gh`, so the guard was invisible from this environment — the notice even
+misattributed the failure to a missing `actions: read` that was already granted, sending three
+investigations after a non-problem. The refusal text is the evidence; gh's source confirms the
+mechanism; a dress rehearsal reproduces it with the base-commit fetcher and shows the current one
+annotating a compile error from the same stub.
+
+**Status:** Approved; executed locally only. 88/88 diagnostics tests, 23/23 pipeline tests, 18/18
+mutations caught, dress rehearsal green (`Docs/evidence/cloud-build-2026-10-19/`). **No part of it
+has run in CI**, and the Unity root cause is still unknown (KI-041): the next owner dispatch is
+what names it — most likely a first-ever compile error in the four Unity-facing assemblies
+(KI-034), which the run data (5–6 min, shader logs present, no breadcrumb) is consistent with but
+does not prove.
