@@ -1,0 +1,23 @@
+# Escape-sequence refusals returned by the diagnose job, verbatim from the check-run annotations API
+# Retrieved 2026-10-19 from api.github.com (the only log host reachable from the implementation sandbox).
+
+## run 39139527909
+[failure] A Unity step failed and the Unity job log could not be read (Logs/unity-job-log.txt (missing)). fetch_job_log.sh downloads it; its "Unity job log" notice in the diagnose job gives the gh error.
+[notice] Inspected Logs/unity-job-log.txt (missing); editor log recognised: no.
+[failure] Process completed with exit code 1.
+[notice] Could not download the log of job 117710893755 after 12 attempts: the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway. Needs actions: read; open the run in the Actions tab instead.
+
+## run 39141218150
+[failure] A Unity step failed but no diagnostic cause matched in: error_logs/unity-job-log.txt (missing). No workspace log was available for a tail; see the Unity job-log download notice.
+[failure] A Unity step failed and the Unity job log could not be read (error_logs/unity-job-log.txt (missing)). fetch_job_log.sh downloads it; its "Unity job log" notice in the diagnose job gives the gh error.
+[notice] Inspected error_logs/unity-job-log.txt (missing); editor log recognised: no.
+[failure] Process completed with exit code 1.
+[notice] Could not download the log of job 117715873675 after 12 attempts: the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway. Needs actions: read; open the run in the Actions tab instead.
+
+## run 39141401948
+[failure] A Unity step failed but no diagnostic cause matched in: error_logs/unity-job-log.txt (missing). No workspace log was available for a tail; see the Unity job-log download notice.
+[failure] A Unity step failed and the Unity job log could not be read (error_logs/unity-job-log.txt (missing)). fetch_job_log.sh downloads it; its "Unity job log" notice in the diagnose job gives the gh error.
+[notice] Inspected error_logs/unity-job-log.txt (missing); editor log recognised: no.
+[failure] Process completed with exit code 1.
+[notice] Could not download the log of job 117718330570 after 12 attempts: the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway. Needs actions: read; open the run in the Actions tab instead.
+

@@ -1,0 +1,21 @@
+P1: caught - never opt in to escape sequences again (the three-run blindness of 2026-10-18)
+P2: caught - pass the opt-in flag without checking whether this gh build has it (older gh: hard error)
+P3: caught - save the downloaded job log without sanitising it
+P4: caught - widen the CSI intermediate-byte class back to [ -\/], which eats the text after ESC[K
+P5: caught - stop leaving carriage returns out of the parsed log
+P6: caught - stop writing the excerpt tail the artefact carries
+P7: caught - stop reporting how many bytes sanitising removed
+P8: caught - report a download that sanitises to nothing as a success
+P9: caught - stop naming a crash/OOM kill, so a hard stop looks like 'nothing matched'
+P10: caught - report any 'out of memory' text as a hard stop, including Unity's benign lines
+P11: caught - stop treating a crash as evidence that a Unity step failed
+P12: caught - claim the breadcrumb is missing even where Unity never ran (the diagnose job)
+P13: caught - stop inferring anything from an absent breadcrumb
+P14: caught - drop the crash/OOM alternatives from the workflow's raw error-line grep
+P15: caught - stop appending the end of the Unity log to the downloadable error report
+P16: caught - let the raw error-line grep flood the report file unbounded
+P17: caught - stop recognising an escape-sequence refusal and blame the token again
+P18: caught - stop recognising a permission error
+
+18/18 mutations caught.
+Files restored; suite green again.

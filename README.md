@@ -54,16 +54,36 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   device builds, touch play, thermal performance. **No APK exists yet** (KI-006). Nothing here
   claims a build log, APK, IPA, screenshot or device measurement that does not exist.
 
-## Android development APK status (16 Oct 2026)
+## Android development APK status (19 Oct 2026)
 
-The latest cloud-build attempt, [run 38880573866](https://github.com/boss-of-python/Wayfinder/actions/runs/38880573866)
-(attempt 2), passed preflight but failed in *Unity 1 of 2: Setup Project* with GameCI's generic
-`Build failed with exit code 1`; no APK was produced. Its diagnose job could not retrieve the
-Unity job log, so the Unity failure remains unknown (KI-041). GitHub reran the original source
-SHA `8db1c30`, so it did not test the follow-up changes merged at `0edcb11`. The current fetcher
-retries longer and preserves its actual error; the reporter now includes a labeled workspace-log
-tail when only worker logs survive. A fresh dispatch is still required to diagnose Unity and
-produce an APK.
+The three latest cloud-build attempts
+([39139527909](https://github.com/boss-of-python/Wayfinder/actions/runs/39139527909),
+[39141218150](https://github.com/boss-of-python/Wayfinder/actions/runs/39141218150),
+[39141401948](https://github.com/boss-of-python/Wayfinder/actions/runs/39141401948)) all passed
+preflight and all failed in *Unity 1 of 2: Setup Project* after 5–6 minutes with GameCI's generic
+`Build failed with exit code 1`; no APK was produced. Each diagnose job then reported the same
+refusal twelve times — `the response contains terminal escape sequences; pass
+--allow-escape-sequences to output it anyway` — which is why the Unity failure was still unknown
+after five dispatches: **`gh api` refuses a raw log body containing ANSI colour and `\r` redraws,
+and redirecting stdout to a file does not bypass that guard**, so Unity's editor log never reached
+the reporter (KI-041, fixed by D-036).
+
+The fetcher now downloads through `curl` → `gh --allow-escape-sequences` → plain `gh`, **sanitises
+the escape sequences out of whatever arrives** (verbatim bytes are not parsable — game-ci colourises
+the compile-error line itself, so a raw log loses the `file=…,line=…,col=…` annotation while still
+looking diagnosed), and stores a 400-line excerpt in the artefact. The reporter names a crash or OOM
+kill and says when the editor breadcrumb is *absent*, which means no C# exception was thrown inside
+the build method.
+
+That absence is what pointed at the cause: Unity ran for minutes, packages resolved (four
+shader-compiler logs survived), and `ProjectSetup.Setup` threw nothing — so the failure was earlier
+than our entry point. Source review then found it (PR #15): `ContentImporter.cs` uses
+`Newtonsoft.Json.Linq` while `Wayfinder.Editor.asmdef` did not reference `Unity.Newtonsoft.Json`,
+and Unity asmdefs require direct references. A CS0234 in an Editor-only assembly aborts batchmode
+before `-executeMethod` — exactly the observed shape. The reference is added; it is reasoned from
+source, **not yet compiled by Unity**, and another error may hide behind it (KI-034). **One dispatch
+of current `main` now yields either an APK or file/line/column annotations**; evidence in
+`Docs/evidence/cloud-build-2026-10-19/`.
 
 The earlier 15 Oct Unity run also exposed a package compile error: Input System 1.12.0 referenced
 `BuildTarget.ReservedCFE`, removed in Unity 6000.3. The manifest is repinned to 1.20.1, but that
@@ -142,14 +162,18 @@ run the supported desktop Unity Editor itself. A manual, dedicated-Windows-runne
 APK workflow is prepared in `.github/workflows/android-phone-build.yml`; it has
 not been run and requires secure owner setup, not a phone-only or free hosted build.
 
-Latest local checks: **90/90** mocked Python build/pipeline tests and **22/22** mutation checks
-pass; the last headless C# run (16 Oct) passed **164/164** tests. The latest cloud run
-([38880573866](https://github.com/boss-of-python/Wayfinder/actions/runs/38880573866)) failed in
-*Setup Project* without the editor log; it was rerun from the original SHA and did not exercise
-the follow-up diagnostics. The current workflow preserves a clearly labeled worker-log tail,
-pre-creates `error_logs/apk-build-errors.log`, and publishes the raw log and report as
-`Wayfinder-APK-error-logs` (`Docs/evidence/cloud-build-2026-10-16/`). The mobile pause/focus and
-authored-water wiring remain Unity-unverified; no real APK or device result exists.
+Latest local checks: **91/91** diagnostics tests, **23/23** mocked pipeline tests, **19/19**
+mutations for the 19 Oct batch (**22/22** for Batch H) and a 20/20 dress rehearsal; the last
+headless C# run (16 Oct) passed **164/164** tests, and the only C#-side change since is one added
+asmdef reference (PR #15). The three latest
+cloud runs failed in *Setup Project*, and their diagnose jobs could not fetch the editor log
+because `gh api` refused a body containing terminal escape sequences — found, reproduced against
+gh's own source and fixed on 19 Oct (KI-041, D-036). The workflow pre-creates
+`error_logs/apk-build-errors.log` and publishes the sanitised job log, its excerpt tail, the fetch
+transcript and the report as `Wayfinder-APK-error-logs`
+(`Docs/evidence/cloud-build-2026-10-19/`). The Unity failure is now attributed to a missing asmdef
+reference but is unverified by a real editor run and needs one dispatch; the mobile pause/focus and
+authored-water wiring remain Unity-unverified, and no real APK or device result exists.
 
 ## Quick start (owner machine)
 

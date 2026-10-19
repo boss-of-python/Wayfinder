@@ -1,0 +1,11 @@
+.github/workflows/android-cloud-build.yml: YAML OK, jobs=['apk', 'diagnose'], steps=19
+  multiline bash run blocks checked: 6
+.github/workflows/android-phone-build.yml: YAML OK, jobs=['android-smoke'], steps=3
+  multiline bash run blocks checked: 0
+Tools/Build/fetch_job_log.sh: bash -n OK
+Tools/Build/report_unity_failure.sh: bash -n OK
+Tools/Build/check_unity_secrets.sh: bash -n OK
+Tools/Build/build.sh: bash -n OK
+Docs/evidence/cloud-build-2026-10-19/dress_rehearsal.sh: bash -n OK
+
+ALL OK

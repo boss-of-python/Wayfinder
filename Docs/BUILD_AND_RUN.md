@@ -16,19 +16,32 @@ passes 164/164 tests (Batch G); older counts below are historical snapshots.
 
 **Executed, but no APK yet.** Five owner dispatches on 2026-10-15 reached Unity and exposed the
 Input System 1.12.0 `BuildTarget.ReservedCFE` compile error; the manifest was repinned to 1.20.1.
-The latest run, [38880573866](https://github.com/boss-of-python/Wayfinder/actions/runs/38880573866),
-was a second attempt on the original `8db1c30` source. Preflight passed, then *Unity 1 of 2: Setup
-Project* failed after about six minutes with `Build failed with exit code 1`; the APK step was
-skipped. The build job had only worker/shader logs, and its diagnose job could not download the
-Unity job log. **The Unity failure is still unknown** (KI-041). That rerun did not exercise the
-follow-up changes merged at `0edcb11`: the fetcher now retries longer and preserves the real `gh`
-error, and ProjectSetup guards a missing settings asset. The workflow now pre-creates `error_logs/`
-and publishes `Wayfinder-APK-error-logs` with `unity-job-log.txt` plus `apk-build-errors.log`;
-the error report includes the fetch transcript, parsed annotations and matching Unity error lines.
-The reporter also emits a labeled tail when only worker logs survive. These changes need a fresh
-owner dispatch; see
-`Docs/evidence/cloud-build-2026-10-16/` for run details. This builds a development APK on
-GitHub's machines; no local Unity install or self-hosted runner is required.
+The three latest runs
+([39139527909](https://github.com/boss-of-python/Wayfinder/actions/runs/39139527909),
+[39141218150](https://github.com/boss-of-python/Wayfinder/actions/runs/39141218150),
+[39141401948](https://github.com/boss-of-python/Wayfinder/actions/runs/39141401948), 2026-10-18,
+current `main`) all passed preflight and all failed in *Unity 1 of 2: Setup Project* after 5.3–6.5
+minutes with `Build failed with exit code 1`; the APK step was skipped each time. Each diagnose job
+then reported the same thing twelve times: `the response contains terminal escape sequences; pass
+--allow-escape-sequences to output it anyway`. That was the real blocker — **`gh api` refuses a raw
+log body containing ANSI colour and `\r` redraws, and redirecting stdout does not bypass it**, so
+Unity's log never reached the reporter (KI-041). Fixed on 2026-10-19 (D-036): the fetcher probes
+`gh api --help`, passes the flag when the installed `gh` has it, sanitises escape sequences out of
+the log it saves, writes a 400-line `unity-job-log.txt.excerpt` tail into the artefact, and reports
+how many bytes it stripped. The reporter now also names a crash/OOM kill, and says so when
+`Logs/wayfinder-editor-failure.log` is *absent* — which means no C# exception was thrown inside the
+build method.
+
+**The Unity failure itself is still unknown** (KI-041). What the run data does establish: Unity ran
+for minutes, four shader-compiler logs survived (so packages resolved — KI-036 narrows), and no
+breadcrumb exists, so the cause is earlier than `ProjectSetup.Setup` or the process was killed. The
+leading suspect is KI-034: the 1.20.1 Input System repin unblocked compilation, so these are the
+first runs in which Unity reaches `Wayfinder.Platform`, `Wayfinder.Presentation`,
+`Wayfinder.Editor` and the test assemblies — never compiled by Unity, only parse-checked. **One
+dispatch now names it** as `file=…,line=…,col=…` annotations. See
+`Docs/evidence/cloud-build-2026-10-19/` for the refusals, step timings and the before/after dress
+rehearsal. This builds a development APK on GitHub's machines; no local Unity install or
+self-hosted runner is required.
 
 Run it: **Actions tab → "Android APK (free cloud build)" → Run workflow** (manual only —
 `workflow_dispatch`, never on `pull_request`). You can pick the branch; the agent cannot
@@ -67,10 +80,10 @@ matters after a failure:
 
 | Step | Action | Result |
 |---|---|---|
-| 1 | `bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" error_logs/unity-job-log.txt` | downloads the finished build job's plain-text log — **this is Unity's editor log**, because game-ci runs `unity-editor -logfile /dev/stdout` (D-035); fetch output is also saved under `error_logs/` |
-| 2 | `bash Tools/Build/report_unity_failure.sh "$PWD" error_logs/unity-job-log.txt` | annotates compile errors, abort reasons, unresolved build methods, package failures and exceptions; its output is appended to `error_logs/apk-build-errors.log` |
-| 3 | Extract matching Unity error lines | appends compiler errors, exceptions, aborts and build failures to `error_logs/apk-build-errors.log`; if the raw log could not be downloaded, the report records that and the fetch diagnostic |
-| 4 | `actions/upload-artifact` | `Wayfinder-APK-error-logs` contains `error_logs/` (the full job log when available, fetch transcript and error report), 7-day retention |
+| 1 | `bash Tools/Build/fetch_job_log.sh "Build Wayfinder-dev.apk" error_logs/unity-job-log.txt 12 10` | downloads the finished build job's log — **this is Unity's editor log**, because game-ci runs `unity-editor -logfile /dev/stdout` (D-035). It passes `--allow-escape-sequences` when the installed `gh` supports it (gh ≥ 2.63 refuses raw bodies otherwise, D-036), strips escape sequences and `\r`, writes the 400-line tail to `error_logs/unity-job-log.txt.excerpt`, and prints how many bytes it stripped. Its transcript is saved to `error_logs/job-log-download.txt` |
+| 2 | `bash Tools/Build/report_unity_failure.sh "$PWD" error_logs/unity-job-log.txt` | annotates compile errors, abort reasons, unresolved build methods, package failures, exceptions, crashes/OOM kills, and a missing breadcrumb; its output is appended to `error_logs/apk-build-errors.log` |
+| 3 | Extract matching Unity error lines | appends compiler errors, exceptions, aborts, crashes, OOM kills, licence and disk-space failures to `error_logs/apk-build-errors.log` (capped at 400 lines × 400 chars — a failed Unity run emits tens of thousands of shader-compiler lines), then the last 400 lines of Unity's own output; if the log could not be downloaded, the report records that and the fetch diagnostic |
+| 4 | `actions/upload-artifact` | `Wayfinder-APK-error-logs` contains `error_logs/` (the sanitised job log, its `.excerpt` tail, the fetch transcript and the error report), 7-day retention |
 
 The separate `diagnose` job has job-level `continue-on-error: true`; the fetch, report, error-line
 extraction and upload steps also have step-level guards. Commands retain their real exit statuses,

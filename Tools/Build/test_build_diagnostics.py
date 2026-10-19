@@ -309,6 +309,79 @@ class ReportUnityFailureTests(unittest.TestCase):
         self.assertIn("::error title=Unity exception::System.NullReferenceException: "
                       "Object reference not set to an instance", result.stdout)
 
+    # ---- hard stops: no exception is thrown, so no breadcrumb and no compile error exists ----
+
+    def test_native_crash_is_reported_as_the_cause(self):
+        # Run 39141401948 failed in Setup Project with no breadcrumb in the workspace, which is
+        # exactly what a process kill looks like: EditorFailureLog's catch never ran.
+        self.write_log(
+            "Refresh completed\n"
+            "Crash!!!\n"
+            "Received signal SIGSEGV\n"
+            "  at 0x00007f8b1c2d3e4f in UnityEditor.AssetDatabase:Refresh\n")
+        result = run(REPORT, self.root, self.failing_env())
+        self.assertIn("::error title=Unity hard stop::Crash!!!", result.stdout)
+        self.assertIn("::error title=Unity hard stop::Received signal SIGSEGV", result.stdout)
+        # A cause was found, so the generic "not explained" error must not compete with it.
+        self.assertNotIn("::error title=Unity failure not explained::", result.stdout)
+
+    def test_container_oom_kill_is_reported_as_the_cause(self):
+        # The Unity Android image plus shader compilation can exhaust a standard runner; the
+        # kernel's own line is the only evidence that survives in the job log.
+        self.write_log("Cmd: compileSnippet\n"
+                       "unity-editor invoked oom-killer: gfp_mask=0x100cca(GFP_HIGHUSER_MOVABLE)\n"
+                       "Killed process 4242 (unity-editor) total-vm:18675132kB anon-rss:9830400kB\n")
+        result = run(REPORT, self.root, self.failing_env())
+        self.assertIn("::error title=Unity hard stop::Killed process 4242 (unity-editor)", result.stdout)
+        self.assertIn("::error title=Unity hard stop::unity-editor invoked oom-killer", result.stdout)
+        self.assertNotIn("::error title=Unity failure not explained::", result.stdout)
+
+    def test_a_crash_alone_is_evidence_of_failure_without_the_workflow_outcomes(self):
+        # The in-job reporter is told the step outcomes, but a hard stop must also be recognised
+        # from the log alone: a killed editor is a failure whatever the workflow says.
+        self.write_log("Crash!!!\nReceived signal SIGSEGV\n", relative="Logs/AssetImportWorker0.log")
+        result = run(REPORT, self.root, self.env)
+        self.assertIn("::error title=Unity hard stop::Crash!!!", result.stdout)
+        self.assertIn("::notice title=Wayfinder breadcrumb absent::", result.stdout)
+
+    def test_benign_signals_and_memory_retry_lines_are_not_reported_as_a_crash(self):
+        # Unity logs these on a normal shutdown; a false "hard stop" would be worse than none.
+        self.write_log("Received signal SIGUSR1\n"
+                       "Received signal SIGINT\n"
+                       "Assertion failed: out of memory while pooling\n")
+        result = run(REPORT, self.root, self.failing_env())
+        self.assertNotIn("::error title=Unity hard stop::", result.stdout)
+
+    def test_a_failure_with_no_breadcrumb_says_our_own_code_did_not_throw(self):
+        # The exact shape of run 39141401948: Unity failed, Logs/ held only shader-compiler logs,
+        # and nothing said whether ProjectSetup.Setup had thrown. The absence is itself evidence.
+        self.write_log("Cmd: compileSnippet\n", relative="Logs/shadercompiler-UnityShaderCompiler-0.log")
+        result = run(REPORT, self.root, self.failing_env())
+        self.assertIn("::notice title=Wayfinder breadcrumb absent::", result.stdout)
+        self.assertIn("no C# exception was thrown inside the build method", result.stdout)
+
+    def test_a_present_breadcrumb_suppresses_the_absence_notice(self):
+        self.write_log(
+            "[Wayfinder] Editor method failed: Wayfinder.Editor.ProjectSetup.Setup - "
+            "UnityEditor.Build.BuildFailedException: Unity QualitySettings asset not available.\n",
+            relative="Logs/wayfinder-editor-failure.log")
+        result = run(REPORT, self.root, self.failing_env())
+        self.assertIn("::error title=Wayfinder editor method failed::", result.stdout)
+        self.assertIn("BuildFailedException: Unity QualitySettings asset not available.", result.stdout)
+        self.assertNotIn("::notice title=Wayfinder breadcrumb absent::", result.stdout)
+
+    def test_the_diagnose_job_workspace_is_not_told_a_breadcrumb_is_missing(self):
+        # That job checks the code out fresh and never runs Unity, so it has no Logs/ at all;
+        # reporting an "absent breadcrumb" there would be a statement about nothing.
+        result = run(REPORT, self.root, dict(self.env, UNITY_JOB_RESULT="failure"),
+                     logs=[self.root / "error_logs/unity-job-log.txt"])
+        self.assertNotIn("::notice title=Wayfinder breadcrumb absent::", result.stdout)
+
+    def test_a_successful_run_does_not_claim_a_breadcrumb_is_missing(self):
+        (self.root / "Logs").mkdir(parents=True, exist_ok=True)
+        result = run(REPORT, self.root, self.env)
+        self.assertNotIn("::notice title=Wayfinder breadcrumb absent::", result.stdout)
+
     def test_downloaded_job_log_is_accepted_as_the_editor_log(self):
         # What the diagnose job passes: the finished job's plain-text log, timestamps and all.
         log = self.write_log(
@@ -368,6 +441,9 @@ class FetchJobLogTests(unittest.TestCase):
         }
 
     def write_gh(self, job_id="4242"):
+        # gh >= 2.63 refuses to print a response containing terminal escape sequences unless it is
+        # asked to (run 39141401948: twelve attempts, no log). The stub answers the log endpoint
+        # the way the real CLI does once --allow-escape-sequences is passed.
         self.gh.write_text(f"""#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$GH_CALLS"
 case "$*" in
@@ -468,6 +544,183 @@ cat "$GH_JOB_LOG" > "$out"
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn("Build failed, with exit code 1", (self.root / "Logs/job.txt").read_text())
         self.assertIn("/actions/jobs/4242/logs", self.calls.read_text())
+
+    # ---- regressions for run 39141401948: gh refused to print a log with escape sequences ----
+
+    def test_gh_is_asked_to_opt_out_of_the_escape_sequence_guard(self):
+        # The runner's notice, verbatim: "the response contains terminal escape sequences; pass
+        # --allow-escape-sequences to output it anyway." Without the flag, all 12 attempts failed.
+        result = self.fetch()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("repos/boss-of-python/Wayfinder/actions/jobs/4242/logs "
+                      "--allow-escape-sequences", self.calls.read_text())
+        self.assertIn("downloaded with gh --allow-escape-sequences for diagnosis", result.stdout)
+
+    def test_a_gh_too_old_for_the_flag_still_delivers_the_log(self):
+        # On gh < 2.63 the flag is an unknown-flag hard error, so the chain must fall through to a
+        # plain request rather than give up.
+        self.gh.write_text(self.gh.read_text().replace(
+            '*"/actions/jobs/4242/logs"*) cat "$GH_JOB_LOG" ;;',
+            '*"/actions/jobs/4242/logs"*)\n'
+            '    case "$*" in\n'
+            '      *"--allow-escape-sequences"*) echo "unknown flag: --allow-escape-sequences" >&2; exit 1 ;;\n'
+            '      *) cat "$GH_JOB_LOG" ;;\n'
+            '    esac ;;'))
+        result = self.fetch()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("Build failed, with exit code 1", (self.root / "Logs/job.txt").read_text())
+        self.assertIn("downloaded with gh for diagnosis", result.stdout)
+
+    def test_the_curl_download_is_sanitised_too(self):
+        # The gap this pins: curl writes bytes verbatim, so preferring it fixes the *download* and
+        # nothing else. A raw log holds `...cs(112,44): ESC[31merror CS0234: ...ESC[0m CR`, which
+        # the reporter's `): error CS[0-9]+:` grep does not match across — the compile error would
+        # go unannotated and the ESC bytes would leak into the annotation text.
+        self.job_log.write_bytes(
+            b"2026-10-18T15:56:40.3Z Assets/Wayfinder/Scripts/Editor/ContentImporter.cs(112,44): "
+            b"\033[31merror CS0234: The type or namespace name 'Json' does not exist in the "
+            b"namespace 'Newtonsoft'\033[0m\r\n"
+            b"2026-10-18T15:56:41.4Z Aborting batchmode due to failure:\r\n")
+        curl_calls = self.root / "curl-calls.txt"
+        env = dict(self.env, WAYFINDER_CURL=str(self.write_curl()),
+                   GH_TOKEN="test-token", CURL_CALLS=str(curl_calls))
+        result = self.fetch(env=env)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("downloaded with curl for diagnosis", result.stdout)
+        written = (self.root / "Logs/job.txt").read_bytes()
+        self.assertNotIn(b"\033", written)
+        self.assertNotIn(b"\r", written)
+        # The reporter annotates the real compile error out of what curl delivered.
+        report = run(REPORT, self.root, dict(self.env, UNITY_JOB_RESULT="failure"),
+                     logs=[self.root / "Logs/job.txt"])
+        self.assertIn("::error file=Assets/Wayfinder/Scripts/Editor/ContentImporter.cs,"
+                      "line=112,col=44,title=Unity compile error::error CS0234", report.stdout)
+        self.assertNotIn("Unity failure not explained", report.stdout)
+
+    def test_a_raw_unsanitised_log_would_miss_the_compile_error(self):
+        # The control for the test above: hand the reporter the same bytes *without* sanitising and
+        # it cannot annotate them. This is what a verbatim download alone produces, so it is the
+        # reason sanitising belongs in the fetcher and not only in the download choice.
+        raw = self.root / "error_logs/unity-job-log-raw.txt"
+        raw.parent.mkdir(parents=True, exist_ok=True)
+        raw.write_bytes(
+            b"2026-10-18T15:56:40.3Z Assets/Wayfinder/Scripts/Editor/ContentImporter.cs(112,44): "
+            b"\033[31merror CS0234: The type or namespace name 'Json' does not exist\033[0m\r\n")
+        report = run(REPORT, self.root, dict(self.env, UNITY_JOB_RESULT="failure"), logs=[raw])
+        self.assertNotIn("::error file=Assets/Wayfinder/Scripts/Editor/ContentImporter.cs",
+                         report.stdout)
+        self.assertIn("Unity failure not explained", report.stdout)
+
+    def test_escape_sequences_and_carriage_returns_are_stripped_from_the_saved_log(self):
+        # A Unity job log is coloured by game-ci/Docker and full of \r progress redraws. Left in
+        # place they split the very lines the reporter greps for, and GitHub's workflow-command
+        # parser rejects ESC in annotation text.
+        self.job_log.write_bytes(
+            b"2026-10-18T15:52:01.1Z \033[31mRefreshing native access tokens\033[0m\r\n"
+            b"2026-10-18T15:58:30.2Z \033[1mAssets/Wayfinder/Scripts/Editor/SceneBuilder.cs"
+            b"(88,13): error CS0103: The name 'Bake' does not exist\033[0m\n"
+            b"2026-10-18T15:58:39.9Z \033[KAborting batchmode due to failure:\n")
+        result = self.fetch()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        written = (self.root / "Logs/job.txt").read_bytes()
+        self.assertNotIn(b"\033", written)
+        self.assertNotIn(b"\r", written)
+        text = written.decode()
+        self.assertIn("Assets/Wayfinder/Scripts/Editor/SceneBuilder.cs(88,13): error CS0103: "
+                      "The name 'Bake' does not exist", text)
+        # ESC[K (erase to end of line) is immediately followed by real text here. A sanitiser
+        # whose intermediate-byte class is too wide deletes that text with the sequence, which
+        # is how "Aborting batchmode due to failure:" became "orting batchmode due to failure:".
+        self.assertIn("Aborting batchmode due to failure:", text)
+        # The reporter must be able to annotate straight from the sanitised file.
+        report = run(REPORT, self.root, dict(self.env, UNITY_JOB_RESULT="failure"),
+                     logs=[self.root / "Logs/job.txt"])
+        self.assertIn("::error file=Assets/Wayfinder/Scripts/Editor/SceneBuilder.cs,line=88,col=13",
+                      report.stdout)
+
+    def test_a_tail_excerpt_is_saved_next_to_the_log_for_the_uploaded_artefact(self):
+        # Annotations carry a few hundred characters; the artefact must carry the end of Unity's
+        # own output, which is where the cause of a hard stop usually is.
+        self.job_log.write_text("".join(f"line {i}\n" for i in range(1, 901))
+                                + "Crash!!! Out of memory\n")
+        result = self.fetch()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        excerpt = (self.root / "Logs/job.txt.excerpt").read_text()
+        self.assertIn("Crash!!! Out of memory", excerpt)
+        self.assertIn("Last 400 lines of job 4242", excerpt)
+        self.assertNotIn("line 1\n", excerpt)
+        # The verbatim download is not left beside the artefact: a failing Unity job log runs to
+        # tens of MB, and only the byte delta it reported is worth keeping.
+        self.assertFalse((self.root / "Logs/job.txt.raw").exists())
+        self.assertIn("for diagnosis", result.stdout)
+
+    def test_the_byte_delta_removed_by_sanitising_is_reported(self):
+        # If the sanitiser ever ate real log content, the delta is the evidence that says so.
+        self.job_log.write_bytes(b"\033[31mred\033[0m plain line\n")
+        result = self.fetch()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("Stripped 9 bytes of escape sequences/carriage returns from 24 downloaded.",
+                      result.stdout)
+        self.assertEqual("red plain line\n", (self.root / "Logs/job.txt").read_text())
+
+    def test_a_log_with_no_escape_sequences_says_so(self):
+        result = self.fetch()
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("no escape sequences to strip", result.stdout)
+
+    def test_a_download_of_only_control_characters_is_not_reported_as_success(self):
+        self.job_log.write_bytes(b"\033[0m\r\033[K")
+        result = self.fetch(attempts="2")
+        self.assertEqual(1, result.returncode)
+        self.assertIn("Could not download the log", result.stdout)
+        self.assertIn("only control characters", result.stdout)
+        self.assertFalse((self.root / "Logs/job.txt").exists())
+        self.assertFalse((self.root / "Logs/job.txt.raw").exists())
+
+    def test_an_escape_sequence_refusal_does_not_blame_the_token(self):
+        # Runs 39139527909/39141218150/39141401948 printed "Needs actions: read" over exactly this
+        # refusal, and the workflow had already granted that permission. The hint must name the
+        # thing that actually went wrong, or the next reader investigates a non-problem.
+        self.gh.write_text(f"""#!/usr/bin/env bash
+case "$*" in
+  *"--help"*) printf 'Flags:\\n      --allow-escape-sequences\\n' ;;
+  *"/jobs?per_page=100"*) printf '%s\\n' "4242" ;;
+  *) echo 'the response contains terminal escape sequences; pass --allow-escape-sequences to output it anyway' >&2; exit 1 ;;
+esac
+""")
+        self.gh.chmod(self.gh.stat().st_mode | stat.S_IEXEC)
+        result = self.fetch(attempts="2")
+        self.assertEqual(1, result.returncode)
+        self.assertNotIn("Needs `actions: read`", result.stdout)
+        self.assertIn("The downloader refused a body containing terminal escape sequences",
+                      result.stdout)
+        # The hint has to say what actually unblocks it: a token for curl, or the flag for gh.
+        self.assertIn("GH_TOKEN/GITHUB_TOKEN", result.stdout)
+        self.assertIn("--allow-escape-sequences", result.stdout)
+        self.assertIn("gh --version", result.stdout)
+
+    def test_a_permission_error_is_still_reported_as_a_permission_problem(self):
+        self.gh.write_text("""#!/usr/bin/env bash
+case "$*" in
+  *"--help"*) printf 'Flags:\\n      --allow-escape-sequences\\n' ;;
+  *"/jobs?per_page=100"*) printf '%s\\n' "4242" ;;
+  *) echo 'gh: HTTP 403: resource not accessible by integration' >&2; exit 1 ;;
+esac
+""")
+        self.gh.chmod(self.gh.stat().st_mode | stat.S_IEXEC)
+        result = self.fetch(attempts="2")
+        self.assertEqual(1, result.returncode)
+        self.assertIn("Needs `actions: read` on the workflow token", result.stdout)
+
+    def test_an_unrecognised_download_error_points_at_the_actions_tab(self):
+        result = self.fetch(attempts="2")  # default stub succeeds; use the failing-redirect stub
+        self.assertEqual(0, result.returncode)
+        self.gh.write_text(self.gh.read_text().replace(
+            '*"/actions/jobs/4242/logs"*) cat "$GH_JOB_LOG" ;;',
+            '*"/actions/jobs/4242/logs"*) echo \'dial tcp: i/o timeout\' >&2; exit 1 ;;'))
+        result = self.fetch(attempts="2")
+        self.assertEqual(1, result.returncode)
+        self.assertIn("Open the run in the Actions tab to read the Unity log there.", result.stdout)
 
     def test_workflow_gives_the_log_a_longer_retry_window(self):
         diagnose = WORKFLOW.read_text()
@@ -693,11 +946,30 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         self.assertIn("grep -Ein", diagnose)
         self.assertIn("name: Wayfinder-APK-error-logs", diagnose)
         self.assertIn("path: error_logs/", diagnose)
+        # The excerpt tail lives next to the fetched log, so it rides up in the same artefact:
+        # annotations carry a few hundred characters, the artefact carries the end of Unity's log.
+        self.assertIn("error_logs/unity-job-log.txt.excerpt", diagnose)
         self.assertIn("UNITY_JOB_RESULT: ${{ needs.apk.result }}", diagnose)
         # The job-level guard prevents checkout/setup/upload failures in this reporting-only job
         # from failing the workflow; its four failure-prone steps also keep running independently.
         self.assertIn("    continue-on-error: true\n    runs-on: ubuntu-24.04", diagnose)
         self.assertEqual(4, diagnose.count("        continue-on-error: true"))
+
+    def test_the_error_line_grep_covers_a_hard_stop_and_stays_bounded(self):
+        step = self.step_block("Append Unity error lines to the APK error log")
+        # A crash or a kill leaves no compile error and no exception, so the raw grep has to
+        # carry those alternatives or the downloadable report says nothing about them.
+        for pattern in ["Crash!!!", "Native stacktrace", "Fatal Error!", "Out of memory",
+                        "Killed process", "No space left on device", "Licensing::Module"]:
+            self.assertIn(pattern, step)
+        # A failed Unity run emits tens of thousands of shader-compiler lines, and this text is
+        # also tee'd into the job summary, so it is capped per line and in total.
+        self.assertIn("| head -400 | cut -c1-400", step)
+
+    def test_the_report_file_carries_the_end_of_the_unity_log(self):
+        step = self.step_block("Append Unity error lines to the APK error log")
+        self.assertIn("Last 400 lines of the Unity job log", step)
+        self.assertIn("cat error_logs/unity-job-log.txt.excerpt", step)
 
     def test_the_diagnosis_job_downloads_the_job_it_is_named_after(self):
         # A rename of the build job would silently make the diagnosis download nothing.

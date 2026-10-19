@@ -1,41 +1,110 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-18. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-19. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
 
-## Latest Android APK workflow attempt — 2026-10-16
+## Latest Android APK workflow attempts — 2026-10-18 (three runs), diagnosed 2026-10-19
 
-The latest cloud run [38880573866](https://github.com/boss-of-python/Wayfinder/actions/runs/38880573866),
-attempt 2 on `main` at source SHA `8db1c304`, passed preflight and runner setup but failed in
-*Unity 1 of 2: Setup Project* after about six minutes. The APK step was skipped. Its only
-annotation naming a Unity failure cause was GameCI's generic `Build failed with exit code 1`;
-the build reporter also noted that it inspected four shader-compiler logs but found no editor log
-or `wayfinder-editor-failure.log`.
+Runs [39139527909](https://github.com/boss-of-python/Wayfinder/actions/runs/39139527909),
+[39141218150](https://github.com/boss-of-python/Wayfinder/actions/runs/39141218150) and
+[39141401948](https://github.com/boss-of-python/Wayfinder/actions/runs/39141401948) all ran
+current `main`, all passed preflight, and all failed in *Unity 1 of 2: Setup Project* after
+5.3–6.5 minutes with GameCI's generic `Build failed with exit code 1`. The APK step was skipped
+each time. In the build job the reporter inspected four shader-compiler logs (108–236 KB,
+`buildPlatform=13`) and found **no editor log and no `wayfinder-editor-failure.log`**.
 
-The *Explain the Unity result* job found the build job but could not download the raw job log. The
-old fetcher emitted only a generic `needs actions: read` notice; the workflow had already declared
-that permission, so this does not prove it was the cause. PR #12 merged immediately before the
-rerun, but GitHub re-ran the original SHA `8db1c304`, not the new merge commit `0edcb11`. The
-rerun therefore did not test the follow-up longer retries, preserved `gh` error details, or the
-ProjectSettings lookup guard. The Unity failure itself remains unknown (KI-041).
+Each *Explain the Unity result* job then reported the same refusal twelve times:
 
-This work also closes a remaining diagnostics gap from that run: if the editor log cannot be
-retrieved and only worker logs survive, the reporter now emits a clearly labeled workspace-log
-tail instead of treating “editor log missing” as a cause and suppressing all context. The manual
-APK workflow now pre-creates `error_logs/apk-build-errors.log`, preserves the raw job log and
-fetch transcript there, and uploads them with the diagnostic report in `Wayfinder-APK-error-logs`.
-The reporting code is regression-tested, but a fresh owner dispatch is still needed to verify it
-and to identify the Unity failure. No APK exists yet. Evidence and the API-derived run details:
-`Docs/evidence/cloud-build-2026-10-16/`.
+```
+Could not download the log of job 117718330570 after 12 attempts: the response contains terminal
+escape sequences; pass --allow-escape-sequences to output it anyway. Needs actions: read; …
+```
 
-Keep the Unity email/password secrets configured and dispatch the current branch
-`arena/474c9658-wayfinder` after these changes are available. Latest local checks are **164/164**
-headless C# tests (last run 16 Oct), **90/90** mocked Python build/pipeline tests and **22/22**
-mutations caught; content validation, formula checks and economy simulation are earlier checks.
-None substitute for the Unity/APK/device gates.
+That notice is the finding. `gh api` guards raw non-JSON bodies, a game-ci Unity job log is full of
+ANSI colour and `\r` redraws, and — confirmed in `cli/cli`'s `pkg/cmd/api/api.go` — the guard is
+`!isJSON && !opts.AllowEscapeSequences && bodyWriter != io.Discard`, so **redirecting stdout to a
+file does not bypass it**. Nothing was ever written, and the notice's `actions: read` hint was
+wrong: the permission was granted. This is why KI-041 survived five dispatches (D-036).
+
+**Fixed in this batch (on top of PR #15's `curl`-first download chain):** the fetcher sanitises
+CSI/OSC sequences and `\r` out of whatever it downloads — verbatim bytes are *not* parsable, because
+game-ci colourises the compile-error line itself; it writes a 400-line/400-char
+`error_logs/unity-job-log.txt.excerpt` for the artefact; it prints how many bytes it stripped, so a
+sanitiser that ever ate content would be visible; and its refusal notice now names the real cause
+instead of always blaming `actions: read`. The reporter gained crash / OOM-kill /
+fatal-error patterns (a killed editor throws no C# exception, so it leaves no breadcrumb and used
+to look like "nothing matched") and now states when the breadcrumb is *absent* — which is itself
+evidence that the cause is earlier than our entry point. The workflow's raw error-line grep covers
+crashes, OOM kills, licence and disk-space failures, is capped at 400 lines × 400 chars, and
+appends the tail of Unity's own output to `apk-build-errors.log`.
+
+**What is now known about the Unity failure, without a dispatch:** Unity really ran for minutes;
+shader-compiler logs exist, so packages resolved and import was under way (KI-036 narrows — this is
+not a UPM resolution failure); and `ProjectSetup.Setup` threw no C# exception, because its
+breadcrumb file does not exist. So the cause is earlier than our entry point (a compile error, a
+licence problem, an unresolvable `-executeMethod`) or the editor process was killed. The leading
+suspect is **KI-034**: the 1.20.1 Input System repin unblocked compilation, so these are the first
+runs in which Unity reaches `Wayfinder.Platform`, `Wayfinder.Presentation`, `Wayfinder.Editor` and
+the two test assemblies — never compiled by Unity, only parse-checked and stub-type-checked.
+
+**Also verified, deliberately not changed (KI-042):** `GET /actions/caches` returns exactly one
+entry (the game-ci CLI), and `Post Reuse Unity's import cache` is skipped in every run because
+`actions/cache@55cc834` declares `post-if: "success()"`. No warm `Library` is possible until a run
+succeeds once; caching a `Library` from a *failed* import would add an uncontrolled variable to a
+diagnosis that is not finished.
+
+**The Unity root cause is now identified from source, and no APK exists yet.** PR #15, merged while
+this batch was in flight, found that `ContentImporter.cs` uses `Newtonsoft.Json.Linq` while
+`Wayfinder.Editor.asmdef` did not reference `Unity.Newtonsoft.Json` — a CS0234 in an Editor-only
+assembly, which aborts batchmode before `-executeMethod` and so explains the missing breadcrumb.
+That is the shape KI-034 predicted; the reference is added but has **not** been compiled by Unity,
+and another error may hide behind it. Nothing in this batch has run in CI either: the fetch path is
+proven against faithful stubs and gh's own source, not against a live Unity log. One owner dispatch
+of current `main` now yields either an APK or `file=…,line=…,col=…` annotations.
+Evidence: `Docs/evidence/cloud-build-2026-10-19/`.
+
+Latest local checks are **91/91** diagnostics tests, **23/23** mocked pipeline tests, **19/19**
+mutations for this batch (and 22/22 for Batch H), a 20/20 dress rehearsal, and **164/164** headless
+C# tests (last run 16 Oct; the only C#-side change since is one added asmdef reference, PR #15). None substitute for the
+Unity/APK/device gates.
+
+## Batch 2026-10-19-I — Unity's log becomes reachable *and* parsable (BUILD-01; narrows KI-041/KI-034, opens KI-042)
+
+Requirements touched: **BUILD-01**, KI-006/033/034/036/039/041, new KI-042. Decision **D-036**.
+Merged with PR #15, which landed mid-batch with the same diagnosis and a `curl`-first download; the
+two halves are complementary (bytes vs. parsable bytes) and were integrated, not chosen between.
+Evidence: `Docs/evidence/cloud-build-2026-10-19/` (verbatim refusals from three runs, step timings,
+gh source extract, six-part dress rehearsal, 19/19 mutations).
+
+| Item | Before | After | Evidence |
+|---|---|---|---|
+| Downloading Unity's editor log | `gh api … > error_logs/unity-job-log.txt` refused the body and wrote nothing; 12 retries, then a notice blaming a permission that was granted | chain of `curl` → `gh api … --allow-escape-sequences` → plain `gh api` (PR #15), then sanitising, a 400-line `.excerpt`, and a printed byte delta (this batch) | `escape-sequence-refusals.txt`, `dress-rehearsal.log`, gh `pkg/cmd/api/api.go` |
+| A downloaded log that is verbatim but unparsable | colourised `…cs(112,44): ESC[31merror CS0234: …ESC[0m CR` does not match the reporter's `): error CS[0-9]+:` grep, so the compile error is not annotated — while the escape-free `Aborting batchmode` line still is, so the run *looks* diagnosed | every downloaded byte is sanitised before it is written, over both download paths; pinned by a test **and** its unsanitised control | `test_the_curl_download_is_sanitised_too`, `test_a_raw_unsanitised_log_would_miss_the_compile_error`, rehearsal part 5 |
+| Escape sequences in the log | would have split the greps (`error CS0117:`, `Aborting batchmode…`) and been rejected by the workflow-command parser | CSI/OSC/lone-`ESC`/`\r` stripped; the CSI intermediate-byte class is `[ -/]`, not `[ -\/]` (a backslash is not an escape in a POSIX bracket expression — it ate real text and is pinned by mutation P4) | `test_escape_sequences_and_carriage_returns_are_stripped_from_the_saved_log` |
+| A killed editor (crash/OOM) | indistinguishable from "diagnostics found nothing": no exception, so no breadcrumb, no compile error | named as `::error title=Unity hard stop::…` for `Crash!!!`, native stacktraces, `Fatal Error!`, OOM-killer/`Killed process`/cgroup-OOM, fatal signals, core dumps, `No space left on device`; benign `SIGUSR1`/`SIGINT` and "out of memory" retry lines are *not* reported | `test_native_crash_is_reported_as_the_cause`, `test_container_oom_kill_is_reported_as_the_cause`, `test_benign_signals_and_memory_retry_lines_are_not_reported_as_a_crash` |
+| An absent breadcrumb | said nothing | `::notice title=Wayfinder breadcrumb absent::` — no C# exception was thrown inside the build method, so the cause is earlier or the process died. Stated only where Unity ran, never in the diagnose job's fresh checkout | `test_a_failure_with_no_breadcrumb_says_our_own_code_did_not_throw`, `test_the_diagnose_job_workspace_is_not_told_a_breadcrumb_is_missing` |
+| The downloadable report | matching error lines only, unbounded | crash/OOM/licence/disk patterns added, capped at 400 lines × 400 chars, plus the last 400 lines of Unity's output from `unity-job-log.txt.excerpt` | workflow rows 3–4 in `Docs/BUILD_AND_RUN.md` |
+| The refusal notice's advice | always "Needs `actions: read`", even when the token had it — three investigations chased a non-problem | derived from the error text: an escape-sequence refusal names the `gh` version, a real 403/404/scope error mentions the token, anything else points at the Actions tab | `test_an_escape_sequence_refusal_does_not_blame_the_token`, `test_a_permission_error_is_still_reported_as_a_permission_problem` |
+| `Library` cache | assumed to warm up over runs | proven never to save: `post-if: "success()"` in the pinned `actions/cache`, one cache entry repo-wide. Left as-is (KI-042) | `step-timings.txt`, caches API |
+
+- **Verified here:** 91/91 diagnostics tests, 23/23 pipeline tests, 19/19 mutations for this batch
+  and 22/22 for Batch H (N10 retargeted at the moved guard), dress rehearsal 20/20 (base-commit
+  fetcher reproduces the refusal and writes nothing; current fetcher downloads over both paths,
+  sanitises, and the reporter emits a `file=…,line=…,col=…` annotation; an unsanitised control shows
+  what sanitising buys), both workflows parsed as YAML, all six multiline `run` blocks and five
+  scripts pass `bash -n`, `headless_cs.py syntax` → 30 files / 0 errors.
+- **Not verified:** anything in CI. No Unity run, no APK, no device result. The Unity log inside the
+  rehearsal stubs is **synthetic** — the real CS0234 text at the real `ContentImporter.cs(112,44)`
+  location, wrapped in the escapes a real job log carries. It reproduces the shape, not the capture.
+- **Also landed mid-batch (PR #15):** `Wayfinder.Editor.asmdef` now references `Unity.Newtonsoft.Json`,
+  which `ContentImporter.cs` uses via `Newtonsoft.Json.Linq` at six places. This is the concrete
+  compile error KI-034 predicted; it is read from source, not compiled by Unity.
+- **Next:** one owner dispatch of current `main`, then read the *Explain the Unity result*
+  annotations (`gh api repos/{owner}/{repo}/check-runs/{job-id}/annotations`) — either an APK, or
+  the next compile error in file/line/col.
 
 ## Batch 2026-10-16-H — The cloud build explains itself (BUILD-01; fixes KI-039, opens KI-040/041)
 
