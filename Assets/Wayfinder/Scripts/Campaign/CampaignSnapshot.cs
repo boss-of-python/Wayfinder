@@ -21,7 +21,14 @@ namespace Wayfinder.Campaign
         {
             var p = new SavePayload
             {
-                wallet = new WalletDto { salvage = s.Economy.BankedSalvage, escrowedSalvage = s.Economy.EscrowedSalvage },
+                wallet = new WalletDto
+                {
+                    salvage = s.Economy.BankedSalvage,
+                    // DEF-017: the hub-attributed share is persisted separately; the scalar keeps
+                    // holding the unattributed pool so an older build still reads a sane total.
+                    escrowedSalvage = s.Economy.EscrowedSalvage - HubEscrowTotal(s.Economy),
+                    escrowByHub = HubEscrowDtos(s.Economy)
+                },
                 activeVehicleId = s.ActiveVehicleId,
                 researchedUpgradeIds = ResearchedInTierOrder(s),
                 unlockedGarageIds = Sorted(s.Garage.UnlockedGarages),
@@ -80,7 +87,9 @@ namespace Wayfinder.Campaign
             {
                 revealedCellsBase64 = s.Discovery.RevealedCells.ToBase64(),
                 surveyedCellsBase64 = s.Discovery.SurveyedCells.ToBase64(),
-                countableMaskBase64 = string.Empty, // derived data (WorldBaker); never persisted
+                // DEF-008: persisted. It used to be dropped as "derived data", so every load
+                // reverted the coverage denominator to all 9,216 cells (ocean included).
+                countableMaskBase64 = s.Discovery.CountableMask.ToBase64(),
                 discoveredLandmarkIds = Sorted(s.Discovery.DiscoveredLandmarkIds),
                 collectedCacheIds = Sorted(s.Discovery.CollectedCacheIds),
                 relicIds = Sorted(s.Discovery.RelicIds),
@@ -121,11 +130,39 @@ namespace Wayfinder.Campaign
             return p;
         }
 
+        static List<EscrowEntryDto> HubEscrowDtos(EconomyService economy)
+        {
+            var entries = new List<EscrowEntryDto>();
+            foreach (var pair in economy.EscrowByHub)
+                if (!string.IsNullOrEmpty(pair.Key) && pair.Value > 0)
+                    entries.Add(new EscrowEntryDto { hubId = pair.Key, amount = pair.Value });
+            entries.Sort((a, b) => string.CompareOrdinal(a.hubId, b.hubId));
+            return entries;
+        }
+
+        /// <summary>Sum of the hub-attributed escrow (saved under wallet.escrowByHub).</summary>
+        static int HubEscrowTotal(EconomyService economy)
+        {
+            int total = 0;
+            foreach (var share in economy.EscrowByHub.Values) total += share;
+            return total;
+        }
+
+        static List<(string hubId, int amount)> HubEscrow(WalletDto wallet)
+        {
+            var entries = new List<(string hubId, int amount)>();
+            if (wallet?.escrowByHub == null) return entries;
+            foreach (var e in wallet.escrowByHub)
+                if (e != null && !string.IsNullOrEmpty(e.hubId) && e.amount > 0)
+                    entries.Add((e.hubId, e.amount));
+            return entries;
+        }
+
         public static void Apply(CampaignSession s, SavePayload p)
         {
             p = p ?? new SavePayload();
 
-            s.Economy.Restore(p.wallet?.salvage ?? 0, p.wallet?.escrowedSalvage ?? 0);
+            s.Economy.Restore(p.wallet?.salvage ?? 0, p.wallet?.escrowedSalvage ?? 0, HubEscrow(p.wallet));
 
             // Research first: it decides cargo slots/payload and tank size.
             var researched = new List<string>();

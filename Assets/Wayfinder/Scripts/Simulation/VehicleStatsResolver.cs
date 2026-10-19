@@ -61,7 +61,11 @@ namespace Wayfinder.Simulation
         {
             FuelCapacityLiters, PayloadKg, CargoSlots, PeakTorqueNm, PoweredFuelDrainFactor,
             SuspensionTravelM, GroundClearanceM, UnderbodyDamageFactor, WinchReachM, WinchForceCapN,
-            SignalRadiusM, DirtGravelGrip, MaxEngineTorqueFactor
+            SignalRadiusM, DirtGravelGrip, MaxEngineTorqueFactor,
+            /// <summary>Intake height above the chassis datum (§5.3): 0.55 m baseline, 0.85 m raised.</summary>
+            SafeWadingDepthM,
+            /// <summary>Feature flags (0 or 1). Research sets them; the resolver exposes them as bools.</summary>
+            LowRange, DiffLock, MudTires, SnowTires, RockTires
         }
 
         public enum Operation { Add, Multiply, Set }
@@ -72,13 +76,25 @@ namespace Wayfinder.Simulation
             public readonly Operation Operation;
             public readonly float Value;
             public readonly string SourceId;
+            /// <summary>
+            /// Precedence for <see cref="Operation.Set"/>: the highest rank wins, and list order
+            /// breaks ties. Research passes the tier, so a later tier always overrides an earlier
+            /// one no matter what order the modifiers were added in (DEF-002).
+            /// </summary>
+            public readonly int Rank;
 
             public StatModifier(Stat stat, Operation op, float value, string sourceId)
+                : this(stat, op, value, sourceId, 0)
+            {
+            }
+
+            public StatModifier(Stat stat, Operation op, float value, string sourceId, int rank)
             {
                 Stat = stat;
                 Operation = op;
                 Value = value;
                 SourceId = sourceId ?? string.Empty;
+                Rank = rank;
             }
         }
 
@@ -87,17 +103,35 @@ namespace Wayfinder.Simulation
         public void AddModifier(Stat stat, Operation op, float value, string sourceId) =>
             _modifiers.Add(new StatModifier(stat, op, value, sourceId));
 
+        /// <summary>Adds a modifier with an explicit precedence (higher rank overrides a lower one).</summary>
+        public void AddModifier(Stat stat, Operation op, float value, string sourceId, int rank) =>
+            _modifiers.Add(new StatModifier(stat, op, value, sourceId, rank));
+
         /// <summary>Adds all modifiers from a researched upgrade definition (Content/upgrades.json effects).</summary>
-        public void AddUpgradeEffects(IEnumerable<(Stat stat, Operation op, float value)> effects, string upgradeId)
+        public void AddUpgradeEffects(IEnumerable<(Stat stat, Operation op, float value)> effects, string upgradeId) =>
+            AddUpgradeEffects(effects, upgradeId, 0);
+
+        /// <summary>
+        /// Adds all modifiers from a researched upgrade definition at one precedence (its tier), so
+        /// composition is independent of the order the researched set happens to enumerate in.
+        /// </summary>
+        public void AddUpgradeEffects(IEnumerable<(Stat stat, Operation op, float value)> effects, string upgradeId, int rank)
         {
             if (effects == null) return;
             foreach (var e in effects)
-                AddModifier(e.stat, e.op, e.value, upgradeId);
+                AddModifier(e.stat, e.op, e.value, upgradeId, rank);
         }
 
         /// <summary>
         /// Composes modifiers per stat: Set replaces base, then Add accumulates, then Multiply
         /// accumulates; final = (base + Σadd) × Πmul (Set wins as new base).
+        /// <para>
+        /// Two or more <see cref="Operation.Set"/> modifiers on one stat are resolved by
+        /// <see cref="StatModifier.Rank"/> (highest wins; ties fall back to the order added), never by
+        /// the order a caller's collection happened to enumerate in. Before 2026-10-19 the last Set in
+        /// list order won and research was applied in <c>HashSet</c> order, so a fully-researched Scout
+        /// could resolve tier-4 values instead of tier-17 (DEF-002).
+        /// </para>
         /// </summary>
         public float Compose(Stat stat, float baseValue)
         {
@@ -105,6 +139,7 @@ namespace Wayfinder.Simulation
             float add = 0f;
             float mul = 1f;
             bool hasSet = false;
+            int setRank = int.MinValue;
             for (int i = 0; i < _modifiers.Count; i++)
             {
                 var m = _modifiers[i];
@@ -112,8 +147,12 @@ namespace Wayfinder.Simulation
                 switch (m.Operation)
                 {
                     case Operation.Set:
-                        setBase = m.Value;
-                        hasSet = true;
+                        if (!hasSet || m.Rank >= setRank)
+                        {
+                            setBase = m.Value;
+                            setRank = m.Rank;
+                            hasSet = true;
+                        }
                         break;
                     case Operation.Add:
                         add += m.Value;
@@ -162,9 +201,18 @@ namespace Wayfinder.Simulation
                 WinchForceCapN = Compose(Stat.WinchForceCapN, 0f),
                 SignalRadiusM = Compose(Stat.SignalRadiusM, 80f),
                 PoweredFuelDrainFactor = Compose(Stat.PoweredFuelDrainFactor, 1f),
-                MudTiresUnlocked = mudTiresResearched,
-                SnowTiresUnlocked = snowTiresResearched,
-                RockTiresUnlocked = rockTiresResearched
+                // §5.3: the intake height is the safe wading depth. Before 2026-10-19 this field was
+                // declared but never composed, so every puddle read as "above the intake" and stalled
+                // the engine (DEF-001). The baseline is the authored constant, and research raises it.
+                SafeWadingDepthM = Compose(Stat.SafeWadingDepthM, WaterCrossingModel.BaselineSafeWadingM),
+                LowRangeAvailable = Compose(Stat.LowRange, 0f) >= 0.5f,
+                DiffLockAvailable = Compose(Stat.DiffLock, 0f) >= 0.5f,
+                // Tire-set availability comes from research (§11.1 tiers 8 and 18), not from the
+                // caller. The parameters remain as an explicit override (content or a save that
+                // already unlocked a set) and are OR-ed, never the sole source (DEF-004).
+                MudTiresUnlocked = mudTiresResearched || Compose(Stat.MudTires, 0f) >= 0.5f,
+                SnowTiresUnlocked = snowTiresResearched || Compose(Stat.SnowTires, 0f) >= 0.5f,
+                RockTiresUnlocked = rockTiresResearched || Compose(Stat.RockTires, 0f) >= 0.5f
             };
 
             // Condition modifiers (§5.5): below 50 the stat degrades linearly to the floor at 0.

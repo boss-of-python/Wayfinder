@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Wayfinder content validation (headless).
 
-Mirrors Assets/Wayfinder/Scripts/Editor/ContentValidators.cs so it can run in CI or any
-environment without Unity. Exit code 0 = pass, 1 = validation errors.
+**This file is the authoritative content validator.** It runs in CI on every push. The in-editor
+mirror lives in `Assets/Wayfinder/Scripts/Editor/ContentImporter.cs` (class `ContentValidators`,
+inside that file — there is no `Editor/ContentValidators.cs`; an earlier version of this docstring
+pointed at one, and the drift went unnoticed because nothing checked the path (DEF-016)). Keep the
+two in step: the Python side is what gates a merge.
+
+Exit code 0 = pass, 1 = validation errors.
 
 Checks (§16.6, CONTENT-01, UPG-01, QUEST-01, ITEM-01, PROD-01):
   * exact release-scope content counts and per-biome splits
@@ -425,8 +430,62 @@ def check_dependency_scan():
                         err(f"PROD-01: external URL '{match}' in {name}:{i} — remote endpoints are forbidden")
 
 
+def check_objective_reachability():
+    """Every mission objective target must resolve to content the game can place (DEF-003/DEF-016).
+
+    Missions Q05-Q20 were authored against sites (`relay.canyon`, `junction.city.01`, …) that no
+    catalog defined, and nothing checked, so 16 of 20 missions were uncompletable while the status
+    document claimed M4 complete. Those sites now live in `sites.json`; this rule is what stops the
+    next mission from being authored the same way.
+    """
+    known = set()
+    for name in ("landmarks.json", "caches.json", "garages.json", "camps.json", "items.json",
+                 "sites.json", "contracts.json"):
+        for row in load(name):
+            if row.get("id"):
+                known.add(row["id"])
+
+    slice_ = load("vertical_slice.json")
+    for key in ("campSockets", "inspectTargets", "questItemSites", "relays", "checkpointRoutes", "landmarks"):
+        for row in slice_.get(key, []):
+            if row.get("id"):
+                known.add(row["id"])
+    for cache_id in slice_.get("caches", []):
+        known.add(cache_id)
+
+    for mission in load("missions.json"):
+        code = mission.get("displayCode", mission.get("id"))
+        for objective in mission.get("objectives", []):
+            target = objective.get("targetId")
+            kind = objective.get("type")
+            # RevealMapPercent carries a percentage, not a place.
+            if not target or kind == "RevealMapPercent" or target == "map":
+                continue
+            if target not in known:
+                err(f"mission {code}: objective {kind} targets '{target}', which no catalog defines")
+
+    # Every site outside the slice must be placeable: inside the world and with a usable radius.
+    for site in load("sites.json"):
+        pos = site.get("positionHint") or site.get("position") or {}
+        x, z = pos.get("x"), pos.get("z")
+        if x is None or z is None:
+            err(f"site {site['id']}: no position")
+            continue
+        if not (0 <= x < 6144 and 0 <= z < 6144):
+            err(f"site {site['id']}: position ({x}, {z}) is outside the 6144 m world")
+        if (site.get("radiusMeters") or 0) <= 0:
+            err(f"site {site['id']}: radiusMeters must be positive")
+        if site.get("kind") == "route":
+            checkpoints = site.get("checkpoints") or []
+            if len(checkpoints) < 2:
+                err(f"site {site['id']}: a checkpoint route needs at least two checkpoints")
+        if site.get("kind") not in ("inspect", "relay", "questItem", "delivery", "visit", "route", "campSocket"):
+            err(f"site {site['id']}: unknown kind '{site.get('kind')}'")
+
+
 def main():
     check_counts()
+    check_objective_reachability()
     check_upgrades()
     check_missions()
     check_items_recipes()

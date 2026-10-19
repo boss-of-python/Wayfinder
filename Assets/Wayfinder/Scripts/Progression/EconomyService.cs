@@ -12,7 +12,32 @@ namespace Wayfinder.Progression
     public sealed class EconomyService
     {
         public int BankedSalvage { get; private set; }
-        public int EscrowedSalvage { get; private set; } // pending banking (mapping rewards, mission escrow)
+
+        // DEF-017: escrow used to be one global counter, so the first bank of any kind — a camp
+        // deposit with an empty cargo, say — swept every pending reward, including rewards earned in
+        // a different region for a different hub (§8.4/§12.2). Escrow is now keyed by the hub that
+        // must receive it, plus an unattributed pool for rewards earned in the field (mapping,
+        // landmark discoveries, contracts) which stay bankable at any hub by design.
+        readonly Dictionary<string, int> _escrowByHub = new Dictionary<string, int>(StringComparer.Ordinal);
+        int _unattributedEscrow;
+
+        /// <summary>Total pending Salvage: the unattributed pool plus every hub's share.</summary>
+        public int EscrowedSalvage
+        {
+            get
+            {
+                int total = _unattributedEscrow;
+                foreach (var share in _escrowByHub.Values) total += share;
+                return total;
+            }
+        }
+
+        /// <summary>Pending Salvage attributed to one hub (0 when none).</summary>
+        public int EscrowFor(string hubId) =>
+            string.IsNullOrEmpty(hubId) ? 0 : (_escrowByHub.TryGetValue(hubId, out int amount) ? amount : 0);
+
+        /// <summary>Hub-attributed escrow, for saving and for the HUD.</summary>
+        public IReadOnlyDictionary<string, int> EscrowByHub => _escrowByHub;
 
         public CommandResult TrySpend(int amount, TransactionId transactionId)
         {
@@ -29,18 +54,35 @@ namespace Wayfinder.Progression
             BankedSalvage += amount;
         }
 
-        /// <summary>Escrow holds rewards until garage/camp banking (§2.3, §8.4).</summary>
-        public void Escrow(int amount)
+        /// <summary>Escrow holds rewards until garage/camp banking (§2.3, §8.4). No hub = bankable anywhere.</summary>
+        public void Escrow(int amount) => Escrow(amount, null);
+
+        /// <summary>Escrows a reward that only <paramref name="hubId"/> may bank (DEF-017).</summary>
+        public void Escrow(int amount, string hubId)
         {
             if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
-            EscrowedSalvage += amount;
+            if (string.IsNullOrEmpty(hubId)) { _unattributedEscrow += amount; return; }
+            _escrowByHub.TryGetValue(hubId, out int current);
+            _escrowByHub[hubId] = current + amount;
         }
 
-        /// <summary>Banks escrow → wallet. Idempotent via TransactionService wrapper.</summary>
-        public int BankEscrow()
+        /// <summary>Banks the unattributed pool only (no hub context).</summary>
+        public int BankEscrow() => BankEscrow(null);
+
+        /// <summary>
+        /// Banks escrow → wallet: everything unattributed, plus what is attributed to
+        /// <paramref name="hubId"/>. Another hub's escrow stays pending (DEF-017).
+        /// Idempotent via the TransactionService wrapper.
+        /// </summary>
+        public int BankEscrow(string hubId)
         {
-            int banked = EscrowedSalvage;
-            EscrowedSalvage = 0;
+            int banked = _unattributedEscrow;
+            _unattributedEscrow = 0;
+            if (!string.IsNullOrEmpty(hubId) && _escrowByHub.TryGetValue(hubId, out int share))
+            {
+                banked += share;
+                _escrowByHub.Remove(hubId);
+            }
             BankedSalvage += banked;
             return banked;
         }
@@ -59,10 +101,14 @@ namespace Wayfinder.Progression
             return CommandResult.Ok();
         }
 
-        public void Restore(int banked, int escrow)
+        public void Restore(int banked, int escrow, IEnumerable<(string hubId, int amount)> escrowByHub = null)
         {
             BankedSalvage = Math.Max(0, banked);
-            EscrowedSalvage = Math.Max(0, escrow);
+            _unattributedEscrow = Math.Max(0, escrow);
+            _escrowByHub.Clear();
+            if (escrowByHub != null)
+                foreach (var (hubId, amount) in escrowByHub)
+                    if (!string.IsNullOrEmpty(hubId) && amount > 0) _escrowByHub[hubId] = amount;
         }
     }
 
@@ -72,6 +118,17 @@ namespace Wayfinder.Progression
         public readonly string PickupId;
         public readonly int SalvageUnits;
         public readonly IReadOnlyList<ItemStack> Stacks;
+        /// <summary>
+        /// Authored material ids that are not in the item catalog. Empty for valid content.
+        /// <para>
+        /// Ids were previously trusted: <c>InventoryService.Add</c> calls <c>ItemCatalog.Get</c>,
+        /// which throws <c>KeyNotFoundException</c> for an unknown id, and the exception escaped
+        /// <c>TransactionService.Execute</c> before its rollback ran — so one typo in caches.json
+        /// threw mid-frame and left the transaction's checkpoint un-restored (DEF-009). Unknown ids
+        /// are now reported here and collection fails with <c>FailureReason.ContentMissing</c>.
+        /// </para>
+        /// </summary>
+        public readonly IReadOnlyList<string> UnknownItemIds;
 
         public PickupContents(string pickupId, int salvageUnits, IEnumerable<(string itemId, int quantity)> materials)
         {
@@ -80,12 +137,18 @@ namespace Wayfinder.Progression
             PickupId = pickupId;
             SalvageUnits = salvageUnits;
             var stacks = new List<ItemStack>();
+            var unknown = new List<string>();
             if (salvageUnits > 0)
                 stacks.Add(new ItemStack(new ContentId(ItemCatalog.SalvageBundle), salvageUnits));
             if (materials != null)
                 foreach (var (itemId, quantity) in materials)
-                    if (quantity > 0) stacks.Add(new ItemStack(new ContentId(itemId), quantity));
+                {
+                    if (quantity <= 0) continue;
+                    if (!ItemCatalog.TryGet(itemId, out _)) { unknown.Add(itemId); continue; }
+                    stacks.Add(new ItemStack(new ContentId(itemId), quantity));
+                }
             Stacks = stacks;
+            UnknownItemIds = unknown;
         }
     }
 
@@ -124,6 +187,8 @@ namespace Wayfinder.Progression
         public DiscoveryService Discovery;
         public GarageService Garage;
         public IPickupCatalog Pickups;
+        /// <summary>Contract state (§9.3). Required by AcceptContract/CompleteContract (DEF-007).</summary>
+        public ContractService Contracts;
     }
 
     /// <summary>
@@ -189,14 +254,26 @@ namespace Wayfinder.Progression
                 case CraftItem craft:
                     result = CraftingService.TryCraft(_inventory, _economy, craft.RecipeId, craft.MaterialSource,
                         craft.OutputDestination);
+                    if (result.Success)
+                        committed = new ItemCrafted(craft.TransactionId, new ContentId(craft.RecipeId.Value));
                     break;
                 case TransferItems transfer:
                     result = _inventory.Transfer(transfer.From, transfer.To,
                         new ItemStack(transfer.ItemId, transfer.Quantity));
+                    if (result.Success)
+                        committed = new ItemsTransferred(transfer.TransactionId, transfer.From, transfer.To,
+                            transfer.ItemId, transfer.Quantity);
                     break;
                 case SellItems sell:
                     result = _inventory.Remove(sell.Source, sell.ItemId, sell.Quantity);
-                    if (result.Success) result = _economy.Sell(sell.ItemId.Value, sell.Quantity);
+                    if (result.Success)
+                    {
+                        int walletBefore = _economy.BankedSalvage;
+                        result = _economy.Sell(sell.ItemId.Value, sell.Quantity);
+                        if (result.Success)
+                            committed = new ItemsSold(sell.TransactionId, sell.ItemId, sell.Quantity,
+                                _economy.BankedSalvage - walletBefore);
+                    }
                     break;
                 case UseItem use:
                     // §5.6 "Field supplies: consume one item on successful use". The caller validated
@@ -205,11 +282,22 @@ namespace Wayfinder.Progression
                              ItemCatalog.CategoryOf(use.ItemId.Value) == ItemCategory.Consumable
                         ? _inventory.Remove(use.Source, use.ItemId, 1)
                         : CommandResult.Fail(FailureReason.ItemNotUsableHere, $"'{use.ItemId.Value}' is not a field supply");
+                    if (result.Success) committed = new ItemUsed(use.TransactionId, use.ItemId, use.Source);
+                    break;
+                case UnlockGarage unlock:
+                    result = ExecuteUnlockGarage(unlock, out committed);
+                    break;
+                case AcceptContract accept:
+                    result = ExecuteAcceptContract(accept, out committed);
+                    break;
+                case CompleteContract complete:
+                    result = ExecuteCompleteContract(complete, out committed);
                     break;
                 case RequestRecovery _:
                     // Recovery itself is always available (REC-01); the campaign session applies
                     // the rescue rules and persists them. Here it is an event-only marker.
                     result = CommandResult.Ok();
+                    committed = new RecoveryRequested(command.TransactionId);
                     break;
                 default:
                     return CommandResult.Fail(FailureReason.InvalidTarget, $"unhandled command {command.GetType().Name}");
@@ -234,22 +322,99 @@ namespace Wayfinder.Progression
                 return CommandResult.Fail(FailureReason.ContentMissing, "pickup catalog not configured");
             if (!_deps.Pickups.TryGetContents(pickupId, out var contents))
                 return CommandResult.Fail(FailureReason.ContentMissing, $"unknown pickup '{pickupId}'");
-            // Double-collect guard lives in the same commit as the grant (QA case 2).
-            if (_deps.Discovery != null && _deps.Discovery.IsCacheCollected(pickupId))
+            // DEF-009: an unresolvable material id is a content error, not an exception mid-frame.
+            if (contents.UnknownItemIds.Count > 0)
+                return CommandResult.Fail(FailureReason.ContentMissing,
+                    $"pickup '{pickupId}' references unknown item id(s): {string.Join(", ", contents.UnknownItemIds)}");
+            // DEF-010: the invariant is a required collaborator, not a nullable short-circuit. Until
+            // 2026-10-19 the guard was `if (_deps.Discovery != null && …)`, so a composition root
+            // built without Discovery could collect the same cache once per transaction id, and the
+            // bool result of TryMarkCacheCollected was discarded after the grant had already happened.
+            if (_deps.Discovery == null)
+                return CommandResult.Fail(FailureReason.ContentMissing, "discovery service not configured");
+            if (_deps.Discovery.IsCacheCollected(pickupId))
                 return CommandResult.Fail(FailureReason.AlreadyCollected, pickupId);
 
+            var checkpoint = _inventory.Checkpoint();
             // All stacks fit or nothing is added and the cache stays uncollected (QA case 3).
             var add = _inventory.AddAll(cmd.Destination, contents.Stacks);
             if (!add.Success) return add;
-            _deps.Discovery?.TryMarkCacheCollected(pickupId);
+            if (!_deps.Discovery.TryMarkCacheCollected(pickupId))
+            {
+                _inventory.Rollback(checkpoint);
+                return CommandResult.Fail(FailureReason.AlreadyCollected, pickupId);
+            }
             committed = new PickupCollected(cmd.TransactionId, cmd.PickupId, contents.SalvageUnits);
+            return CommandResult.Ok();
+        }
+
+        /// <summary>
+        /// Garage unlocking (DEF-003). Nothing called <see cref="GarageService.UnlockGarage"/>, so
+        /// only garage.home was ever unlocked and Q05's VisitVolume(garage.canyon) — reported only by
+        /// a successful extraction there — could never complete. Unlocking is free (§11.4) and runs
+        /// atomically with everything else, so a failed commit cannot leave a garage unlocked.
+        /// </summary>
+        CommandResult ExecuteUnlockGarage(UnlockGarage cmd, out GameEvent committed)
+        {
+            committed = null;
+            if (_deps.Garage == null)
+                return CommandResult.Fail(FailureReason.InternalError, "garage service not configured");
+            string garageId = cmd.GarageId.Value;
+            if (!GarageService.IsKnownGarage(garageId))
+                return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown garage '{garageId}'");
+            if (_deps.Garage.IsGarageUnlocked(garageId))
+                return CommandResult.Fail(FailureReason.AlreadyApplied, "garage already unlocked");
+            _deps.Garage.UnlockGarage(garageId);
+            committed = new GarageUnlocked(cmd.TransactionId, cmd.GarageId);
+            return CommandResult.Ok();
+        }
+
+        /// <summary>Contract accept (DEF-007) — state only; no reward moves yet.</summary>
+        CommandResult ExecuteAcceptContract(AcceptContract cmd, out GameEvent committed)
+        {
+            committed = null;
+            if (_deps.Contracts == null)
+                return CommandResult.Fail(FailureReason.InternalError, "contract service not configured");
+            var result = _deps.Contracts.Accept(cmd.ContractId.Value);
+            if (!result.Success) return result;
+            committed = new ContractAccepted(cmd.TransactionId, cmd.ContractId);
+            return CommandResult.Ok();
+        }
+
+        /// <summary>
+        /// Contract completion (DEF-007). The reward key is claimed and the reward *escrowed* — not
+        /// granted straight to the wallet — so it is banked with the next extraction like every other
+        /// pending reward, and a replay cannot pay twice.
+        /// </summary>
+        CommandResult ExecuteCompleteContract(CompleteContract cmd, out GameEvent committed)
+        {
+            committed = null;
+            if (_deps.Contracts == null)
+                return CommandResult.Fail(FailureReason.InternalError, "contract service not configured");
+            if (_deps.Discovery == null)
+                return CommandResult.Fail(FailureReason.InternalError, "reward ledger not configured");
+            string contractId = cmd.ContractId.Value;
+            if (!_deps.Contracts.IsAccepted(contractId))
+                return CommandResult.Fail(FailureReason.MissionNotAccepted, $"contract '{contractId}' is not accepted");
+            if (string.IsNullOrEmpty(cmd.RewardKey))
+                return CommandResult.Fail(FailureReason.InvalidTarget, "contract reward key required");
+            if (!_deps.Discovery.RewardLedger.TryClaim(cmd.RewardKey))
+            {
+                // Already paid: mark it done so the board stops offering it, but pay nothing.
+                _deps.Contracts.MarkCompleted(contractId);
+                return CommandResult.Fail(FailureReason.AlreadyApplied, contractId);
+            }
+            _economy.Escrow(cmd.RewardSalvage);
+            _deps.Contracts.MarkCompleted(contractId);
+            committed = new ContractCompleted(cmd.TransactionId, cmd.ContractId, cmd.RewardSalvage);
             return CommandResult.Ok();
         }
 
         CommandResult ExecuteBank(BankCargo cmd, out GameEvent committed)
         {
             committed = null;
-            var settlement = CargoSettlement.Settle(_inventory, _economy, cmd.CargoSource, cmd.MaterialDestination);
+            var settlement = CargoSettlement.Settle(_inventory, _economy, cmd.CargoSource, cmd.MaterialDestination,
+                cmd.HubId.Value);
             if (!settlement.Result.Success) return settlement.Result;
             committed = new ExpeditionBanked(cmd.TransactionId, cmd.TransactionId.Value,
                 settlement.SalvageUnitsBanked + settlement.EscrowBanked, 0);
@@ -337,7 +502,15 @@ namespace Wayfinder.Progression
         }
 
         public static Outcome Settle(InventoryService inventory, EconomyService economy,
-            InventoryId cargo, InventoryId materialDestination)
+            InventoryId cargo, InventoryId materialDestination) =>
+            Settle(inventory, economy, cargo, materialDestination, null);
+
+        /// <summary>
+        /// Banks cargo Salvage at a hub. `hubId` selects which hub-attributed escrow is released
+        /// (DEF-017); a null hub banks only the unattributed pool.
+        /// </summary>
+        public static Outcome Settle(InventoryService inventory, EconomyService economy,
+            InventoryId cargo, InventoryId materialDestination, string hubId)
         {
             if (inventory == null) throw new ArgumentNullException(nameof(inventory));
             if (economy == null) throw new ArgumentNullException(nameof(economy));
@@ -377,7 +550,7 @@ namespace Wayfinder.Progression
                 }
             }
 
-            int escrow = economy.BankEscrow();
+            int escrow = economy.BankEscrow(hubId);
             economy.Grant(units); // 1 salvage_bundle unit banks into 1 Salvage (§10.3)
             return new Outcome(CommandResult.Ok(), units, escrow, stored, left);
         }

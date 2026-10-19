@@ -56,7 +56,10 @@ namespace Wayfinder.Progression
             ["quest.brace_manifest"] = Def("quest.brace_manifest", "item.brace_manifest.name", 1, 0f, true, false, 0),
             ["quest.archive_case"] = Def("quest.archive_case", "item.archive_case.name", 1, 10.0f, false, false, 0),
             ["quest.cable_spool"] = Def("quest.cable_spool", "item.cable_spool.name", 1, 35.0f, false, false, 0),
-            ["quest.stabilizer_plates"] = Def("quest.stabilizer_plates", "item.stabilizer_plates.name", 1, 40.0f, false, false, 0)
+            ["quest.stabilizer_plates"] = Def("quest.stabilizer_plates", "item.stabilizer_plates.name", 1, 40.0f, false, false, 0),
+            // Q14 reads the pump diagram. It was referenced by missions.json but existed in no
+            // catalog, so the mission's CollectQuestItem could never complete (DEF-003).
+            ["document.pump_diagram"] = Def("document.pump_diagram", "item.pump_diagram.name", 1, 1.0f, false, false, 0)
         };
 
         static ItemDefinition Def(string id, string nameKey, int stack, float mass, bool ledger, bool sellable, int price) =>
@@ -163,11 +166,19 @@ namespace Wayfinder.Progression
             return m;
         }
 
-        public int QuantityOf(InventoryId id, string itemId)
+        public int QuantityOf(InventoryId id, string itemId) => QuantityOf(id, itemId, string.Empty);
+
+        /// <summary>Quantity of one item, optionally limited to one mission instance (DEF-021).</summary>
+        public int QuantityOf(InventoryId id, string itemId, string missionInstanceId)
         {
+            string filter = missionInstanceId ?? string.Empty;
             int q = 0;
             foreach (var s in Stacks(id))
-                if (s.ItemId.Value == itemId) q += s.Quantity;
+            {
+                if (s.ItemId.Value != itemId) continue;
+                if (filter.Length > 0 && !string.Equals(s.MissionInstanceId, filter, StringComparison.Ordinal)) continue;
+                q += s.Quantity;
+            }
             return q;
         }
 
@@ -273,12 +284,25 @@ namespace Wayfinder.Progression
         /// removed what it found and then reported "insufficient quantity", so a failed
         /// remove/transfer silently destroyed items (KI-019).
         /// </summary>
-        public CommandResult Remove(InventoryId target, ContentId itemId, int quantity)
+        public CommandResult Remove(InventoryId target, ContentId itemId, int quantity) =>
+            Remove(target, itemId, quantity, null);
+
+        /// <summary>
+        /// Removes exactly <paramref name="quantity"/> units or nothing.
+        /// <para>
+        /// <paramref name="missionInstanceId"/> restricts the removal to stacks bound to one mission
+        /// instance (empty or null = any stack). Quest items are per-instance: two missions can grant
+        /// the same item id, and until 2026-10-19 a removal took from whichever stack it found first,
+        /// so turning in mission B could consume mission A's item (DEF-021).
+        /// </para>
+        /// </summary>
+        public CommandResult Remove(InventoryId target, ContentId itemId, int quantity, string missionInstanceId)
         {
+            string filter = missionInstanceId ?? string.Empty;
             if (quantity <= 0) return CommandResult.Fail(FailureReason.InvalidTarget);
             if (!_stacks.TryGetValue(target, out var list))
                 return CommandResult.Fail(FailureReason.ItemNotFound);
-            int available = QuantityOf(target, itemId.Value);
+            int available = QuantityOf(target, itemId.Value, filter);
             if (available < quantity)
                 return CommandResult.Fail(FailureReason.ItemNotFound, $"insufficient quantity: have {available}, need {quantity}");
 
@@ -287,6 +311,7 @@ namespace Wayfinder.Progression
             {
                 var s = list[i];
                 if (s.ItemId.Value != itemId.Value) continue;
+                if (filter.Length > 0 && !string.Equals(s.MissionInstanceId, filter, StringComparison.Ordinal)) continue;
                 int take = Math.Min(s.Quantity, remaining);
                 remaining -= take;
                 if (s.Quantity - take <= 0) list.RemoveAt(i--);

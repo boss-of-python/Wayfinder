@@ -111,14 +111,76 @@ namespace Wayfinder.Core
             return Convert.ToBase64String(bytes);
         }
 
+        /// <summary>
+        /// Parses a saved grid. Never throws: a corrupt or short payload is reported through
+        /// <paramref name="error"/> and whatever prefix was readable is kept, so a save made by an
+        /// older build still loads instead of throwing out of the load path.
+        /// <para>
+        /// Until 2026-10-19 <c>FromBase64</c> silently truncated a short payload (leaving the tail of
+        /// the grid as zeros — a partially revealed map became "not revealed") and let
+        /// <c>Convert.FromBase64String</c>'s <c>FormatException</c> escape into
+        /// <c>SaveService</c>, which caught only IO and access exceptions (DEF-020).
+        /// </para>
+        /// </summary>
+        public static bool TryFromBase64(int width, int height, string base64, out BitGrid grid, out string error)
+        {
+            grid = new BitGrid(width, height);
+            error = null;
+            if (string.IsNullOrEmpty(base64)) return true;
+
+            byte[] bytes;
+            try
+            {
+                bytes = Convert.FromBase64String(base64);
+            }
+            catch (FormatException ex)
+            {
+                error = "malformed base64 grid payload: " + ex.Message;
+                return false;
+            }
+
+            int expected = grid._words.Length * 8;
+            if (bytes.Length != expected)
+            {
+                error = $"grid payload is {bytes.Length} byte(s), expected {expected} for {width}x{height}";
+                int copy = Math.Min(bytes.Length, expected);
+                Buffer.BlockCopy(bytes, 0, grid._words, 0, copy);
+                return false;
+            }
+            Buffer.BlockCopy(bytes, 0, grid._words, 0, expected);
+            return true;
+        }
+
+        /// <summary>Parses a saved grid, ignoring a malformed/short payload (see <see cref="TryFromBase64"/>).</summary>
         public static BitGrid FromBase64(int width, int height, string base64)
         {
-            var grid = new BitGrid(width, height);
-            if (string.IsNullOrEmpty(base64)) return grid;
-            byte[] bytes = Convert.FromBase64String(base64);
-            int copy = Math.Min(bytes.Length, grid._words.Length * 8);
-            Buffer.BlockCopy(bytes, 0, grid._words, 0, copy);
+            TryFromBase64(width, height, base64, out var grid, out _);
             return grid;
+        }
+
+        /// <summary>Value equality: two grids are equal when they are the same size and every bit matches.</summary>
+        public bool Equals(BitGrid other)
+        {
+            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            if (Width != other.Width || Height != other.Height) return false;
+            for (int i = 0; i < _words.Length; i++)
+                if (_words[i] != other._words[i]) return false;
+            return true;
+        }
+
+        public override bool Equals(object obj) => Equals(obj as BitGrid);
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + Width;
+                hash = hash * 31 + Height;
+                for (int i = 0; i < _words.Length; i++) hash = hash * 31 + (int)_words[i];
+                return hash;
+            }
         }
 
         public BitGrid Clone()

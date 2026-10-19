@@ -1,0 +1,96 @@
+probe compile: exit 0, 0 error(s), 0 warning(s)
+NUnitLite 3.13.3 (.NET Standard 2.0)
+Copyright (c) 2022 Charlie Poole, Rob Prouse
+
+Runtime Environment
+   OS Version: Linux 6.1.158+ #1 SMP PREEMPT_DYNAMIC Mon May 11 18:48:24 UTC 2026
+  CLR Version: 3.1.23
+
+Test Files
+    /tmp/wayfinder-bug-probe-xsetoguk/BugProbe.dll
+
+Test Discovery
+  Start time: 2026-10-19 08:07:16Z
+    End time: 2026-10-19 08:07:16Z
+    Duration: 0.028 seconds
+
+Errors, Failures and Warnings
+
+1) Failed : Wayfinder.Review.ReviewProbeTests.DEF01_LowRangeAndDiffLockFlagsAreNeverSet
+  tier 7 'lowRange' has no effect: nothing assigns this flag
+  Expected: False
+  But was:  True
+   at Wayfinder.Review.ReviewProbeTests.DEF01_LowRangeAndDiffLockFlagsAreNeverSet()
+
+2) Failed : Wayfinder.Review.ReviewProbeTests.DEF01_VehicleStallsIn25cmOfWaterBecauseIntakeHeightIsZero
+  0.25 m of water (well under the 0.55 m baseline) stalls the engine
+  Expected: True
+  But was:  False
+   at Wayfinder.Review.ReviewProbeTests.DEF01_VehicleStallsIn25cmOfWaterBecauseIntakeHeightIsZero()
+
+3) Failed : Wayfinder.Review.ReviewProbeTests.DEF01_WadingDepthIsAlwaysZero
+  EffectiveVehicleStats.SafeWadingDepthM is never assigned by Resolve(); it stays 0 m even with every research tier applied, while §5.3 documents 0.55 m baseline / 0.85 m upgraded.
+  Expected: 0.0f
+  But was:  0.850000024f
+   at Wayfinder.Review.ReviewProbeTests.DEF01_WadingDepthIsAlwaysZero()
+
+4) Failed : Wayfinder.Review.ReviewProbeTests.DEF02_ResearchApplyOrderIsHashSetOrderNotTierOrder
+  reverse the iteration order and all 20 researched tiers resolve to the TIER 4 rack (14 slots, and 30 L tank), i.e. buying later upgrades can silently make the vehicle worse
+  Expected: 14
+  But was:  20
+   at Wayfinder.Review.ReviewProbeTests.DEF02_ResearchApplyOrderIsHashSetOrderNotTierOrder()
+
+5) Failed : Wayfinder.Review.ReviewProbeTests.DEF04_DoubleCollectGuardDependsOnDiscoveryBeingWired
+  Expected: True
+  But was:  False
+   at Wayfinder.Review.ReviewProbeTests.DEF04_DoubleCollectGuardDependsOnDiscoveryBeingWired()
+
+6) Failed : Wayfinder.Review.ReviewProbeTests.DEF04_UnknownItemIdInPickupContentThrowsOutOfTransactionExecute
+  an unknown item id inside authored pickup content raises KeyNotFoundException from InventoryService.Add instead of a typed ContentMissing
+  Expected: <System.Collections.Generic.KeyNotFoundException>
+  But was:  null
+   at Wayfinder.Review.ReviewProbeTests.DEF04_UnknownItemIdInPickupContentThrowsOutOfTransactionExecute()
+
+7) Failed : Wayfinder.Review.ReviewProbeTests.DEF05_OnlySomeCommandsEmitCommittedEvents
+  CraftItem/TransferItems/SellItems/UseItem commit with `committed = null`: no GameEvent is raised
+  Expected: 0
+  But was:  1
+   at Wayfinder.Review.ReviewProbeTests.DEF05_OnlySomeCommandsEmitCommittedEvents()
+
+8) Failed : Wayfinder.Review.ReviewProbeTests.DEF06_NonHomeGaragesAreNeverUnlockedAndFullCampaignCannotProgress
+  extraction at a locked garage is refused
+  Expected: False
+  But was:  True
+   at Wayfinder.Review.ReviewProbeTests.DEF06_NonHomeGaragesAreNeverUnlockedAndFullCampaignCannotProgress()
+
+9) Failed : Wayfinder.Review.ReviewProbeTests.DEF07_BitGridFromBase64DoesNotValidatePayload
+  malformed payloads throw FormatException — a type SaveService.TryRead does not catch
+  Expected: <System.FormatException>
+  But was:  null
+   at Wayfinder.Review.ReviewProbeTests.DEF07_BitGridFromBase64DoesNotValidatePayload()
+
+10) Failed : Wayfinder.Review.ReviewProbeTests.DEF09_ChunkFailedTransitionLosesItsFailureDetail
+  FailureDetail is assigned from `error`, which is only ever set on the rejected path
+  Expected string length 0 but was 27. Strings differ at index 0.
+  Expected: <string.Empty>
+  But was:  "failed (no detail supplied)"
+  -----------^
+   at Wayfinder.Review.ReviewProbeTests.DEF09_ChunkFailedTransitionLosesItsFailureDetail()
+
+Run Settings
+    Number of Test Workers: 1
+    Work Directory: /home/user/Wayfinder
+    Internal Trace: Off
+
+Test Run Summary
+  Overall result: Failed
+  Test Count: 15, Passed: 5, Failed: 10, Warnings: 0, Inconclusive: 0, Skipped: 0
+    Failed Tests - Failures: 10, Errors: 0, Invalid: 0
+  Start time: 2026-10-19 08:07:16Z
+    End time: 2026-10-19 08:07:24Z
+    Duration: 8.147 seconds
+
+Results (nunit3) saved as /tmp/wayfinder-bug-probe-xsetoguk/BugProbe.xml
+
+result xml head: <test-run id="2" name="BugProbe.dll" fullname="/tmp/wayfinder-bug-probe-xsetoguk/BugProbe.dll" testcasecount="15" result="Failed" start-time="2026-10-19T08:07:16.3728644Z" end-time="2026-10-19T08:07:24.5194708Z" duration="8.146570" total="15" passed="5" failed="10" inconclusive="0" skipped="0" warnings="0" asserts="33" random-seed="1597356074">
+probe workdir: /tmp/wayfinder-bug-probe-xsetoguk

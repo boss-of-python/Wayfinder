@@ -129,7 +129,13 @@
       "upgrade.scout.06.tank1"
     ],
     "requiredMission": "Q05",
-    "effects": [],
+    "effects": [
+      {
+        "stat": "lowRange",
+        "operation": "Set",
+        "value": 1
+      }
+    ],
     "nameKey": "upgrade.lowRange.name",
     "descriptionKey": "upgrade.lowRange.description",
     "result": "Optional 1.8x low range; 25 km/h cap"
@@ -142,7 +148,13 @@
       "upgrade.scout.07.lowRange"
     ],
     "requiredMission": "Q06",
-    "effects": [],
+    "effects": [
+      {
+        "stat": "mudTires",
+        "operation": "Set",
+        "value": 1
+      }
+    ],
     "nameKey": "upgrade.mudTires.name",
     "descriptionKey": "upgrade.mudTires.description",
     "result": "Unlock swappable mud tires"
@@ -222,7 +234,13 @@
       "upgrade.scout.11.reinforcedRack"
     ],
     "requiredMission": "Q10",
-    "effects": [],
+    "effects": [
+      {
+        "stat": "safeWadingDepthM",
+        "operation": "Set",
+        "value": 0.85
+      }
+    ],
     "nameKey": "upgrade.raisedIntake.name",
     "descriptionKey": "upgrade.raisedIntake.description",
     "result": "Safe wading 0.55->0.85 m"
@@ -235,7 +253,13 @@
       "upgrade.scout.12.raisedIntake"
     ],
     "requiredMission": "Q11",
-    "effects": [],
+    "effects": [
+      {
+        "stat": "diffLock",
+        "operation": "Set",
+        "value": 1
+      }
+    ],
     "nameKey": "upgrade.diffLock.name",
     "descriptionKey": "upgrade.diffLock.description",
     "result": "Toggle low-speed lock; turning scrub; unlock rock tires"
@@ -339,7 +363,13 @@
       "upgrade.scout.17.expeditionRack"
     ],
     "requiredMission": "Q16",
-    "effects": [],
+    "effects": [
+      {
+        "stat": "snowTires",
+        "operation": "Set",
+        "value": 1
+      }
+    ],
     "nameKey": "upgrade.coldKit.name",
     "descriptionKey": "upgrade.coldKit.description",
     "result": "Unlock snow tires; improved cold-start presentation only"

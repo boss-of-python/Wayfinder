@@ -34,12 +34,16 @@ namespace Wayfinder.Simulation
         float _groundHeightY;
         readonly Dictionary<Collider, WaterVolume> _waterContacts = new Dictionary<Collider, WaterVolume>();
         public float WaterDepthMeters { get; private set; }
+        /// <summary>Mud depth under the wheels this tick, 0 when no grounded wheel is in mud (DEF-015).</summary>
+        public float MudDepthMeters { get; private set; }
         readonly Powertrain _powertrain = new Powertrain();
         readonly DamageModel _damage = new DamageModel();
         readonly MudSinkModel _mud = new MudSinkModel();
         readonly WaterCrossingModel _water = new WaterCrossingModel();
         readonly RolloverMonitor _rollover = new RolloverMonitor();
         readonly VehicleStatsResolver _resolver = new VehicleStatsResolver();
+        /// <summary>Stats resolved by the last FixedUpdate (exposed for the HUD and the safe-pose gate).</summary>
+        EffectiveVehicleStats _stats;
 
         float _steerCommand;
         float _throttleCommand;
@@ -55,6 +59,12 @@ namespace Wayfinder.Simulation
         readonly float[] _slip = new float[4];
         readonly float[] _wheelTorque = new float[4];
         readonly SurfaceType[] _surfaces = new SurfaceType[4];
+
+        /// <summary>
+        /// Wet-surface flag for grip composition (§4.4). Until the weather system drives this it is
+        /// false; it exists so the per-wheel grip path does not hardcode "dry" (DEF-005).
+        /// </summary>
+        public bool SurfaceWet { get; set; }
 
         public float FuelLiters => _fuelLiters;
         public float SpeedMetersPerSecond => _rb != null ? _rb.linearVelocity.magnitude : 0f;
@@ -154,7 +164,9 @@ namespace Wayfinder.Simulation
             ApplyWheelForces(stats, reverseIndicated);
 
             // Hazards and fuel (simulation delta only).
-            _mud.Step(_throttleCommand, LongitudinalSpeedMs(), CurrentMudDepthM(), dt);
+            float mudDepthM = CurrentMudDepthM();
+            MudDepthMeters = mudDepthM;
+            _mud.Step(_throttleCommand, LongitudinalSpeedMs(), mudDepthM, dt);
             float intakeHeight = stats.SafeWadingDepthM;
             WaterDepthMeters = CurrentWaterDepthM();
             if (_water.Step(WaterDepthMeters, intakeHeight, dt, out bool stallEvent) && stallEvent)
@@ -209,7 +221,8 @@ namespace Wayfinder.Simulation
             wheel.steerAngle = steerDegrees;
             wheel.motorTorque = motorTorque;
 
-            float surfaceGrip = SurfaceTable.Get(_surfaces[WheelIndex(wheel)]).EffectiveGrip(false);
+            int index = WheelIndex(wheel);
+            float surfaceGrip = SurfaceTable.Get(_surfaces[index]).EffectiveGrip(SurfaceWet);
             float brakeScale = MathUtil.Clamp01(surfaceGrip / 0.9f + 0.1f); // ABS-ish assist envelope
             wheel.brakeTorque = brakeCmd * (wheel == wheelFrontLeft || wheel == wheelFrontRight
                 ? spec.BrakeTorqueFrontNmPerWheel
@@ -217,11 +230,16 @@ namespace Wayfinder.Simulation
 
             // WheelCollider friction shaped toward the composed effective grip (§4.4 calibration note:
             // setting μ does NOT create an exact physical coefficient — M1 calibration required).
+            // Per-wheel: each wheel resolves grip for the surface it is actually standing on, so ice,
+            // deep mud and asphalt no longer share one packed-dirt coefficient (DEF-005). Before
+            // 2026-10-19 the whole vehicle was resolved for `PackedDirt, wet:false` and the per-wheel
+            // surface only scaled brake torque.
+            float grip = _resolver.GripFor(tireSet, _surfaces[index], SurfaceWet, stats.TireGripFactor, out float lateral);
             var fwd = wheel.forwardFriction;
-            fwd.stiffness = stats.EffectiveGrip * (1f + _mud.SinkFraction * -0.5f) * _mud.TractionMultiplier;
+            fwd.stiffness = grip * (1f + _mud.SinkFraction * -0.5f) * _mud.TractionMultiplier;
             wheel.forwardFriction = fwd;
             var side = wheel.sidewaysFriction;
-            side.stiffness = stats.EffectiveGrip * stats.LateralGripFactor * _mud.TractionMultiplier;
+            side.stiffness = grip * lateral * _mud.TractionMultiplier;
             wheel.sidewaysFriction = side;
         }
 
@@ -249,12 +267,35 @@ namespace Wayfinder.Simulation
 
         EffectiveVehicleStats ResolveStats()
         {
+            // Tire-set availability is derived from research inside the resolver (§11.1 tiers 8 and
+            // 18). Until 2026-10-19 the three flags were passed as constants — `true,true,true` here
+            // and `false,false,false` from the campaign — so research never gated them (DEF-004).
             var stats = _resolver.Resolve(
-                spec, _fuelLiters, _cargoMassKg, tireSet, SurfaceType.PackedDirt, false,
+                spec, _fuelLiters, _cargoMassKg, tireSet, DominantSurface(), SurfaceWet,
                 _damage.EngineCondition, _damage.SuspensionCondition, _damage.TiresCondition,
-                true, true, true);
+                false, false, false);
             stats.PunctureActive = _damage.HasPuncture;
+            _stats = stats;
             return stats;
+        }
+
+        /// <summary>
+        /// The surface most of the grounded wheels are on. Used only for the whole-vehicle stats
+        /// (torque, fuel, wading); per-wheel traction uses each wheel's own surface (DEF-005).
+        /// </summary>
+        SurfaceType DominantSurface()
+        {
+            int best = 0;
+            SurfaceType winner = SurfaceType.PackedDirt;
+            for (int i = 0; i < 4; i++)
+            {
+                if (!_grounded[i]) continue;
+                int count = 0;
+                for (int j = 0; j < 4; j++)
+                    if (_grounded[j] && _surfaces[j] == _surfaces[i]) count++;
+                if (count > best) { best = count; winner = _surfaces[i]; }
+            }
+            return winner;
         }
 
         void SampleGrounded()
@@ -306,8 +347,24 @@ namespace Wayfinder.Simulation
 
         float LongitudinalSpeedMs() => Vector3.Dot(_rb.linearVelocity, transform.forward);
 
-        // Mud depth and full water-force integration still require authored depth/terrain data.
-        float CurrentMudDepthM() => SurfaceTable.IsMud(_surfaces[0]) ? 0.10f : 0f;
+        /// <summary>
+        /// Deepest mud any grounded wheel is standing in, from the mud model's authored depth
+        /// constants (§5.2). Before 2026-10-19 this read wheel 0 only and returned a literal 0.10 m,
+        /// so deep mud and shallow mud — the two surfaces that decide whether the sink model runs —
+        /// were indistinguishable (DEF-015).
+        /// </summary>
+        float CurrentMudDepthM()
+        {
+            float depth = 0f;
+            for (int i = 0; i < 4; i++)
+            {
+                if (!_grounded[i] || !SurfaceTable.IsMud(_surfaces[i])) continue;
+                depth = Mathf.Max(depth, _surfaces[i] == SurfaceType.DeepMud
+                    ? MudSinkModel.ShallowDepthM + (MudSinkModel.BogDepthM - MudSinkModel.ShallowDepthM) * 0.5f
+                    : MudSinkModel.ShallowDepthM);
+            }
+            return depth;
+        }
 
         void OnTriggerEnter(Collider other)
         {
@@ -335,10 +392,40 @@ namespace Wayfinder.Simulation
             }
             return Mathf.Max(0f, depth);
         }
-        float CurrentBodyRollDegrees() => Vector3.SignedAngle(transform.up, Vector3.up, transform.forward);
-        float CurrentTerrainSlopeDegrees() => Vector3.Angle(transform.forward,
-            Vector3.ProjectOnPlane(transform.forward, Vector3.up)) ;
-        float CurrentTerrainSlopeRadians() => Mathf.Asin(Mathf.Clamp(transform.up.y - 1f, -1f, 0f) * -1f);
+        /// <summary>Body roll about the forward axis (+ = leaning right). Used by the HUD and the rollover monitor.</summary>
+        public float CurrentBodyRollDegrees() => Vector3.SignedAngle(transform.up, Vector3.up, transform.forward);
+
+        /// <summary>
+        /// Cross-slope (side-slope) of the ground under the vehicle, in degrees: the angle between
+        /// world up and the body's up vector projected onto the vehicle's roll plane. This is the axis
+        /// that actually causes a rollover. Until 2026-10-19 the value handed to the rollover monitor
+        /// was the *pitch* of the forward vector, so the §5.4 22° side-slope limit was measuring the
+        /// wrong axis (DEF-006).
+        /// </summary>
+        float CurrentTerrainSlopeDegrees()
+        {
+            Vector3 lateral = Vector3.ProjectOnPlane(transform.up, transform.forward);
+            return Vector3.Angle(Vector3.up, lateral);
+        }
+
+        /// <summary>
+        /// Terrain incline from the body's up vector: acos(up.y). Until 2026-10-19 this used
+        /// <c>asin(1 - up.y)</c>, which is not the tilt angle — a 45° climb reported 17°, so grade
+        /// fuel load was under-counted by roughly 2.6× (DEF-006).
+        /// </summary>
+        float CurrentTerrainSlopeRadians() => Mathf.Acos(Mathf.Clamp(transform.up.y, -1f, 1f));
+
+        /// <summary>Resolved clearance under the chassis, including research (§5.6 safe-pose gate).</summary>
+        public float GroundClearanceMeters => _stats != null ? _stats.GroundClearanceM : 0f;
+        /// <summary>True while at least one wheel has ground contact.</summary>
+        public bool AnyWheelGrounded
+        {
+            get
+            {
+                for (int i = 0; i < 4; i++) if (_grounded[i]) return true;
+                return false;
+            }
+        }
 
         void UpdateState()
         {
@@ -346,6 +433,8 @@ namespace Wayfinder.Simulation
                 State = VehicleState.Disabled;
             else if (_engineOn == false && SpeedMetersPerSecond < 0.2f)
                 State = VehicleState.Stalled;
+            else if (!AnyWheelGrounded)
+                State = VehicleState.Airborne; // airborne is a real measurement now, not a constant (DEF-015)
             else if (SpeedMetersPerSecond > 0.5f)
                 State = VehicleState.Driving;
             else

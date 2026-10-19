@@ -122,6 +122,7 @@ namespace Wayfinder.Editor
             // editor checks keep the same rules available inside Unity.
             ValidateUpgradeTable(report, contentDir, ids, CheckUnique);
             ValidateMissionTable(report, contentDir, ids, CheckUnique);
+            ValidateObjectiveReachability(report, contentDir);
             ValidateCounts(report, contentDir);
             return report;
         }
@@ -176,8 +177,20 @@ namespace Wayfinder.Editor
                 checkUnique("mission", id);
                 string code = token.Value<string>("displayCode");
                 codes.Add(code);
-                int reward = token.Value<int>("rewardSalvage");
-                if (reward < 0) report.Error($"mission {code}: negative reward");
+                // DEF-016: the schema is `reward: { salvage, items }` — there is no `rewardSalvage`
+                // key, so `Value<int>` returned 0 for every mission and the negative-reward check
+                // below could never fire. Read the nested value, and fail when it is missing
+                // instead of defaulting to a passing zero.
+                var rewardNode = token["reward"];
+                if (rewardNode == null)
+                {
+                    report.Error($"mission {code}: no reward object");
+                }
+                else
+                {
+                    int reward = rewardNode.Value<int?>("salvage") ?? 0;
+                    if (reward < 0) report.Error($"mission {code}: negative reward");
+                }
                 if (token["prerequisites"] is Newtonsoft.Json.Linq.JArray pre)
                 {
                     foreach (var p in pre)
@@ -192,6 +205,66 @@ namespace Wayfinder.Editor
             {
                 if (!codes.Contains($"Q{q:00}"))
                     report.Error($"mission Q{q:00} missing");
+            }
+        }
+
+        /// <summary>
+        /// Every objective target must resolve to something the game can actually place (DEF-003 /
+        /// DEF-016). The same rule in <c>Tools/Validation/validate_content.py</c> is authoritative for
+        /// CI; this is the in-editor mirror so a content author sees it without leaving Unity.
+        /// </summary>
+        static void ValidateObjectiveReachability(ValidationReport report, string contentDir)
+        {
+            var known = new HashSet<string>(StringComparer.Ordinal);
+            void Collect(string file)
+            {
+                string path = Path.Combine(contentDir, file);
+                if (!File.Exists(path)) return;
+                foreach (var token in Newtonsoft.Json.Linq.JArray.Parse(File.ReadAllText(path)))
+                {
+                    string id = token.Value<string>("id");
+                    if (!string.IsNullOrEmpty(id)) known.Add(id);
+                    if (token["checkpoints"] is Newtonsoft.Json.Linq.JArray) known.Add(id);
+                }
+            }
+            foreach (var file in new[] { "landmarks.json", "caches.json", "garages.json", "camps.json",
+                                          "items.json", "sites.json", "contracts.json" })
+                Collect(file);
+
+            // The vertical slice places its own sites (camp sockets, inspect targets, relays, routes).
+            string slicePath = Path.Combine(contentDir, "vertical_slice.json");
+            if (File.Exists(slicePath))
+            {
+                var slice = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(slicePath));
+                foreach (var key in new[] { "campSockets", "inspectTargets", "questItemSites", "relays", "checkpointRoutes" })
+                    if (slice[key] is Newtonsoft.Json.Linq.JArray array)
+                        foreach (var token in array)
+                        {
+                            string id = token.Value<string>("id");
+                            if (!string.IsNullOrEmpty(id)) known.Add(id);
+                        }
+                foreach (var token in slice["landmarks"] as Newtonsoft.Json.Linq.JArray ?? new Newtonsoft.Json.Linq.JArray())
+                {
+                    string id = token.Value<string>("id");
+                    if (!string.IsNullOrEmpty(id)) known.Add(id);
+                }
+            }
+
+            string missionsPath = Path.Combine(contentDir, "missions.json");
+            if (!File.Exists(missionsPath)) return;
+            foreach (var token in Newtonsoft.Json.Linq.JArray.Parse(File.ReadAllText(missionsPath)))
+            {
+                string code = token.Value<string>("displayCode");
+                if (token["objectives"] is Newtonsoft.Json.Linq.JArray objectives)
+                    foreach (var objective in objectives)
+                    {
+                        string type = objective.Value<string>("type");
+                        string target = objective.Value<string>("targetId");
+                        // RevealMapPercent carries a percentage, not a place.
+                        if (string.IsNullOrEmpty(target) || type == "RevealMapPercent" || target == "map") continue;
+                        if (!known.Contains(target))
+                            report.Error($"mission {code}: objective {type} targets '{target}', which no catalog defines");
+                    }
             }
         }
 

@@ -130,8 +130,12 @@ namespace Wayfinder.Platform
             Current = cmd;
 
             InteractHeld = _driving.FindAction("Interact").IsPressed();
-            InteractTapped = _driving.FindAction("InteractTap").WasPressedThisFrame()
-                             || (holdToInteractAlternativeTap && _driving.FindAction("InteractTap").IsPressed());
+            // Edge only, and gated by the accessibility setting that offers a tap as an alternative
+            // to holding (§3.5). Until 2026-10-19 the expression OR-ed in `IsPressed()`, so the flag
+            // stayed true on every frame of a hold and any consumer treating it as an event fired
+            // once per frame (DEF-014).
+            InteractTapped = holdToInteractAlternativeTap
+                             && _driving.FindAction("InteractTap").WasPressedThisFrame();
             MapPressed = _driving.FindAction("Map").WasPressedThisFrame();
             PausePressed = _driving.FindAction("Pause").WasPressedThisFrame();
             RecoveryPressed = _driving.FindAction("Recovery").WasPressedThisFrame();

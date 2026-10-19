@@ -143,7 +143,7 @@ namespace Wayfinder.World
     public sealed class HeightField
     {
         readonly NoiseField _noise;
-        readonly float[] _samples; // (TileResolution × ChunksPerSide + 1)² grid over the world
+        float[] _samples; // (TileResolution × ChunksPerSide + 1)² grid over the world
         readonly int _gridSide;
 
         public HeightField(NoiseField noise = null)
@@ -151,14 +151,20 @@ namespace Wayfinder.World
             _noise = noise ?? new NoiseField();
             // World grid: 2 m spacing over 6144 m → 3072 samples + 1 border = 3073 per side.
             _gridSide = WorldConstants.WorldSizeMeters / (int)WorldConstants.TerrainSampleSpacingMeters + 1;
-            _samples = new float[_gridSide * _gridSide];
+            // DEF-023: the 3073² float grid (~37.8 MB) used to be allocated by the constructor, so
+            // merely *constructing* a HeightField — including for a query that never bakes — cost
+            // 37.8 MB. It is now allocated by Bake(), which is what actually fills it.
+            _samples = null;
         }
 
         public int GridSide => _gridSide;
+        /// <summary>True once <see cref="Bake"/> has filled the grid.</summary>
+        public bool IsBaked => _samples != null;
 
         /// <summary>Bakes the macro heightfield (editor pipeline; deterministic).</summary>
         public void Bake()
         {
+            if (_samples == null) _samples = new float[_gridSide * _gridSide];
             for (int z = 0; z < _gridSide; z++)
             for (int x = 0; x < _gridSide; x++)
             {
@@ -168,8 +174,28 @@ namespace Wayfinder.World
             }
         }
 
+        /// <summary>
+        /// Bakes one tile's samples in tile-local order (used by the seam check and by the editor
+        /// mesh bake). Tile (cx,cz) covers [cx·chunk, cx·chunk + (res−1)·spacing] in both axes, so
+        /// tile (cx,cz) column res−1 and tile (cx+1,cz) column 0 are the same world line.
+        /// </summary>
+        public SeamCheck.TerrainTile BakeTile(int chunkX, int chunkZ)
+        {
+            int res = WorldConstants.TerrainTileResolution;
+            float spacing = WorldConstants.TerrainSampleSpacingMeters;
+            float originX = chunkX * WorldConstants.ChunkSizeMeters;
+            float originZ = chunkZ * WorldConstants.ChunkSizeMeters;
+            var tile = new SeamCheck.TerrainTile(res);
+            for (int z = 0; z < res; z++)
+            for (int x = 0; x < res; x++)
+                tile[x, z] = Quantize(Sample(originX + x * spacing, originZ + z * spacing));
+            return tile;
+        }
+
         public float Sample(float x, float z)
         {
+            if (_samples == null)
+                throw new InvalidOperationException("HeightField.Bake() must be called before sampling.");
             float gx = MathUtil.Clamp(x / WorldConstants.TerrainSampleSpacingMeters, 0f, _gridSide - 1.001f);
             float gz = MathUtil.Clamp(z / WorldConstants.TerrainSampleSpacingMeters, 0f, _gridSide - 1.001f);
             int x0 = (int)gx, z0 = (int)gz;
@@ -194,33 +220,85 @@ namespace Wayfinder.World
     {
         public const float MaxAllowedDifferenceMeters = 0.001f;
 
+        /// <summary>
+        /// One baked terrain tile: <see cref="HeightField.BakeTile"/> output, addressed tile-locally.
+        /// The seam check compares tiles — not one continuous sampler — so an off-by-one in the tile
+        /// bake is visible (DEF-011).
+        /// </summary>
+        public sealed class TerrainTile
+        {
+            public readonly int Resolution;
+            public readonly float[] Samples;
+            public TerrainTile(int resolution) { Resolution = resolution; Samples = new float[resolution * resolution]; }
+            public float this[int x, int z] { get => Samples[z * Resolution + x]; set => Samples[z * Resolution + x] = value; }
+        }
+
+        /// <summary>
+        /// Compares the shared border of two *baked tiles* after quantization (§7.4): tile(cx,cz)'s
+        /// east column against tile(cx+1,cz)'s west column, and likewise for the north border.
+        /// <para>
+        /// Until 2026-10-19 this evaluated one global <c>HeightField.Sample</c> function 2 mm either
+        /// side of a chunk border. The largest difference that can produce is slope × 0.002 m — under
+        /// the 1 mm threshold for any slope below 0.5 m/m — so the check could not fail and GEN-02
+        /// had no real evidence. Comparing tiles means a tile whose border samples come from the
+        /// wrong index genuinely mismatches. The old out-of-range guard returned <c>true</c>
+        /// (pass); an invalid chunk index is now a failure.
+        /// </para>
+        /// </summary>
         public static bool BordersMatch(HeightField field, int chunkX, int chunkZ, out float maxDifference)
         {
             maxDifference = 0f;
+            if (field == null) throw new ArgumentNullException(nameof(field));
             if (chunkX < 0 || chunkZ < 0 ||
-                chunkX >= WorldConstants.ChunksPerSide - 0 || chunkZ >= WorldConstants.ChunksPerSide - 0)
-                return true;
+                chunkX >= WorldConstants.ChunksPerSide || chunkZ >= WorldConstants.ChunksPerSide)
+                return false;
 
-            float originX = chunkX * WorldConstants.ChunkSizeMeters;
-            float originZ = chunkZ * WorldConstants.ChunkSizeMeters;
-            float endX = originX + WorldConstants.ChunkSizeMeters;
-            float endZ = originZ + WorldConstants.ChunkSizeMeters;
+            bool hasEast = chunkX + 1 < WorldConstants.ChunksPerSide;
+            bool hasNorth = chunkZ + 1 < WorldConstants.ChunksPerSide;
+            if (!hasEast && !hasNorth) return true; // last tile: no shared border to check
 
-            // Shared east border with the neighbor chunk.
-            for (int i = 0; i < WorldConstants.TerrainTileResolution; i++)
+            var tile = field.BakeTile(chunkX, chunkZ);
+            bool ok = true;
+            float difference;
+
+            if (hasEast)
             {
-                float z = originZ + i * WorldConstants.TerrainSampleSpacingMeters;
-                float a = HeightField.Quantize(field.Sample(endX - 0.001f, z));
-                float b = HeightField.Quantize(field.Sample(endX + 0.001f, z));
-                maxDifference = Math.Max(maxDifference, Math.Abs(a - b));
+                ok &= BordersMatch(tile, field.BakeTile(chunkX + 1, chunkZ), Edge.East, out difference);
+                maxDifference = Math.Max(maxDifference, difference);
             }
-            // Shared north border.
-            for (int i = 0; i < WorldConstants.TerrainTileResolution; i++)
+            if (hasNorth)
             {
-                float x = originX + i * WorldConstants.TerrainSampleSpacingMeters;
-                float a = HeightField.Quantize(field.Sample(x, endZ - 0.001f));
-                float b = HeightField.Quantize(field.Sample(x, endZ + 0.001f));
-                maxDifference = Math.Max(maxDifference, Math.Abs(a - b));
+                ok &= BordersMatch(tile, field.BakeTile(chunkX, chunkZ + 1), Edge.North, out difference);
+                maxDifference = Math.Max(maxDifference, difference);
+            }
+            return ok;
+        }
+
+        /// <summary>Which shared border two tiles are compared along.</summary>
+        public enum Edge { East, North }
+
+        /// <summary>
+        /// Compares one shared border of two already-baked tiles. Split out of the chunk overload so a
+        /// test can hand it tiles that disagree and prove the check can actually fail (DEF-011).
+        /// </summary>
+        public static bool BordersMatch(TerrainTile tile, TerrainTile neighbour, Edge edge, out float maxDifference)
+        {
+            maxDifference = 0f;
+            if (tile == null) throw new ArgumentNullException(nameof(tile));
+            if (neighbour == null) throw new ArgumentNullException(nameof(neighbour));
+            if (tile.Resolution != neighbour.Resolution)
+                throw new ArgumentException("tiles of different resolutions cannot share a border");
+
+            int res = tile.Resolution;
+            if (edge == Edge.East)
+            {
+                for (int z = 0; z < res; z++)
+                    maxDifference = Math.Max(maxDifference, Math.Abs(tile[res - 1, z] - neighbour[0, z]));
+            }
+            else
+            {
+                for (int x = 0; x < res; x++)
+                    maxDifference = Math.Max(maxDifference, Math.Abs(tile[x, res - 1] - neighbour[x, 0]));
             }
             return maxDifference <= MaxAllowedDifferenceMeters;
         }
@@ -250,7 +328,14 @@ namespace Wayfinder.World
         public int StateVersion { get; private set; }
         public string FailureDetail { get; private set; } = string.Empty;
 
-        public bool TryTransition(ChunkState target, out string error)
+        public bool TryTransition(ChunkState target, out string error) => TryTransition(target, null, out error);
+
+        /// <summary>
+        /// Transition with a cause. Until 2026-10-19 the detail was taken from the *rejected* path's
+        /// <c>error</c> variable, which is always empty when the transition succeeds, so every real
+        /// failure reached <c>ChunkStreamPlanner.StreamingDefects</c> with an empty cause (DEF-012).
+        /// </summary>
+        public bool TryTransition(ChunkState target, string detail, out string error)
         {
             error = string.Empty;
             if (!IsLegal(State, target))
@@ -260,7 +345,9 @@ namespace Wayfinder.World
             }
             State = target;
             StateVersion++;
-            if (target == ChunkState.Failed) FailureDetail = error;
+            FailureDetail = target == ChunkState.Failed
+                ? (string.IsNullOrEmpty(detail) ? "failed (no detail supplied)" : detail)
+                : string.Empty;
             return true;
         }
 

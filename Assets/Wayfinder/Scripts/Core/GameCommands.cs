@@ -160,6 +160,37 @@ namespace Wayfinder.Core
         public PurchaseCosmetic(TransactionId tx, ContentId cosmeticId) : base(tx) => CosmeticId = cosmeticId;
     }
 
+    /// <summary>Unlocks a known garage (§12.1). Garages are free — no Salvage is spent (§11.4).</summary>
+    public sealed class UnlockGarage : GameCommand
+    {
+        public readonly ContentId GarageId;
+        public UnlockGarage(TransactionId tx, ContentId garageId) : base(tx) => GarageId = garageId;
+    }
+
+    /// <summary>Accepts an optional contract from the board (§9.3).</summary>
+    public sealed class AcceptContract : GameCommand
+    {
+        public readonly ContentId ContractId;
+        public AcceptContract(TransactionId tx, ContentId contractId) : base(tx) => ContractId = contractId;
+    }
+
+    /// <summary>
+    /// Completes an accepted contract: claims <paramref name="RewardKey"/> exactly once and escrows
+    /// <paramref name="RewardSalvage"/> until the next banking (§9.3, §16.3).
+    /// </summary>
+    public sealed class CompleteContract : GameCommand
+    {
+        public readonly ContentId ContractId;
+        public readonly int RewardSalvage;
+        public readonly string RewardKey;
+        public CompleteContract(TransactionId tx, ContentId contractId, int rewardSalvage, string rewardKey) : base(tx)
+        {
+            ContractId = contractId;
+            RewardSalvage = rewardSalvage;
+            RewardKey = rewardKey ?? string.Empty;
+        }
+    }
+
     public sealed class SellItems : GameCommand
     {
         public readonly InventoryId Source;

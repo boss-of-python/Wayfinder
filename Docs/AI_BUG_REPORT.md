@@ -54,31 +54,31 @@ symptom / root_cause / evidence / impact / fix / verify_with
 
 ```yaml
 defects:
-  - {id: DEF-001, sev: S1, cat: gameplay-logic, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Simulation/VehicleStatsResolver.cs, line: 37, symbol: 'EffectiveVehicleStats.SafeWadingDepthM never assigned in Resolve (:134-170); Stat enum has no wading member', probe: DEF01_WadingDepthIsAlwaysZero}
-  - {id: DEF-002, sev: S1, cat: math, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Simulation/VehicleStatsResolver.cs, line: 102, symbol: 'Compose: last Set wins; ResearchService.ApplyTo (:156) iterates a HashSet', probe: DEF02_ComposeIsSetOrderDependent}
-  - {id: DEF-003, sev: S1, cat: gameplay-logic, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Progression/GarageService.cs, line: 37, symbol: UnlockGarage has no call sites; Q05-Q20 target ids absent from all catalogs, probe: DEF06_NonHomeGaragesAreNeverUnlockedAndFullCampaignCannotProgress}
-  - {id: DEF-004, sev: S1, cat: gameplay-logic, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Progression/ResearchService.cs, line: 59, symbol: 'tiers 7/8/12/13/18 (:59,:60,:69,:70,:82) declare no effects; LowRange/DiffLock flags never assigned', probe: DEF01_LowRangeAndDiffLockFlagsAreNeverSet}
-  - {id: DEF-005, sev: S1, cat: gameplay-logic, conf: static-unity, status: open, file: Assets/Wayfinder/Scripts/Simulation/VehicleController.cs, line: 250, symbol: 'ResolveStats hardcodes SurfaceType.PackedDirt, wet false, true,true,true; per-wheel surface only scales brakes', probe: null}
-  - {id: DEF-006, sev: S2, cat: math, conf: static-unity, status: open, file: Assets/Wayfinder/Scripts/Simulation/VehicleController.cs, line: 341, symbol: CurrentTerrainSlopeRadians = asin(1-up.y) instead of acos(up.y); pitch fed where roll context is expected, probe: null}
-  - {id: DEF-007, sev: S2, cat: gameplay-logic, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs, line: 247, symbol: 'ContractService.Accept/:247 and Complete/:255 have no call sites; Complete bypasses TransactionService', probe: null}
-  - {id: DEF-008, sev: S2, cat: content, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs, line: 43, symbol: 'CountableMask initialised to all 9216 cells and never persisted (CampaignSnapshot.cs:83)', probe: DEF06 countableMaskBase64 empty}
-  - {id: DEF-009, sev: S2, cat: data-integrity, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Progression/InventoryService.cs, line: 246, symbol: InventoryService.Add -> ItemCatalog.Get throws KeyNotFoundException for unknown ids on the pickup path, probe: DEF04_UnknownItemIdInPickupContentThrowsOutOfTransactionExecute}
-  - {id: DEF-010, sev: S2, cat: data-integrity, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Progression/EconomyService.cs, line: 238, symbol: ExecuteCollect double-collect guard is conditional on _deps.Discovery != null; TryMarkCacheCollected result ignored, probe: DEF04_DoubleCollectGuardDependsOnDiscoveryBeingWired}
-  - {id: DEF-011, sev: S2, cat: tooling, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/World/WorldDefinition.cs, line: 197, symbol: SeamCheck.BordersMatch compares one continuous field 2 mm apart (guard uses '- 0'); Python mirror compares a single coordinate, probe: DEF03_SeamCheckComparesTheSameContinuousField}
-  - {id: DEF-012, sev: S2, cat: tooling, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/World/WorldDefinition.cs, line: 263, symbol: 'ChunkStateMachine sets FailureDetail only on the rejected path, so a real Failed transition stores string.Empty', probe: DEF09_ChunkFailedTransitionLosesItsFailureDetail}
-  - {id: DEF-013, sev: S2, cat: unity-integration, conf: static-unity, status: open, file: Assets/Wayfinder/Scripts/Simulation/ChaseCameraBehaviour.cs, line: 123, symbol: Horizon-stabilisation Slerp blends to an identical rotation with t=1f; _smoothedLookPoint starts at zero, probe: null}
-  - {id: DEF-014, sev: S2, cat: unity-integration, conf: static-unity, status: open, file: Assets/Wayfinder/Scripts/Platform/InputRouter.cs, line: 133, symbol: 'InteractTapped includes IsPressed(), so it is true on every frame of a hold; flag defaults true (:27)', probe: null}
-  - {id: DEF-015, sev: S2, cat: unity-integration, conf: static-unity, status: open, file: Assets/Wayfinder/Scripts/Presentation/VerticalSliceDriver.cs, line: 148, symbol: 'BuildFieldInput hardcodes Grounded/RollDegrees/InDeepMud/ClearanceMeters/TapToInteract (:148-154); UpdateState never sets Airborne/Winching/Recovering', probe: null}
-  - {id: DEF-016, sev: S2, cat: tooling, conf: static-unity, status: open, file: Assets/Wayfinder/Scripts/Editor/ContentImporter.cs, line: 179, symbol: 'ValidateMissionTable reads ''rewardSalvage'' (schema: reward.salvage) so the check can never fire; validate_content.py:4 cites a non-existent ContentValidators.cs', probe: null}
-  - {id: DEF-017, sev: S2, cat: gameplay-logic, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Progression/EconomyService.cs, line: 380, symbol: CargoSettlement.Settle banks the whole global escrow at any hub; deposit notice built from pre-transaction state, probe: DEF10_CargoSettlementBanksEscrowFromAnySourceOnEveryBank}
-  - {id: DEF-018, sev: S3, cat: gameplay-logic, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Progression/EconomyService.cs, line: 189, symbol: 'CraftItem/TransferItems/SellItems/UseItem/RequestRecovery never set committed -> Commit(id, null) at :225', probe: DEF05_OnlySomeCommandsEmitCommittedEvents}
-  - {id: DEF-019, sev: S3, cat: data-integrity, conf: verified-executed, status: open, file: Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs, line: 132, symbol: LandmarkDiscovered carries default(TransactionId) on a permanent 120-Salvage reward, probe: DEF08_TransactionIdOfGrantedRewardsIsDefaultInDiscoveryService}
-  - {id: DEF-020, sev: S3, cat: persistence, conf: verified-executed, status: open-latent, file: Assets/Wayfinder/Scripts/Core/BitGrid.cs, line: 114, symbol: 'FromBase64 accepts short payloads and throws raw FormatException; SaveService catches only IO/UnauthorizedAccess (:233,:237)', probe: DEF07_BitGridFromBase64DoesNotValidatePayload}
-  - {id: DEF-021, sev: S3, cat: data-integrity, conf: static-pure, status: open, file: Assets/Wayfinder/Scripts/Progression/InventoryService.cs, line: 276, symbol: 'Remove ignores MissionInstanceId; protected ledger is a List (:143,:249) and RemoveProtected pops one entry (:374)', probe: null}
-  - {id: DEF-022, sev: S3, cat: persistence, conf: static-pure, status: open, file: Assets/Wayfinder/Scripts/Persistence/SaveService.cs, line: 181, symbol: Save catches IO/UnauthorizedAccess only; temp file leaks on FailedWrite; LoadBestValid never checks envelope.slotId, probe: null}
-  - {id: DEF-023, sev: S3, cat: performance, conf: static-pure, status: open, file: Assets/Wayfinder/Scripts/World/WorldDefinition.cs, line: 153, symbol: 'HeightField._samples = float[3073*3073] (~37.8 MB) allocated up front (:147,:154)', probe: null}
-  - {id: DEF-024, sev: S3, cat: gameplay-logic, conf: static-pure, status: open, file: Assets/Wayfinder/Scripts/World/RouteGraph.cs, line: 225, symbol: 'WeatherSystem.Step resets _accum instead of decrementing it (:223-225), so 1 Hz ticks drift by the frame delta', probe: null}
-  - {id: DEF-025, sev: S2, cat: tooling, conf: static-pure, status: open, file: Tools/Validation/formula_checks.py, line: 145, symbol: '5 tautological checks (:140, :145-148), mirror never reads the C# source, dead COSTS line (:128), seam check compares one coordinate with itself', probe: null}
+  - {id: DEF-001, sev: S1, cat: gameplay-logic, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Simulation/VehicleStatsResolver.cs, line: 37, symbol: 'EffectiveVehicleStats.SafeWadingDepthM never assigned in Resolve (:134-170); Stat enum has no wading member', probe: DEF01_WadingDepthIsAlwaysZero}
+  - {id: DEF-002, sev: S1, cat: math, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Simulation/VehicleStatsResolver.cs, line: 102, symbol: 'Compose: last Set wins; ResearchService.ApplyTo (:156) iterates a HashSet', probe: DEF02_ComposeIsSetOrderDependent}
+  - {id: DEF-003, sev: S1, cat: gameplay-logic, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Progression/GarageService.cs, line: 37, symbol: UnlockGarage has no call sites; Q05-Q20 target ids absent from all catalogs, probe: DEF06_NonHomeGaragesAreNeverUnlockedAndFullCampaignCannotProgress}
+  - {id: DEF-004, sev: S1, cat: gameplay-logic, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Progression/ResearchService.cs, line: 59, symbol: 'tiers 7/8/12/13/18 (:59,:60,:69,:70,:82) declare no effects; LowRange/DiffLock flags never assigned', probe: DEF01_LowRangeAndDiffLockFlagsAreNeverSet}
+  - {id: DEF-005, sev: S1, cat: gameplay-logic, conf: static-unity, status: fixed, file: Assets/Wayfinder/Scripts/Simulation/VehicleController.cs, line: 250, symbol: 'ResolveStats hardcodes SurfaceType.PackedDirt, wet false, true,true,true; per-wheel surface only scales brakes', probe: null}
+  - {id: DEF-006, sev: S2, cat: math, conf: static-unity, status: fixed, file: Assets/Wayfinder/Scripts/Simulation/VehicleController.cs, line: 341, symbol: CurrentTerrainSlopeRadians = asin(1-up.y) instead of acos(up.y); pitch fed where roll context is expected, probe: null}
+  - {id: DEF-007, sev: S2, cat: gameplay-logic, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs, line: 247, symbol: 'ContractService.Accept/:247 and Complete/:255 have no call sites; Complete bypasses TransactionService', probe: null}
+  - {id: DEF-008, sev: S2, cat: content, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs, line: 43, symbol: 'CountableMask initialised to all 9216 cells and never persisted (CampaignSnapshot.cs:83)', probe: DEF06 countableMaskBase64 empty}
+  - {id: DEF-009, sev: S2, cat: data-integrity, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Progression/InventoryService.cs, line: 246, symbol: InventoryService.Add -> ItemCatalog.Get throws KeyNotFoundException for unknown ids on the pickup path, probe: DEF04_UnknownItemIdInPickupContentThrowsOutOfTransactionExecute}
+  - {id: DEF-010, sev: S2, cat: data-integrity, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Progression/EconomyService.cs, line: 238, symbol: ExecuteCollect double-collect guard is conditional on _deps.Discovery != null; TryMarkCacheCollected result ignored, probe: DEF04_DoubleCollectGuardDependsOnDiscoveryBeingWired}
+  - {id: DEF-011, sev: S2, cat: tooling, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/World/WorldDefinition.cs, line: 197, symbol: SeamCheck.BordersMatch compares one continuous field 2 mm apart (guard uses '- 0'); Python mirror compares a single coordinate, probe: DEF03_SeamCheckComparesTheSameContinuousField}
+  - {id: DEF-012, sev: S2, cat: tooling, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/World/WorldDefinition.cs, line: 263, symbol: 'ChunkStateMachine sets FailureDetail only on the rejected path, so a real Failed transition stores string.Empty', probe: DEF09_ChunkFailedTransitionLosesItsFailureDetail}
+  - {id: DEF-013, sev: S2, cat: unity-integration, conf: static-unity, status: fixed, file: Assets/Wayfinder/Scripts/Simulation/ChaseCameraBehaviour.cs, line: 123, symbol: Horizon-stabilisation Slerp blends to an identical rotation with t=1f; _smoothedLookPoint starts at zero, probe: null}
+  - {id: DEF-014, sev: S2, cat: unity-integration, conf: static-unity, status: fixed, file: Assets/Wayfinder/Scripts/Platform/InputRouter.cs, line: 133, symbol: 'InteractTapped includes IsPressed(), so it is true on every frame of a hold; flag defaults true (:27)', probe: null}
+  - {id: DEF-015, sev: S2, cat: unity-integration, conf: static-unity, status: fixed, file: Assets/Wayfinder/Scripts/Presentation/VerticalSliceDriver.cs, line: 148, symbol: 'BuildFieldInput hardcodes Grounded/RollDegrees/InDeepMud/ClearanceMeters/TapToInteract (:148-154); UpdateState never sets Airborne/Winching/Recovering', probe: null}
+  - {id: DEF-016, sev: S2, cat: tooling, conf: static-unity, status: fixed, file: Assets/Wayfinder/Scripts/Editor/ContentImporter.cs, line: 179, symbol: 'ValidateMissionTable reads ''rewardSalvage'' (schema: reward.salvage) so the check can never fire; validate_content.py:4 cites a non-existent ContentValidators.cs', probe: null}
+  - {id: DEF-017, sev: S2, cat: gameplay-logic, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Progression/EconomyService.cs, line: 380, symbol: CargoSettlement.Settle banks the whole global escrow at any hub; deposit notice built from pre-transaction state, probe: DEF10_CargoSettlementBanksEscrowFromAnySourceOnEveryBank}
+  - {id: DEF-018, sev: S3, cat: gameplay-logic, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Progression/EconomyService.cs, line: 189, symbol: 'CraftItem/TransferItems/SellItems/UseItem/RequestRecovery never set committed -> Commit(id, null) at :225', probe: DEF05_OnlySomeCommandsEmitCommittedEvents}
+  - {id: DEF-019, sev: S3, cat: data-integrity, conf: verified-executed, status: fixed, file: Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs, line: 132, symbol: LandmarkDiscovered carries default(TransactionId) on a permanent 120-Salvage reward, probe: DEF08_TransactionIdOfGrantedRewardsIsDefaultInDiscoveryService}
+  - {id: DEF-020, sev: S3, cat: persistence, conf: verified-executed, status: fixed-latent, file: Assets/Wayfinder/Scripts/Core/BitGrid.cs, line: 114, symbol: 'FromBase64 accepts short payloads and throws raw FormatException; SaveService catches only IO/UnauthorizedAccess (:233,:237)', probe: DEF07_BitGridFromBase64DoesNotValidatePayload}
+  - {id: DEF-021, sev: S3, cat: data-integrity, conf: static-pure, status: fixed, file: Assets/Wayfinder/Scripts/Progression/InventoryService.cs, line: 276, symbol: 'Remove ignores MissionInstanceId; protected ledger is a List (:143,:249) and RemoveProtected pops one entry (:374)', probe: null}
+  - {id: DEF-022, sev: S3, cat: persistence, conf: static-pure, status: fixed, file: Assets/Wayfinder/Scripts/Persistence/SaveService.cs, line: 181, symbol: Save catches IO/UnauthorizedAccess only; temp file leaks on FailedWrite; LoadBestValid never checks envelope.slotId, probe: null}
+  - {id: DEF-023, sev: S3, cat: performance, conf: static-pure, status: fixed, file: Assets/Wayfinder/Scripts/World/WorldDefinition.cs, line: 153, symbol: 'HeightField._samples = float[3073*3073] (~37.8 MB) allocated up front (:147,:154)', probe: null}
+  - {id: DEF-024, sev: S3, cat: gameplay-logic, conf: static-pure, status: fixed, file: Assets/Wayfinder/Scripts/World/RouteGraph.cs, line: 225, symbol: 'WeatherSystem.Step resets _accum instead of decrementing it (:223-225), so 1 Hz ticks drift by the frame delta', probe: null}
+  - {id: DEF-025, sev: S2, cat: tooling, conf: static-pure, status: fixed, file: Tools/Validation/formula_checks.py, line: 145, symbol: '5 tautological checks (:140, :145-148), mirror never reads the C# source, dead COSTS line (:128), seam check compares one coordinate with itself', probe: null}
 ```
 
 ---
@@ -122,7 +122,10 @@ id: DEF-001
 severity: S1
 category: gameplay-logic
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — SafeWadingDepthM is composed from WaterCrossingModel and the raised-intake tier (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §5.3 (safe wading 0.55 m, raised intake 0.85 m), §5.5, §11.2 tier 12 "raisedIntake"
 location:
   - Assets/Wayfinder/Scripts/Simulation/VehicleStatsResolver.cs:37    (EffectiveVehicleStats.SafeWadingDepthM)
@@ -162,7 +165,10 @@ id: DEF-002
 severity: S1
 category: math
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — StatModifier carries a rank; ResearchService.ApplyTo walks Tiers in authored order (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §11.2 ("stats compose through one resolver; the garage shows exactly these values")
 location:
   - Assets/Wayfinder/Scripts/Simulation/VehicleStatsResolver.cs:102-120 (Compose, `case Operation.Set` :114)
@@ -196,7 +202,10 @@ id: DEF-003
 severity: S1
 category: gameplay-logic
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — garages unlock on arrival via the UnlockGarage transaction; the 23 missing sites are authored in Content/sites.json (relays on §6.1 anchors, the rest procedural and marked) (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §2.3, §9.2 (20 main missions), §12.1 (garage unlock), milestone M4
 location:
   - Assets/Wayfinder/Scripts/Progression/GarageService.cs:37   (UnlockGarage — definition only)
@@ -240,7 +249,10 @@ id: DEF-004
 severity: S1
 category: gameplay-logic
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — tiers 7/8/12/13/18 now carry effects in both C# and upgrades.json; LowRange/DiffLock/MudTires/SnowTires composed in Resolve() (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §11.2 tier table; §10.2 mud/snow tires; §4.3 low range; §4.5 diff lock; §5.3 raised intake; §7.7 cold kit
 location:
   - Assets/Wayfinder/Scripts/Progression/ResearchService.cs:59,60,69,70,82 (tiers 7/8/12/13/18 — no effects)
@@ -277,7 +289,10 @@ id: DEF-005
 severity: S1
 category: gameplay-logic
 confidence: static-unity
-status: open
+status: fixed
+fixed_note: >
+  fixed — per-wheel GripFor(_surfaces[i], SurfaceWet) replaces one PackedDirt resolve (Unity-only file; type-checked, not executed) (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §4.4 (surface-specific traction is the handling pillar), §4.5
 location:
   - Assets/Wayfinder/Scripts/Simulation/VehicleController.cs:250-256 (ResolveStats → PackedDirt, wet:false, true,true,true)
@@ -313,7 +328,10 @@ id: DEF-006
 severity: S2
 category: math
 confidence: static-unity
-status: open
+status: fixed
+fixed_note: >
+  fixed — cross-slope from ProjectOnPlane and acos(up.y) for incline (Unity-only file; type-checked) (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §5.4 (rollover warning uses incline context), §5.1 (grade load), §5.4 side-slope limit 22°
 location:
   - Assets/Wayfinder/Scripts/Simulation/VehicleController.cs:341 (return Asin(Clamp(up.y - 1, -1, 0) * -1))
@@ -342,7 +360,10 @@ id: DEF-007
 severity: S2
 category: gameplay-logic
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — AcceptContract/CompleteContract commands through TransactionService; rewards escrowed and paid exactly once (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §9.3, milestone M4
 location:
   - Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs:180 (ContractService)
@@ -371,7 +392,10 @@ id: DEF-008
 severity: S2
 category: content
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — the countable mask is baked deterministically, installable by WorldBaker, and persisted (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §8.1 (countable mask excludes ocean/decorative cliffs), §8.4 (60 % finale gate), §9.2 Q20
 location:
   - Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs:25,39,43 (CountableMask starts fully set)
@@ -404,7 +428,10 @@ id: DEF-009
 severity: S2
 category: data-integrity
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — PickupContents reports unknown item ids; collection fails with ContentMissing instead of throwing (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: handoff "error handling for unavailable content"; Appendix D typed failures
 location:
   - Assets/Wayfinder/Scripts/Progression/EconomyService.cs:70,76 (PickupContents / ctor — no id validation)
@@ -437,7 +464,10 @@ id: DEF-010
 severity: S2
 category: data-integrity
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — Discovery is a required collaborator and TryMarkCacheCollected is checked before the grant is kept (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §12.4 idempotent transactions; QA case 2
 location:
   - Assets/Wayfinder/Scripts/Progression/EconomyService.cs:229  (ExecuteCollect)
@@ -464,7 +494,10 @@ id: DEF-011
 severity: S2
 category: tooling
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — SeamCheck compares baked tiles and rejects out-of-range chunks; the tile comparison is falsifiable (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §7.4 (tile borders agree within 1 mm), evidence GEN-02
 location:
   - Assets/Wayfinder/Scripts/World/WorldDefinition.cs:197  (BordersMatch)
@@ -496,7 +529,10 @@ id: DEF-012
 severity: S2
 category: tooling
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — TryTransition(target, detail, out error) carries the cause onto ChunkState.Failed (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §18.3 (streaming defects must be reportable)
 location:
   - Assets/Wayfinder/Scripts/World/WorldDefinition.cs:251 (`FailureDetail { get; private set; } = string.Empty`)
@@ -519,7 +555,10 @@ id: DEF-013
 severity: S2
 category: unity-integration
 confidence: static-unity
-status: open
+status: fixed
+fixed_note: >
+  fixed — horizon stabilization blends the look-up vector toward target.up (Unity-only file; type-checked) (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §3.4/§3.5 (independent accessibility toggles), §19.1
 location:
   - Assets/Wayfinder/Scripts/Simulation/ChaseCameraBehaviour.cs:36  (enableHorizonStabilization default true)
@@ -547,7 +586,10 @@ id: DEF-014
 severity: S2
 category: unity-integration
 confidence: static-unity
-status: open
+status: fixed
+fixed_note: >
+  fixed — InteractTapped is edge-triggered and gated by the accessibility setting (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §3.5 tap alternative; §16.4 "fires once per press"
 location:
   - Assets/Wayfinder/Scripts/Platform/InputRouter.cs:27  (holdToInteractAlternativeTap defaults to true)
@@ -571,7 +613,10 @@ id: DEF-015
 severity: S2
 category: unity-integration
 confidence: static-unity
-status: open
+status: fixed
+fixed_note: >
+  fixed — telemetry reports real mud depth, clearance, roll and Airborne (Unity-only files; type-checked) (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §5.6 safe-pose sampling; §5.2 deep mud; §3.5 accessibility; §2.5 vehicle states
 location:
   - Assets/Wayfinder/Scripts/Presentation/VerticalSliceDriver.cs:148 (Grounded = State != Airborne)
@@ -600,7 +645,10 @@ id: DEF-016
 severity: S2
 category: tooling
 confidence: static-unity
-status: open
+status: fixed
+fixed_note: >
+  fixed — the editor validator reads reward.salvage and enforces objective reachability; validate_content.py is the authoritative side (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §17.1 content validation; §16.6 CI must fail on content errors
 location:
   - Assets/Wayfinder/Scripts/Editor/ContentImporter.cs:179 (`token.Value<int>("rewardSalvage")`)
@@ -633,7 +681,10 @@ id: DEF-017
 severity: S2
 category: gameplay-logic
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — escrow is keyed by hub; a bank releases the unattributed pool plus its own share only (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §2.3, §8.4, §12.2 ("bank resources" at garage/camp)
 location:
   - Assets/Wayfinder/Scripts/Progression/EconomyService.cs:40  (BankEscrow — moves the whole balance)
@@ -661,7 +712,10 @@ id: DEF-025
 severity: S2
 category: tooling
 confidence: static-pure
-status: open
+status: fixed
+fixed_note: >
+  fixed — formula_checks.py parses the C# constants and a self-lint rejects literal-only checks (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §16.6 / GEN evidence chain; DECISIONS on headless verification
 location:
   - Tools/Validation/formula_checks.py:145  (`check("water: baseline wading 0.55 m", True and 0.55 == 0.55)`)
@@ -701,7 +755,10 @@ id: DEF-018
 severity: S3
 category: gameplay-logic
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — ItemCrafted/ItemsTransferred/ItemsSold/ItemUsed/RecoveryRequested are emitted on commit (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §16.3 ("events report committed outcomes only")
 location:
   - Assets/Wayfinder/Scripts/Progression/EconomyService.cs:173  (`GameEvent committed = null;`)
@@ -722,7 +779,10 @@ id: DEF-019
 severity: S3
 category: data-integrity
 confidence: verified-executed
-status: open
+status: fixed
+fixed_note: >
+  fixed — the session passes a real TransactionId to TryDiscoverLandmark (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §16.3 ("every permanent reward event carries a stable source key and transaction ID")
 location:
   - Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs:118 (TryDiscoverLandmark signature, out GameEvent discovered)
@@ -742,7 +802,7 @@ id: DEF-020
 severity: S3
 category: persistence
 confidence: verified-executed
-status: open-latent
+status: fixed
 spec: §15 save integrity (checksum + backup), QA case 19
 location:
   - Assets/Wayfinder/Scripts/Core/BitGrid.cs:114 (`FromBase64`)
@@ -768,7 +828,10 @@ id: DEF-021
 severity: S3
 category: data-integrity
 confidence: static-pure
-status: open
+status: fixed
+fixed_note: >
+  fixed — Remove/QuantityOf take a mission-instance filter (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 location:
   - Assets/Wayfinder/Scripts/Progression/InventoryService.cs:276-297 (Remove matches ItemId only; remainder keeps MissionInstanceId)
   - Assets/Wayfinder/Scripts/Progression/InventoryService.cs:143   (readonly List<string> _protectedLedger)
@@ -793,7 +856,10 @@ id: DEF-022
 severity: S3
 category: persistence
 confidence: static-pure
-status: open
+status: fixed
+fixed_note: >
+  fixed — Save() converts non-IO failures to FailedWrite and clears the temp file; LoadBestValid rejects another slot's envelope (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 location:
   - Assets/Wayfinder/Scripts/Persistence/SaveService.cs:181-240 (Save)
   - Assets/Wayfinder/Scripts/Persistence/SaveService.cs:233,237 (catch IOException / UnauthorizedAccessException only)
@@ -821,7 +887,10 @@ id: DEF-023
 severity: S3
 category: performance
 confidence: static-pure
-status: open
+status: fixed
+fixed_note: >
+  fixed — the 37.8 MB grid is allocated by Bake(), not by the constructor (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §18.5 quality tiers; §19 memory budget on 4 GB Android devices
 location:
   - Assets/Wayfinder/Scripts/World/WorldDefinition.cs:147,153 (_gridSide = 6144/2 + 1 = 3073)
@@ -844,7 +913,10 @@ id: DEF-024
 severity: S3
 category: gameplay-logic
 confidence: static-pure
-status: open
+status: fixed
+fixed_note: >
+  fixed — the accumulator carries its remainder (_accum -= 1f / SimulationHz) (2026-10-19). Pinned by
+  Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs.
 spec: §7.7 (weather sim at 1 Hz)
 location:
   - Assets/Wayfinder/Scripts/World/RouteGraph.cs:204 (class WeatherSystem)
@@ -866,15 +938,15 @@ verify_with: step 600 × 1/60 s and assert exactly 10 weather ticks.
 
 | Claim in the repo | Reality (evidence) |
 |---|---|
-| `Docs/IMPLEMENTATION_STATUS.md`: M4 "All 20 missions, 30 contracts + 5 templates — Implemented" | Q05–Q20 unreachable (DEF-003); no contract can be accepted (DEF-007). Only the forest slice Q01–Q04 plays. |
-| README: research "20 tiers Σ 32,200 Salvage" implemented | 5 tiers have no effects (9,100 = 28 %, DEF-004); Set composition can silently downgrade to tier-4 values (DEF-002). |
-| §4.4 surface-specific traction ("terrain is the puzzle") | Grip resolved for packed dirt only (DEF-005). |
-| §2.5 vehicle states Parked/Driving/Airborne/Winching/Stalled/Disabled/Recovering | Only four are ever assigned; Airborne/Winching/Recovering are unreachable (DEF-015). |
-| "terrain seam agreement ≤ 1 mm — worst diff 0.0" (EVIDENCE_M0, formula_checks output) | The check cannot fail — it samples one continuous function, and its Python mirror samples a single coordinate (DEF-011). |
-| `formula_checks.py` green output quoted as formula evidence | Self-contained mirror, never reads the C# source; 5 checks are tautologies (DEF-025). |
-| `validate_content.py` docstring: mirrors `Assets/Wayfinder/Scripts/Editor/ContentValidators.cs` | That file does not exist; the C# validators live in `Editor/ContentImporter.cs:80` and have already drifted (DEF-016). |
-| `Docs/KNOWN_ISSUES.md` KI-034 "four assemblies not compiled by Unity" | Still true; every `static-unity` defect here is also unverified at compile time. |
-| README "164 headless tests pass" | **True** — reproduced (164/164, 1,366,213 asserts). |
+| `Docs/IMPLEMENTATION_STATUS.md`: M4 "All 20 missions, 30 contracts + 5 templates — Implemented" | **Now close to true:** Q05–Q20 targets exist (DEF-003) and contracts can be accepted and completed (DEF-007). The sites Q05–Q20 use are authored in `Content/sites.json`; the relay four sit on the §6.1 anchors, the other 19 are procedural placements awaiting a level-design pass. Contract *sockets* (`contract_socket.*`) are still not placed in the world. |
+| README: research "20 tiers Σ 32,200 Salvage" implemented | **True again:** all 20 tiers carry effects (DEF-004) and composition is rank-ordered (DEF-002). Σ is still 32,200. |
+| §4.4 surface-specific traction ("terrain is the puzzle") | Per-wheel grip from the real surface and weather (DEF-005) — **needs one Unity PlayMode run** to confirm. |
+| §2.5 vehicle states Parked/Driving/Airborne/Winching/Stalled/Disabled/Recovering | Airborne is now assigned (DEF-015). Winching and Recovering are still not — they need the winch and rescue flows, which are M5 scope. |
+| "terrain seam agreement ≤ 1 mm — worst diff 0.0" (EVIDENCE_M0, formula_checks output) | Still 0.0, and always will be: adjacent tiles sample the same world line from a continuous field. The comparison is now exercised against a falsifiable case, and the output says which checks are mirrors rather than evidence (DEF-011/DEF-025). |
+| `formula_checks.py` green output quoted as formula evidence | Now reads `HazardModels.cs`, `WorldDefinition.cs`, `ResearchService.cs`, `upgrades.json` and `CampaignSession.Extraction.cs`; a self-lint rejects literal-only checks (DEF-025). Mutating `BaselineSafeWadingM` to 0.10 fails it. |
+| `validate_content.py` docstring: mirrors `Assets/Wayfinder/Scripts/Editor/ContentValidators.cs` | Corrected — the docstring now names `ContentImporter.cs` (class `ContentValidators`) and states that the Python file is authoritative. Both sides enforce objective reachability (DEF-016); the reward key they read is `reward.salvage`. |
+| `Docs/KNOWN_ISSUES.md` KI-034 "four assemblies not compiled by Unity" | Still true. `Tools/Build/unity_type_check.py` now compiles all 12 assemblies against a stub engine API (12/12 green), which removes the most likely class of KI-034 error but is **not** a Unity compilation. |
+| README "164 headless tests pass" | **True** — and now 188/188 (164 original + 24 regression tests for this report). |
 
 Non-defect context an AI needs:
 
@@ -885,7 +957,31 @@ Non-defect context an AI needs:
 
 ---
 
-## 7. Verified-good (do not "fix" these; do not re-test)
+## 6b. Status of this report after the 2026-10-19 fix pass
+
+Every defect is closed in code. What "closed" means, precisely:
+
+* **Engine-free assemblies** (Core, World, Progression, Persistence, Campaign) — fixes are executed:
+  188/188 EditMode tests pass, including 24 new regression tests in
+  `Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs`, one per defect.
+* **Unity-facing assemblies** (DEF-005, DEF-006, DEF-013, DEF-014, DEF-015 in Platform/Presentation/
+  Simulation) — fixed and type-checked against the stub engine API by
+  `Tools/Build/unity_type_check.py` (12/12 assemblies, 0 warnings), **not executed**. They still
+  need one real Unity run (KI-034).
+* **Executed evidence that the fixes are real:** `python3 Docs/evidence/ai-review-2026-10-16/run_bug_probe.py`
+  now fails 10 of its 15 characterization assertions — the intended inversion (§8 step 8).
+
+The five probes that still pass, and why that is not a contradiction:
+
+| probe | why it still passes |
+|---|---|
+| DEF01_TireUnlockFlagsOnlyReflectCallerArguments | it calls `Resolve(..., true,true,true)` directly; the fix is that `VehicleController.ResolveStats()` no longer passes hardcoded unlocks (a Unity file, so the probe cannot see it) |
+| DEF02_ComposeIsSetOrderDependent | it uses the rank-less `AddModifier` overload; equal ranks still fall back to list order by design. The research tree now always supplies a tier rank, which is what made the ordering non-deterministic |
+| DEF03_SeamCheckComparesTheSameContinuousField | a real `HeightField` is continuous, so two tiles sampling the same world line always agree — the check returns 0, as it should. The comparison itself is now falsifiable (`SeamCheck.BordersMatch(tile, neighbour, edge, out diff)`) and is tested with a 5 mm disagreement |
+| DEF08_TransactionIdOfGrantedRewardsIsDefaultInDiscoveryService | it calls the legacy 4-argument `TryDiscoverLandmark`. The session uses the new overload that threads a real transaction id |
+| DEF10_CargoSettlementBanksEscrowFromAnySourceOnEveryBank | it escrows without a hub, which is exactly the "bankable anywhere" pool. Hub-attributed escrow is a new code path, covered by the DEF-017 tests |
+
+
 
 * Headless toolchain: real Roslyn 3.9 / C# 9 compile of **63 engine-free C# files across 7 assemblies**
   — 0 errors, 0 warnings, .NET Standard 2.1 profile clean, 164/164 NUnit tests, 89/89 build-tool unit tests.
@@ -929,6 +1025,11 @@ Non-defect context an AI needs:
 8. Re-run the whole baseline: `headless_cs.py all` must stay green (plus new tests);
    `validate_content.py`; `formula_checks.py`; and `run_bug_probe.py` must now **fail** on every fixed
    defect — that failure is the signal that the characterizations were inverted.
+
+Steps 1–8 are done (2026-10-19): `headless_cs.py all` = compile OK, **188/188** tests, netstandard2.1
+profile OK, 30-file syntax check OK; `validate_content.py` 0 errors; `formula_checks.py` 0 failures
+(and it now reads the C#); `run_bug_probe.py` fails 10/15. `unity_type_check.py` is 12/12.
+See `Docs/evidence/bug-report-2026-10-19/README.md`.
 
 ---
 

@@ -1,20 +1,192 @@
 [
-  { "id": "salvage_bundle", "nameKey": "item.salvage.name", "maxStack": 50, "unitMassKg": 0.10, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 1, "use": "Bankable Salvage; 1 unit banks into 1 Salvage" },
-  { "id": "scrap_metal", "nameKey": "item.scrap_metal.name", "maxStack": 10, "unitMassKg": 1.0, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 10, "use": "Crafting metal" },
-  { "id": "polymer", "nameKey": "item.polymer.name", "maxStack": 10, "unitMassKg": 0.5, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 12, "use": "Seals/boards material" },
-  { "id": "electronics", "nameKey": "item.electronics.name", "maxStack": 5, "unitMassKg": 0.4, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 25, "use": "Sensors and kits" },
-  { "id": "alloy", "nameKey": "item.alloy.name", "maxStack": 5, "unitMassKg": 0.8, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 35, "use": "Advanced fabrication" },
-  { "id": "fuel_can", "nameKey": "item.fuel_can.name", "maxStack": 2, "unitMassKg": 5.0, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 60, "use": "Adds min(6, capacity-current) L fuel; confirm waste; one can consumed per use" },
-  { "id": "repair_kit", "nameKey": "item.repair_kit.name", "maxStack": 3, "unitMassKg": 3.0, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 45, "use": "Restore 35 condition to one subsystem; outside water; stopped" },
-  { "id": "tire_patch", "nameKey": "item.tire_patch.name", "maxStack": 4, "unitMassKg": 0.5, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 22, "use": "Remove one puncture" },
-  { "id": "recovery_boards", "nameKey": "item.recovery_boards.name", "maxStack": 2, "unitMassKg": 4.0, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 35, "use": "Mud traction ×1.45 for 20 s or 12 m; consumed when effect starts" },
-  { "id": "camp_kit", "nameKey": "item.camp_kit.name", "maxStack": 1, "unitMassKg": 12.0, "protectedLedger": false, "sellable": true, "purchasePriceSalvage": 100, "use": "Establish fixed camp socket" },
-  { "id": "survey_sample", "nameKey": "item.survey_sample.name", "maxStack": 3, "unitMassKg": 1.0, "protectedLedger": false, "sellable": false, "purchasePriceSalvage": 0, "use": "Optional contract object" },
-  { "id": "supply_case", "nameKey": "item.supply_case.name", "maxStack": 1, "unitMassKg": 20.0, "protectedLedger": false, "sellable": false, "purchasePriceSalvage": 0, "use": "Delivery object; 20 or 30 kg by definition" },
-  { "id": "relay_fuse", "nameKey": "item.relay_fuse.name", "maxStack": 1, "unitMassKg": 0, "protectedLedger": true, "sellable": false, "purchasePriceSalvage": 0, "use": "Protected small quest item (Q04)" },
-  { "id": "sensor_core", "nameKey": "item.sensor_core.name", "maxStack": 1, "unitMassKg": 0, "protectedLedger": true, "sellable": false, "purchasePriceSalvage": 0, "use": "Protected quest item (Q18)" },
-  { "id": "quest.brace_manifest", "nameKey": "item.brace_manifest.name", "maxStack": 1, "unitMassKg": 0, "protectedLedger": true, "sellable": false, "purchasePriceSalvage": 0, "use": "Protected delivery (ledger)" },
-  { "id": "quest.archive_case", "nameKey": "item.archive_case.name", "maxStack": 1, "unitMassKg": 10.0, "protectedLedger": false, "sellable": false, "purchasePriceSalvage": 0, "use": "Delivery object; one slot, 10 kg" },
-  { "id": "quest.cable_spool", "nameKey": "item.cable_spool.name", "maxStack": 1, "unitMassKg": 35.0, "protectedLedger": false, "sellable": false, "purchasePriceSalvage": 0, "use": "Delivery object; two slots, 35 kg" },
-  { "id": "quest.stabilizer_plates", "nameKey": "item.stabilizer_plates.name", "maxStack": 1, "unitMassKg": 40.0, "protectedLedger": false, "sellable": false, "purchasePriceSalvage": 0, "use": "Delivery object; two slots, 40 kg" }
+  {
+    "id": "salvage_bundle",
+    "nameKey": "item.salvage.name",
+    "maxStack": 50,
+    "unitMassKg": 0.1,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 1,
+    "use": "Bankable Salvage; 1 unit banks into 1 Salvage"
+  },
+  {
+    "id": "scrap_metal",
+    "nameKey": "item.scrap_metal.name",
+    "maxStack": 10,
+    "unitMassKg": 1.0,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 10,
+    "use": "Crafting metal"
+  },
+  {
+    "id": "polymer",
+    "nameKey": "item.polymer.name",
+    "maxStack": 10,
+    "unitMassKg": 0.5,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 12,
+    "use": "Seals/boards material"
+  },
+  {
+    "id": "electronics",
+    "nameKey": "item.electronics.name",
+    "maxStack": 5,
+    "unitMassKg": 0.4,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 25,
+    "use": "Sensors and kits"
+  },
+  {
+    "id": "alloy",
+    "nameKey": "item.alloy.name",
+    "maxStack": 5,
+    "unitMassKg": 0.8,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 35,
+    "use": "Advanced fabrication"
+  },
+  {
+    "id": "fuel_can",
+    "nameKey": "item.fuel_can.name",
+    "maxStack": 2,
+    "unitMassKg": 5.0,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 60,
+    "use": "Adds min(6, capacity-current) L fuel; confirm waste; one can consumed per use"
+  },
+  {
+    "id": "repair_kit",
+    "nameKey": "item.repair_kit.name",
+    "maxStack": 3,
+    "unitMassKg": 3.0,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 45,
+    "use": "Restore 35 condition to one subsystem; outside water; stopped"
+  },
+  {
+    "id": "tire_patch",
+    "nameKey": "item.tire_patch.name",
+    "maxStack": 4,
+    "unitMassKg": 0.5,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 22,
+    "use": "Remove one puncture"
+  },
+  {
+    "id": "recovery_boards",
+    "nameKey": "item.recovery_boards.name",
+    "maxStack": 2,
+    "unitMassKg": 4.0,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 35,
+    "use": "Mud traction \u00d71.45 for 20 s or 12 m; consumed when effect starts"
+  },
+  {
+    "id": "camp_kit",
+    "nameKey": "item.camp_kit.name",
+    "maxStack": 1,
+    "unitMassKg": 12.0,
+    "protectedLedger": false,
+    "sellable": true,
+    "purchasePriceSalvage": 100,
+    "use": "Establish fixed camp socket"
+  },
+  {
+    "id": "survey_sample",
+    "nameKey": "item.survey_sample.name",
+    "maxStack": 3,
+    "unitMassKg": 1.0,
+    "protectedLedger": false,
+    "sellable": false,
+    "purchasePriceSalvage": 0,
+    "use": "Optional contract object"
+  },
+  {
+    "id": "supply_case",
+    "nameKey": "item.supply_case.name",
+    "maxStack": 1,
+    "unitMassKg": 20.0,
+    "protectedLedger": false,
+    "sellable": false,
+    "purchasePriceSalvage": 0,
+    "use": "Delivery object; 20 or 30 kg by definition"
+  },
+  {
+    "id": "relay_fuse",
+    "nameKey": "item.relay_fuse.name",
+    "maxStack": 1,
+    "unitMassKg": 0,
+    "protectedLedger": true,
+    "sellable": false,
+    "purchasePriceSalvage": 0,
+    "use": "Protected small quest item (Q04)"
+  },
+  {
+    "id": "sensor_core",
+    "nameKey": "item.sensor_core.name",
+    "maxStack": 1,
+    "unitMassKg": 0,
+    "protectedLedger": true,
+    "sellable": false,
+    "purchasePriceSalvage": 0,
+    "use": "Protected quest item (Q18)"
+  },
+  {
+    "id": "quest.brace_manifest",
+    "nameKey": "item.brace_manifest.name",
+    "maxStack": 1,
+    "unitMassKg": 0,
+    "protectedLedger": true,
+    "sellable": false,
+    "purchasePriceSalvage": 0,
+    "use": "Protected delivery (ledger)"
+  },
+  {
+    "id": "quest.archive_case",
+    "nameKey": "item.archive_case.name",
+    "maxStack": 1,
+    "unitMassKg": 10.0,
+    "protectedLedger": false,
+    "sellable": false,
+    "purchasePriceSalvage": 0,
+    "use": "Delivery object; one slot, 10 kg"
+  },
+  {
+    "id": "quest.cable_spool",
+    "nameKey": "item.cable_spool.name",
+    "maxStack": 1,
+    "unitMassKg": 35.0,
+    "protectedLedger": false,
+    "sellable": false,
+    "purchasePriceSalvage": 0,
+    "use": "Delivery object; two slots, 35 kg"
+  },
+  {
+    "id": "quest.stabilizer_plates",
+    "nameKey": "item.stabilizer_plates.name",
+    "maxStack": 1,
+    "unitMassKg": 40.0,
+    "protectedLedger": false,
+    "sellable": false,
+    "purchasePriceSalvage": 0,
+    "use": "Delivery object; two slots, 40 kg"
+  },
+  {
+    "id": "document.pump_diagram",
+    "nameKey": "item.pump_diagram.name",
+    "maxStack": 1,
+    "unitMassKg": 1.0,
+    "protectedLedger": false,
+    "sellable": false,
+    "purchasePriceSalvage": 0,
+    "use": "Quest document (Q14): read the pump diagram at the alternate causeway"
+  }
 ]

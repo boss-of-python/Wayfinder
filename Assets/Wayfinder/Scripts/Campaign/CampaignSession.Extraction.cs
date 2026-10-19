@@ -37,6 +37,22 @@ namespace Wayfinder.Campaign
                 summary.Result = CommandResult.Fail(FailureReason.WrongState, "no active expedition");
                 return summary;
             }
+            // DEF-003: reaching a known garage is what unlocks it. Nothing ever called
+            // GarageService.UnlockGarage, so only garage.home was unlocked and Q05's
+            // VisitVolume(garage.canyon) — reported only by a successful extraction here — could
+            // never complete, which froze Q06…Q20 behind it. Unlocking is free (§11.4) and runs as a
+            // transaction, so it is idempotent and rolls back with the extraction that follows.
+            if (!string.IsNullOrEmpty(garageId) && GarageService.IsKnownGarage(garageId) && !Garage.IsGarageUnlocked(garageId))
+            {
+                var unlock = Transactions.Execute(new UnlockGarage(NextTransactionId(), new ContentId(garageId)));
+                if (!unlock.Success)
+                {
+                    summary.Result = unlock;
+                    return summary;
+                }
+                Notice(CampaignNoticeKind.GarageUnlocked, $"Garage unlocked: {garageId}", 0, garageId);
+            }
+
             if (string.IsNullOrEmpty(garageId) || !Garage.IsGarageUnlocked(garageId))
             {
                 summary.Result = CommandResult.Fail(FailureReason.InvalidTarget, $"garage '{garageId}' is not unlocked");

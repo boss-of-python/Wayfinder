@@ -1,0 +1,398 @@
+[
+  {
+    "id": "document.pump_diagram",
+    "kind": "questItem",
+    "biome": "wetlands",
+    "missionCodes": [
+      "Q14"
+    ],
+    "positionHint": {
+      "x": 3548.0,
+      "y": 0,
+      "z": 768.0
+    },
+    "radiusMeters": 8.0,
+    "provenance": "procedural",
+    "itemId": "document.pump_diagram"
+  },
+  {
+    "id": "junction.city.01",
+    "kind": "inspect",
+    "biome": "city",
+    "missionCodes": [
+      "Q09"
+    ],
+    "positionHint": {
+      "x": 4828.0,
+      "y": 0,
+      "z": 2304.0
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "junction.city.02",
+    "kind": "inspect",
+    "biome": "city",
+    "missionCodes": [
+      "Q09"
+    ],
+    "positionHint": {
+      "x": 4349.9,
+      "y": 0,
+      "z": 2540.4
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "junction.city.03",
+    "kind": "inspect",
+    "biome": "city",
+    "missionCodes": [
+      "Q09"
+    ],
+    "positionHint": {
+      "x": 4650.0,
+      "y": 0,
+      "z": 1825.8
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "marker.canyon.01",
+    "kind": "inspect",
+    "biome": "canyon",
+    "missionCodes": [
+      "Q06"
+    ],
+    "positionHint": {
+      "x": 5084.0,
+      "y": 0,
+      "z": 4608.0
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "marker.canyon.02",
+    "kind": "inspect",
+    "biome": "canyon",
+    "missionCodes": [
+      "Q06"
+    ],
+    "positionHint": {
+      "x": 4605.9,
+      "y": 0,
+      "z": 4844.4
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "marker.canyon.03",
+    "kind": "inspect",
+    "biome": "canyon",
+    "missionCodes": [
+      "Q06"
+    ],
+    "positionHint": {
+      "x": 4906.0,
+      "y": 0,
+      "z": 4129.8
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "pole.wetlands.01",
+    "kind": "inspect",
+    "biome": "wetlands",
+    "missionCodes": [
+      "Q13"
+    ],
+    "positionHint": {
+      "x": 3069.9,
+      "y": 0,
+      "z": 1004.4
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "pole.wetlands.02",
+    "kind": "inspect",
+    "biome": "wetlands",
+    "missionCodes": [
+      "Q13"
+    ],
+    "positionHint": {
+      "x": 3370.0,
+      "y": 0,
+      "z": 289.8
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "pole.wetlands.03",
+    "kind": "inspect",
+    "biome": "wetlands",
+    "missionCodes": [
+      "Q13"
+    ],
+    "positionHint": {
+      "x": 3699.1,
+      "y": 0,
+      "z": 1252.1
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "relay.canyon",
+    "kind": "relay",
+    "biome": "canyon",
+    "missionCodes": [
+      "Q08",
+      "Q20"
+    ],
+    "positionHint": {
+      "x": 4864.0,
+      "y": 0,
+      "z": 4608.0
+    },
+    "radiusMeters": 15.0,
+    "provenance": "spec-anchor",
+    "itemId": "relay_fuse"
+  },
+  {
+    "id": "relay.city",
+    "kind": "relay",
+    "biome": "city",
+    "missionCodes": [
+      "Q12",
+      "Q20"
+    ],
+    "positionHint": {
+      "x": 4608.0,
+      "y": 0,
+      "z": 2304.0
+    },
+    "radiusMeters": 15.0,
+    "provenance": "spec-anchor",
+    "itemId": "relay_fuse"
+  },
+  {
+    "id": "relay.highlands",
+    "kind": "relay",
+    "biome": "highlands",
+    "missionCodes": [
+      "Q19",
+      "Q20"
+    ],
+    "positionHint": {
+      "x": 1792.0,
+      "y": 0,
+      "z": 5120.0
+    },
+    "radiusMeters": 15.0,
+    "provenance": "spec-anchor",
+    "itemId": "relay_fuse"
+  },
+  {
+    "id": "relay.wetlands",
+    "kind": "relay",
+    "biome": "wetlands",
+    "missionCodes": [
+      "Q16",
+      "Q20"
+    ],
+    "positionHint": {
+      "x": 3328.0,
+      "y": 0,
+      "z": 768.0
+    },
+    "radiusMeters": 15.0,
+    "provenance": "spec-anchor",
+    "itemId": "relay_fuse"
+  },
+  {
+    "id": "route.highlands.allweather",
+    "kind": "route",
+    "biome": "highlands",
+    "missionCodes": [
+      "Q17"
+    ],
+    "positionHint": {
+      "x": 1533.9,
+      "y": 0,
+      "z": 5356.4
+    },
+    "radiusMeters": 25.0,
+    "provenance": "procedural",
+    "checkpoints": [
+      {
+        "x": 1607.7,
+        "y": 0,
+        "z": 5288.9
+      },
+      {
+        "x": 1474.9,
+        "y": 0,
+        "z": 5410.5
+      }
+    ]
+  },
+  {
+    "id": "route.wetlands.crossing",
+    "kind": "route",
+    "biome": "wetlands",
+    "missionCodes": [
+      "Q13"
+    ],
+    "positionHint": {
+      "x": 4062.1,
+      "y": 0,
+      "z": 301.0
+    },
+    "radiusMeters": 25.0,
+    "provenance": "procedural",
+    "checkpoints": [
+      {
+        "x": 3538.9,
+        "y": 0,
+        "z": 633.8
+      },
+      {
+        "x": 3690.8,
+        "y": 0,
+        "z": 537.2
+      }
+    ]
+  },
+  {
+    "id": "route.wetlands.firm",
+    "kind": "route",
+    "biome": "wetlands",
+    "missionCodes": [
+      "Q15"
+    ],
+    "positionHint": {
+      "x": 3068.4,
+      "y": 0,
+      "z": 1733.7
+    },
+    "radiusMeters": 25.0,
+    "provenance": "procedural",
+    "checkpoints": [
+      {
+        "x": 3263.1,
+        "y": 0,
+        "z": 1009.4
+      },
+      {
+        "x": 3216.4,
+        "y": 0,
+        "z": 1183.3
+      },
+      {
+        "x": 3169.6,
+        "y": 0,
+        "z": 1357.1
+      }
+    ]
+  },
+  {
+    "id": "site.canyon.bridge",
+    "kind": "delivery",
+    "biome": "canyon",
+    "missionCodes": [
+      "Q07"
+    ],
+    "positionHint": {
+      "x": 4135.3,
+      "y": 0,
+      "z": 4479.1
+    },
+    "radiusMeters": 10.0,
+    "provenance": "procedural",
+    "itemId": ""
+  },
+  {
+    "id": "site.canyon.washed_out",
+    "kind": "inspect",
+    "biome": "canyon",
+    "missionCodes": [
+      "Q05"
+    ],
+    "positionHint": {
+      "x": 5598.1,
+      "y": 0,
+      "z": 4141.0
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "site.highlands.observatory",
+    "kind": "visit",
+    "biome": "highlands",
+    "missionCodes": [
+      "Q20"
+    ],
+    "positionHint": {
+      "x": 1834.0,
+      "y": 0,
+      "z": 4641.8
+    },
+    "radiusMeters": 40.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "site.wetlands.alt_causeway",
+    "kind": "inspect",
+    "biome": "wetlands",
+    "missionCodes": [
+      "Q14"
+    ],
+    "positionHint": {
+      "x": 2807.2,
+      "y": 0,
+      "z": 150.0
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "station.highlands.east",
+    "kind": "inspect",
+    "biome": "highlands",
+    "missionCodes": [
+      "Q18"
+    ],
+    "positionHint": {
+      "x": 2163.1,
+      "y": 0,
+      "z": 5604.1
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  },
+  {
+    "id": "station.highlands.west",
+    "kind": "inspect",
+    "biome": "highlands",
+    "missionCodes": [
+      "Q18"
+    ],
+    "positionHint": {
+      "x": 1063.3,
+      "y": 0,
+      "z": 4991.1
+    },
+    "radiusMeters": 12.0,
+    "provenance": "procedural"
+  }
+]
