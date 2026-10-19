@@ -5,25 +5,44 @@ PASS  the old fetcher reproduces the reported refusal
 PASS  the refusal text is the one from runs 39139527909/39141218150/39141401948
 PASS  the old fetcher left no log, so the reporter had nothing to read
 
-== 2. the current fetcher ==
-Downloaded job 117718330570 log: 6 lines, 512 bytes -> error_logs/unity-job-log.txt
-Stripped 39 bytes of escape sequences/carriage returns from 551 downloaded.
-gh accepted --allow-escape-sequences.
-::notice title=Unity job log::Job "Build Wayfinder-dev.apk" (117718330570): 6 lines, 512 bytes downloaded for diagnosis.
-PASS  the current fetcher downloads the log
-PASS  no escape sequence survives into the parsed log
-PASS  no carriage return survives
-PASS  the compile-error line survived sanitising intact, on one line
-PASS  the excerpt tail was written for the artefact
+== 2. the current fetcher over the gh path (no token in the environment) ==
+Downloaded job 117718330570 log with gh --allow-escape-sequences: 5 lines, 460 bytes -> error_logs/unity-job-log.txt
+Stripped 31 bytes of escape sequences/carriage returns from 491 downloaded.
+::notice title=Unity job log::Job "Build Wayfinder-dev.apk" (117718330570): 5 lines, 460 bytes downloaded with gh --allow-escape-sequences for diagnosis.
+PASS  gh was asked to opt out of the guard
 
-== 3. the reporter over the downloaded log ==
-::notice title=Unity diagnostics::Inspected error_logs/unity-job-log.txt (512 bytes); editor log recognised: yes.
-::error file=Assets/Wayfinder/Scripts/Presentation/MapOverlayView.cs,line=212,col=31,title=Unity compile error::error CS1061: 'RectTransform' does not contain a definition for 'setSizeDelta'
+== 3. the current fetcher over the curl path (token present, as in the workflow) ==
+Downloaded job 117718330570 log with curl: 5 lines, 460 bytes -> error_logs/unity-job-log.txt
+Stripped 31 bytes of escape sequences/carriage returns from 491 downloaded.
+::notice title=Unity job log::Job "Build Wayfinder-dev.apk" (117718330570): 5 lines, 460 bytes downloaded with curl for diagnosis.
+PASS  curl was preferred when a token was available
+
+== 4. is what each path wrote actually parsable? ==
+PASS  gh path: no escape sequence survives
+PASS  gh path: no carriage return survives
+PASS  gh path: the compile-error line survived intact, on one line
+PASS  gh path: the excerpt tail was written for the artefact
+PASS  curl path: no escape sequence survives
+PASS  curl path: no carriage return survives
+PASS  curl path: the compile-error line survived intact, on one line
+PASS  curl path: the excerpt tail was written for the artefact
+
+== 5. the control: the same bytes WITHOUT sanitising (what a verbatim download alone gives) ==
+::notice title=Unity diagnostics::Inspected verbatim.log (491 bytes); editor log recognised: yes.
+::error title=Unity aborted batchmode::Scripts have compiler errors.
+::error title=Unity aborted::Unity aborted before completing: Scripts have compiler errors.
+PASS  the unsanitised log loses the compile-error annotation (this is the gap sanitising closes)
+PASS  the unsanitised log still reports the abort reason, so it looks diagnosed while the cause is missing
+
+== 6. the reporter over the sanitised log ==
+::notice title=Unity diagnostics::Inspected error_logs/unity-job-log.txt (460 bytes); editor log recognised: yes.
+::error file=Assets/Wayfinder/Scripts/Editor/ContentImporter.cs,line=112,col=44,title=Unity compile error::error CS0234: The type or namespace name `Json' does not exist in the namespace `Newtonsoft'
 ::error title=Unity aborted batchmode::Scripts have compiler errors.
 ::error title=Unity aborted::Unity aborted before completing: Scripts have compiler errors.
 PASS  the compile error became a file/line/col annotation, readable from the API
 PASS  the downloaded log is recognised as an editor log
 PASS  the batchmode abort reason is annotated
 PASS  no 'failure not explained' fallback when a cause was matched
+PASS  no escape byte leaks into the annotation text
 
 DRESS REHEARSAL: all checks passed.

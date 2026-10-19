@@ -10,7 +10,8 @@
         "Wayfinder.Campaign",
         "Wayfinder.Platform",
         "Wayfinder.Presentation",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.Newtonsoft.Json"
     ],
     "includePlatforms": [
         "Editor"

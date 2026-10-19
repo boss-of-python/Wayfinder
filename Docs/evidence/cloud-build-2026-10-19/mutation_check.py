@@ -28,11 +28,22 @@ TESTS = ROOT / "Tools/Build/test_build_diagnostics.py"
 
 # (id, description, path, old, new)
 MUTATIONS = [
-    ("P1", "never opt in to escape sequences again (the three-run blindness of 2026-10-18)",
-     FETCH, '  allow_escapes="--allow-escape-sequences"', '  allow_escapes=""'),
-    ("P2", "pass the opt-in flag without checking whether this gh build has it (older gh: hard error)",
-     FETCH, 'if "$gh_cli" api --help 2>&1 | grep -q -- \'--allow-escape-sequences\'; then',
-     "if true; then"),
+    # Retargeted after merging PR #15 (curl-first download): the capability probe is gone, because
+    # the chain now tries curl, then `gh --allow-escape-sequences`, then plain `gh`.
+    ("P1", "never ask gh to opt out of the escape-sequence guard (the three-run blindness of 2026-10-18)",
+     FETCH, 'if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" --allow-escape-sequences \\',
+     'if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" \\'),
+    ("P2", "drop the plain-gh fallback, so a gh too old for the flag gets nothing",
+     FETCH, '''  if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$rawfile" 2>"$errfile" \\
+    && [ -s "$rawfile" ]; then
+    downloader="gh"
+    return 0
+  fi
+''', ""),
+    ("P19", "stop preferring curl, so gh's escape-sequence guard can block the download again",
+     FETCH, 'if [ -n "$token" ] && command -v "$curl_cli" >/dev/null 2>&1; then', "if false; then"),
+    # The gap this batch closes on top of PR #15: curl fixes the *download* and writes bytes
+    # verbatim, so without sanitising the reporter still cannot annotate a colourised compile error.
     ("P3", "save the downloaded job log without sanitising it",
      FETCH, 'sanitise <"$rawfile" >"$output"', 'cat <"$rawfile" >"$output"'),
     ("P4", "widen the CSI intermediate-byte class back to [ -\\/], which eats the text after ESC[K",

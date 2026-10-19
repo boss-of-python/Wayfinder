@@ -1,4 +1,4 @@
-# python3 Tools/Build/test_build_diagnostics.py -v  (2026-10-19, after the escape-sequence fix)
+# python3 Tools/Build/test_build_diagnostics.py -v  (2026-10-19, merged tree: PR #15 curl chain + sanitising)
 test_gameci_custom_editor_log_path_is_scanned (test_build_diagnostics.ReportUnityFailureTests.test_gameci_custom_editor_log_path_is_scanned) ... ok
 test_missing_log_is_a_notice_not_a_failure (test_build_diagnostics.ReportUnityFailureTests.test_missing_log_is_a_notice_not_a_failure) ... ok
 test_native_crash_is_reported_as_the_cause (test_build_diagnostics.ReportUnityFailureTests.test_native_crash_is_reported_as_the_cause) ... ok
@@ -18,6 +18,6 @@ test_worker_logs_only_include_a_tail_when_the_editor_log_is_missing (test_build_
 test_missing_explicit_log_does_not_blame_the_same_job (test_build_diagnostics.ReporterMissingLogMessageTests.test_missing_explicit_log_does_not_blame_the_same_job) ... ok
 
 ----------------------------------------------------------------------
-Ran 88 tests in 2.844s
+Ran 91 tests in 3.101s
 
 OK

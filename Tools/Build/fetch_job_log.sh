@@ -17,15 +17,24 @@
 # answered all twelve attempts with
 #   "the response contains terminal escape sequences; pass --allow-escape-sequences to output it
 #    anyway"
-# and no log was ever written. So this script (a) asks for the raw bytes explicitly when the
-# installed gh supports that flag and (b) always sanitises what it writes: escape sequences and
-# carriage returns would otherwise split the very lines report_unity_failure.sh greps for
-# (`error CS0117:`, `Aborting batchmode due to failure:`, ...) and would be rejected by the
-# workflow-command parser, which forbids ESC in annotation text.
+# and no log was ever written — redirecting stdout to a file does not bypass the guard
+# (`!isJSON && !opts.AllowEscapeSequences && bodyWriter != io.Discard`, cli/cli pkg/cmd/api/api.go).
+#
+# So the download goes through curl first (it writes bytes verbatim and follows the API's 302 to
+# the signed log URL), then `gh api --allow-escape-sequences`, then plain `gh api` for versions too
+# old to know the flag.
+#
+# Getting the bytes is only half of it: **verbatim is not parsable.** Unity/game-ci colourise the
+# lines that matter, so a raw download holds
+#   `ContentImporter.cs(112,44): ESC[31merror CS0234: ...ESC[0m CR`
+# and report_unity_failure.sh's `): error CS[0-9]+:` grep does not match across the escape — the
+# compile error is not annotated, the ESC bytes leak into the annotation text, and the run reports
+# "failure not explained" while holding the answer. Everything downloaded is therefore sanitised
+# before it is written out.
 #
 # Usage:  fetch_job_log.sh <job name> <output file> [attempts] [sleep seconds]
 # Env:    GITHUB_REPOSITORY, GITHUB_RUN_ID, GITHUB_RUN_ATTEMPT, GH_TOKEN (or GITHUB_TOKEN),
-#         WAYFINDER_GH to override the `gh` executable (used by the tests).
+#         WAYFINDER_GH / WAYFINDER_CURL to override the `gh` / `curl` executables (used by tests).
 #
 # Writes: <output>            sanitised plain-text job log (what the reporter parses)
 #         <output>.excerpt    last lines of the log, so the uploaded error_logs/ artefact carries
@@ -49,9 +58,11 @@ if [ -z "$job_name" ] || [ -z "$output" ]; then
 fi
 
 gh_cli="${WAYFINDER_GH:-gh}"
+curl_cli="${WAYFINDER_CURL:-curl}"
 repository="${GITHUB_REPOSITORY:-}"
 run_id="${GITHUB_RUN_ID:-}"
 run_attempt="${GITHUB_RUN_ATTEMPT:-1}"
+token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
 
 if [ -z "$repository" ] || [ -z "$run_id" ]; then
   echo "::notice title=Unity job log::GITHUB_REPOSITORY/GITHUB_RUN_ID are unset; cannot download the build job log."
@@ -78,13 +89,35 @@ if [ -z "$job_id" ]; then
 fi
 
 errfile="$(mktemp 2>/dev/null || echo "${output}.err")"
+rawfile="$(mktemp 2>/dev/null || echo "${output}.raw")"
 
-# gh >= 2.63 needs an explicit opt-in before it prints a response containing escape sequences.
-# Detect it once instead of guessing from a version string: an unsupported flag is a hard error.
-allow_escapes=""
-if "$gh_cli" api --help 2>&1 | grep -q -- '--allow-escape-sequences'; then
-  allow_escapes="--allow-escape-sequences"
-fi
+# One download attempt: curl first (immune to gh's escape-sequence refusal), then gh with the flag
+# that opts out of it, then plain gh for versions too old to know the flag. The API answers with a
+# redirect to a short-lived signed blob URL, and the archive can lag a few seconds behind the job's
+# completion; the caller retries the whole attempt before giving up.
+download_log() {
+  if [ -n "$token" ] && command -v "$curl_cli" >/dev/null 2>&1; then
+    if "$curl_cli" -fsSL \
+        -H "Authorization: Bearer $token" \
+        -H "Accept: application/vnd.github+json" \
+        "https://api.github.com/repos/$repository/actions/jobs/$job_id/logs" \
+        -o "$rawfile" 2>"$errfile" && [ -s "$rawfile" ]; then
+      downloader="curl"
+      return 0
+    fi
+  fi
+  if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" --allow-escape-sequences \
+      >"$rawfile" 2>"$errfile" && [ -s "$rawfile" ]; then
+    downloader="gh --allow-escape-sequences"
+    return 0
+  fi
+  if "$gh_cli" api "repos/$repository/actions/jobs/$job_id/logs" >"$rawfile" 2>"$errfile" \
+    && [ -s "$rawfile" ]; then
+    downloader="gh"
+    return 0
+  fi
+  return 1
+}
 
 # Plain text only: drop CSI/OSC sequences (colours, cursor moves), lone ESCs and the \r that
 # Docker progress redraws leave behind. Note the intermediate-byte class is written `[ -/]`
@@ -99,13 +132,11 @@ sanitise() {
 }
 
 last_error=""
-rawfile="$(mktemp 2>/dev/null || echo "${output}.raw")"
+downloader=""
 for attempt in $(seq 1 "$attempts"); do
-  # The API answers with a redirect to a short-lived signed blob URL, and the archive can lag a
-  # few seconds behind the job's completion; retry before giving up. gh's own stderr is kept:
-  # run 38880573866 reported only "could not download", which hid the actual cause.
-  if "$gh_cli" api $allow_escapes "repos/$repository/actions/jobs/$job_id/logs" >"$rawfile" 2>"$errfile" \
-    && [ -s "$rawfile" ]; then
+  # The downloader's own stderr is kept: run 38880573866 reported only "could not download", which
+  # hid the actual cause.
+  if download_log; then
     sanitise <"$rawfile" >"$output"
     if [ -s "$output" ]; then
       # Keep the end of Unity's own output in the uploaded artefact: annotations carry a few
@@ -120,24 +151,19 @@ for attempt in $(seq 1 "$attempts"); do
       raw_bytes="$(wc -c <"$rawfile" | tr -d ' ')"
       removed=$((raw_bytes - bytes))
       rm -f "$errfile" "$rawfile"
-      echo "Downloaded job $job_id log: $lines lines, $bytes bytes -> $output"
+      echo "Downloaded job $job_id log with $downloader: $lines lines, $bytes bytes -> $output"
       # Say how much sanitising removed, so a sanitiser that ever ate real content is visible.
       if [ "$removed" -gt 0 ]; then
         echo "Stripped $removed bytes of escape sequences/carriage returns from $raw_bytes downloaded."
       else
         echo "The download contained no escape sequences to strip ($raw_bytes bytes)."
       fi
-      if [ -n "$allow_escapes" ]; then
-        echo "gh accepted --allow-escape-sequences."
-      else
-        echo "This gh build has no --allow-escape-sequences flag; sanitising made the log parsable anyway."
-      fi
-      echo "::notice title=Unity job log::Job \"$job_name\" ($job_id): $lines lines, $bytes bytes downloaded for diagnosis."
+      echo "::notice title=Unity job log::Job \"$job_name\" ($job_id): $lines lines, $bytes bytes downloaded with $downloader for diagnosis."
       exit 0
     fi
-    last_error="the download contained only control characters; nothing parsable survived sanitising"
+    last_error="$downloader returned a body of which nothing parsable survived sanitising (only control characters)"
   else
-    # Keep the last non-empty line of gh's error, with the signed query string removed.
+    # Keep the last non-empty line of the downloader's error, with the signed query string removed.
     last_error="$(grep -v '^[[:space:]]*$' "$errfile" 2>/dev/null | tail -1 | cut -c1-300 \
       | sed -E 's/\?[^" ]*/?<redacted>/g')"
   fi
@@ -146,15 +172,15 @@ for attempt in $(seq 1 "$attempts"); do
 done
 
 rm -f "$output" "$rawfile" "${output}.excerpt" "$errfile"
-detail="${last_error:-no error text from gh}"
-echo "gh api repos/$repository/actions/jobs/$job_id/logs failed $attempts times: $detail"
+detail="${last_error:-no error text from the downloader}"
+echo "Downloading repos/$repository/actions/jobs/$job_id/logs failed $attempts times: $detail"
 
 # Name the likely cause instead of always blaming the token. Runs 39139527909/39141218150/
 # 39141401948 each printed "Needs actions: read" over an escape-sequence refusal, and the workflow
 # had already granted that permission — the hint sent three investigations after a non-problem.
 case "$detail" in
   *"escape sequences"*)
-    hint="gh refused the body because it contains terminal escape sequences. This script passes --allow-escape-sequences when \`gh api --help\` advertises it, so either the runner's gh is older than 2.63 or it stopped advertising the flag: check \`gh --version\` in the job log." ;;
+    hint="The downloader refused a body containing terminal escape sequences. curl writes bytes verbatim and needs GH_TOKEN/GITHUB_TOKEN in the environment; \`gh api\` needs --allow-escape-sequences (gh >= 2.63). Check \`gh --version\` and the token in the job log." ;;
   *"403"* | *"404"* | *"resource not accessible"* | *"permission"* | *"scope"*)
     hint="Needs \`actions: read\` on the workflow token (and the job must be finished)." ;;
   *)

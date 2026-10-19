@@ -440,19 +440,13 @@ class FetchJobLogTests(unittest.TestCase):
             "GH_JOB_LOG": str(self.job_log),
         }
 
-    def write_gh(self, job_id="4242", supports_escape_flag=True):
-        # `gh api --help` is the capability probe: gh >= 2.63 refuses to print a response that
-        # contains terminal escape sequences unless it is asked to (run 39141401948, twelve
-        # attempts, no log). The stub answers it the way the real CLI does.
-        help_flags = "--allow-escape-sequences" if supports_escape_flag else "--paginate"
+    def write_gh(self, job_id="4242"):
+        # gh >= 2.63 refuses to print a response containing terminal escape sequences unless it is
+        # asked to (run 39141401948: twelve attempts, no log). The stub answers the log endpoint
+        # the way the real CLI does once --allow-escape-sequences is passed.
         self.gh.write_text(f"""#!/usr/bin/env bash
 printf '%s\\n' "$*" >> "$GH_CALLS"
 case "$*" in
-  *"--help"*) cat <<'HELP'
-Flags:
-      {help_flags}
-HELP
-    ;;
   *"/jobs?per_page=100"*)
     case "$*" in
       *'select(.name == "{BUILD_JOB_NAME}")'*) printf '%s\\n' "{job_id}" ;;
@@ -512,31 +506,110 @@ esac
         self.assertIn("?<redacted>", result.stdout)
         self.assertNotIn("SECRET", result.stdout)
         self.assertFalse((self.root / "Logs/job.txt").exists())
-        self.assertEqual(3, self.calls.read_text().count("/actions/jobs/4242/logs"))
+        # Two gh calls per attempt: first with --allow-escape-sequences, then plain as a
+        # fallback for gh versions too old to know the flag. 3 attempts -> 6 calls.
+        self.assertEqual(6, self.calls.read_text().count("/actions/jobs/4242/logs"))
+
+    def write_curl(self, fail=False):
+        curl = self.root / "fake-curl"
+        curl.write_text(f"""#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$CURL_CALLS"
+if [ "{str(fail).lower()}" = "true" ]; then echo 'curl: (22) The requested URL returned error: 403' >&2; exit 22; fi
+out=""
+while [ $# -gt 0 ]; do if [ "$1" = "-o" ]; then out="$2"; fi; shift; done
+cat "$GH_JOB_LOG" > "$out"
+""")
+        curl.chmod(curl.stat().st_mode | stat.S_IEXEC)
+        return curl
+
+    def test_log_download_prefers_curl_so_escape_sequences_cannot_block_it(self):
+        # Runs 39139527909/39141218150/39141401948: `gh api .../logs` refused every download with
+        # "the response contains terminal escape sequences", so the Unity failure stayed invisible.
+        # With a token in the environment the fetcher must use curl, which writes bytes verbatim.
+        curl_calls = self.root / "curl-calls.txt"
+        env = dict(self.env, WAYFINDER_CURL=str(self.write_curl()),
+                   GH_TOKEN="test-token", CURL_CALLS=str(curl_calls))
+        result = self.fetch(env=env)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        written = (self.root / "Logs/job.txt").read_text()
+        self.assertIn("Build failed, with exit code 1", written)
+        self.assertIn("actions/jobs/4242/logs", curl_calls.read_text())
+        self.assertNotIn("/actions/jobs/4242/logs", self.calls.read_text())
+
+    def test_curl_failure_falls_back_to_gh(self):
+        curl_calls = self.root / "curl-calls.txt"
+        env = dict(self.env, WAYFINDER_CURL=str(self.write_curl(fail=True)),
+                   GH_TOKEN="test-token", CURL_CALLS=str(curl_calls))
+        result = self.fetch(env=env)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("Build failed, with exit code 1", (self.root / "Logs/job.txt").read_text())
+        self.assertIn("/actions/jobs/4242/logs", self.calls.read_text())
 
     # ---- regressions for run 39141401948: gh refused to print a log with escape sequences ----
 
-    def test_asks_for_escape_sequences_when_the_installed_gh_supports_them(self):
+    def test_gh_is_asked_to_opt_out_of_the_escape_sequence_guard(self):
         # The runner's notice, verbatim: "the response contains terminal escape sequences; pass
         # --allow-escape-sequences to output it anyway." Without the flag, all 12 attempts failed.
         result = self.fetch()
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-        self.assertIn("--allow-escape-sequences repos/boss-of-python/Wayfinder/actions/jobs/4242/logs",
-                      self.calls.read_text())
+        self.assertIn("repos/boss-of-python/Wayfinder/actions/jobs/4242/logs "
+                      "--allow-escape-sequences", self.calls.read_text())
+        self.assertIn("downloaded with gh --allow-escape-sequences for diagnosis", result.stdout)
 
-    def test_capability_is_probed_not_assumed(self):
-        self.fetch()
-        self.assertIn("api --help", self.calls.read_text())
-
-    def test_older_gh_without_the_flag_is_not_given_an_unknown_flag(self):
-        # An unsupported flag is a hard error ("unknown flag"), so it must not be passed blindly:
-        # the sanitiser below makes the download usable either way.
-        self.write_gh(supports_escape_flag=False)
+    def test_a_gh_too_old_for_the_flag_still_delivers_the_log(self):
+        # On gh < 2.63 the flag is an unknown-flag hard error, so the chain must fall through to a
+        # plain request rather than give up.
+        self.gh.write_text(self.gh.read_text().replace(
+            '*"/actions/jobs/4242/logs"*) cat "$GH_JOB_LOG" ;;',
+            '*"/actions/jobs/4242/logs"*)\n'
+            '    case "$*" in\n'
+            '      *"--allow-escape-sequences"*) echo "unknown flag: --allow-escape-sequences" >&2; exit 1 ;;\n'
+            '      *) cat "$GH_JOB_LOG" ;;\n'
+            '    esac ;;'))
         result = self.fetch()
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
-        calls = self.calls.read_text()
-        self.assertNotIn("--allow-escape-sequences repos/", calls)
-        self.assertIn("has no --allow-escape-sequences flag", result.stdout)
+        self.assertIn("Build failed, with exit code 1", (self.root / "Logs/job.txt").read_text())
+        self.assertIn("downloaded with gh for diagnosis", result.stdout)
+
+    def test_the_curl_download_is_sanitised_too(self):
+        # The gap this pins: curl writes bytes verbatim, so preferring it fixes the *download* and
+        # nothing else. A raw log holds `...cs(112,44): ESC[31merror CS0234: ...ESC[0m CR`, which
+        # the reporter's `): error CS[0-9]+:` grep does not match across — the compile error would
+        # go unannotated and the ESC bytes would leak into the annotation text.
+        self.job_log.write_bytes(
+            b"2026-10-18T15:56:40.3Z Assets/Wayfinder/Scripts/Editor/ContentImporter.cs(112,44): "
+            b"\033[31merror CS0234: The type or namespace name 'Json' does not exist in the "
+            b"namespace 'Newtonsoft'\033[0m\r\n"
+            b"2026-10-18T15:56:41.4Z Aborting batchmode due to failure:\r\n")
+        curl_calls = self.root / "curl-calls.txt"
+        env = dict(self.env, WAYFINDER_CURL=str(self.write_curl()),
+                   GH_TOKEN="test-token", CURL_CALLS=str(curl_calls))
+        result = self.fetch(env=env)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("downloaded with curl for diagnosis", result.stdout)
+        written = (self.root / "Logs/job.txt").read_bytes()
+        self.assertNotIn(b"\033", written)
+        self.assertNotIn(b"\r", written)
+        # The reporter annotates the real compile error out of what curl delivered.
+        report = run(REPORT, self.root, dict(self.env, UNITY_JOB_RESULT="failure"),
+                     logs=[self.root / "Logs/job.txt"])
+        self.assertIn("::error file=Assets/Wayfinder/Scripts/Editor/ContentImporter.cs,"
+                      "line=112,col=44,title=Unity compile error::error CS0234", report.stdout)
+        self.assertNotIn("Unity failure not explained", report.stdout)
+
+    def test_a_raw_unsanitised_log_would_miss_the_compile_error(self):
+        # The control for the test above: hand the reporter the same bytes *without* sanitising and
+        # it cannot annotate them. This is what a verbatim download alone produces, so it is the
+        # reason sanitising belongs in the fetcher and not only in the download choice.
+        raw = self.root / "error_logs/unity-job-log-raw.txt"
+        raw.parent.mkdir(parents=True, exist_ok=True)
+        raw.write_bytes(
+            b"2026-10-18T15:56:40.3Z Assets/Wayfinder/Scripts/Editor/ContentImporter.cs(112,44): "
+            b"\033[31merror CS0234: The type or namespace name 'Json' does not exist\033[0m\r\n")
+        report = run(REPORT, self.root, dict(self.env, UNITY_JOB_RESULT="failure"), logs=[raw])
+        self.assertNotIn("::error file=Assets/Wayfinder/Scripts/Editor/ContentImporter.cs",
+                         report.stdout)
+        self.assertIn("Unity failure not explained", report.stdout)
 
     def test_escape_sequences_and_carriage_returns_are_stripped_from_the_saved_log(self):
         # A Unity job log is coloured by game-ci/Docker and full of \r progress redraws. Left in
@@ -579,7 +652,7 @@ esac
         # The verbatim download is not left beside the artefact: a failing Unity job log runs to
         # tens of MB, and only the byte delta it reported is worth keeping.
         self.assertFalse((self.root / "Logs/job.txt.raw").exists())
-        self.assertIn("bytes downloaded for diagnosis", result.stdout)
+        self.assertIn("for diagnosis", result.stdout)
 
     def test_the_byte_delta_removed_by_sanitising_is_reported(self):
         # If the sanitiser ever ate real log content, the delta is the evidence that says so.
@@ -618,9 +691,12 @@ esac
         self.gh.chmod(self.gh.stat().st_mode | stat.S_IEXEC)
         result = self.fetch(attempts="2")
         self.assertEqual(1, result.returncode)
-        self.assertNotIn("Needs actions: read", result.stdout)
-        self.assertIn("gh refused the body because it contains terminal escape sequences",
+        self.assertNotIn("Needs `actions: read`", result.stdout)
+        self.assertIn("The downloader refused a body containing terminal escape sequences",
                       result.stdout)
+        # The hint has to say what actually unblocks it: a token for curl, or the flag for gh.
+        self.assertIn("GH_TOKEN/GITHUB_TOKEN", result.stdout)
+        self.assertIn("--allow-escape-sequences", result.stdout)
         self.assertIn("gh --version", result.stdout)
 
     def test_a_permission_error_is_still_reported_as_a_permission_problem(self):

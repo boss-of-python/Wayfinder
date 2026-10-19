@@ -252,12 +252,14 @@ dispatch is what proves it, and what finally names the Unity failure (KI-041).
 ## 2026-10-19 — D-036 Fetch Unity's log past gh's escape-sequence guard, and treat absence as evidence
 
 **Decision:**
-- **Detect the CLI capability, don't assume it.** `fetch_job_log.sh` probes `gh api --help` once for
-  `--allow-escape-sequences` and passes it only when the installed `gh` supports it. gh ≥ 2.63
-  refuses a raw non-JSON body that carries terminal escape sequences — and redirecting stdout does
-  **not** bypass the guard (`bodyWriter != io.Discard` in `pkg/cmd/api/api.go`) — while on older
-  `gh` the flag is an unknown-flag hard error. A version-string comparison would guess; the help
-  probe asks.
+- **Download through a chain, then sanitise whatever arrives.** `fetch_job_log.sh` tries `curl`
+  first (it writes bytes verbatim, follows the API's 302 to the signed log URL, and is immune to
+  gh's guard), then `gh api … --allow-escape-sequences`, then plain `gh api` for versions too old
+  to know the flag. gh ≥ 2.63 refuses a raw non-JSON body carrying terminal escape sequences — and
+  redirecting stdout does **not** bypass the guard (`!isJSON && !opts.AllowEscapeSequences &&
+  bodyWriter != io.Discard`, `pkg/cmd/api/api.go`). The chain is PR #15's; the half it was missing
+  is that **verbatim is not parsable** (next bullet), so the two are complementary rather than
+  alternative fixes and were merged rather than chosen between.
 - **The saved log is sanitised plain text.** CSI/OSC sequences, lone `ESC` and `\r` are stripped
   before anything parses the file: they split the exact lines the reporter greps for
   (`error CS0117:`, `Aborting batchmode due to failure:`) and GitHub's workflow-command parser
@@ -297,9 +299,12 @@ investigations after a non-problem. The refusal text is the evidence; gh's sourc
 mechanism; a dress rehearsal reproduces it with the base-commit fetcher and shows the current one
 annotating a compile error from the same stub.
 
-**Status:** Approved; executed locally only. 88/88 diagnostics tests, 23/23 pipeline tests, 18/18
-mutations caught, dress rehearsal green (`Docs/evidence/cloud-build-2026-10-19/`). **No part of it
-has run in CI**, and the Unity root cause is still unknown (KI-041): the next owner dispatch is
-what names it — most likely a first-ever compile error in the four Unity-facing assemblies
-(KI-034), which the run data (5–6 min, shader logs present, no breadcrumb) is consistent with but
-does not prove.
+**Status:** Approved; executed locally only. 91/91 diagnostics tests, 23/23 pipeline tests, 19/19
+mutations caught for this batch and 22/22 for Batch H, dress rehearsal green over both download
+paths (`Docs/evidence/cloud-build-2026-10-19/`). **No part of it has run in CI.** The Unity root
+cause is no longer unknown: PR #15, merged while this batch was in flight, found that
+`ContentImporter.cs` uses `Newtonsoft.Json.Linq` while `Wayfinder.Editor.asmdef` did not reference
+`Unity.Newtonsoft.Json` — a CS0234 that aborts batchmode before `-executeMethod`, which is exactly
+the shape KI-034 predicted and the run data showed (5–6 min, shader logs present, no breadcrumb).
+That fix is reasoned from the source, not yet executed by Unity, and other errors may hide behind
+it; one owner dispatch now both tests it and, if it fails again, reports why in file/line/col.

@@ -68,14 +68,21 @@ after five dispatches: **`gh api` refuses a raw log body containing ANSI colour 
 and redirecting stdout to a file does not bypass that guard**, so Unity's editor log never reached
 the reporter (KI-041, fixed by D-036).
 
-The fetcher now probes `gh api --help` for that flag, sanitises escape sequences out of the log it
-saves, and stores a 400-line excerpt in the artefact; the reporter names a crash or OOM kill and
-says when the editor breadcrumb is *absent* (which means no C# exception was thrown inside the
-build method). What the run data already establishes: Unity ran for minutes, packages resolved
-(four shader-compiler logs survived), and `ProjectSetup.Setup` threw nothing — so the cause is
-earlier than our entry point or the process was killed. The leading suspect is the first-ever
-Unity compile of the four Unity-facing assemblies (KI-034). **One dispatch of current `main` now
-names it** as file/line/column annotations; evidence in
+The fetcher now downloads through `curl` → `gh --allow-escape-sequences` → plain `gh`, **sanitises
+the escape sequences out of whatever arrives** (verbatim bytes are not parsable — game-ci colourises
+the compile-error line itself, so a raw log loses the `file=…,line=…,col=…` annotation while still
+looking diagnosed), and stores a 400-line excerpt in the artefact. The reporter names a crash or OOM
+kill and says when the editor breadcrumb is *absent*, which means no C# exception was thrown inside
+the build method.
+
+That absence is what pointed at the cause: Unity ran for minutes, packages resolved (four
+shader-compiler logs survived), and `ProjectSetup.Setup` threw nothing — so the failure was earlier
+than our entry point. Source review then found it (PR #15): `ContentImporter.cs` uses
+`Newtonsoft.Json.Linq` while `Wayfinder.Editor.asmdef` did not reference `Unity.Newtonsoft.Json`,
+and Unity asmdefs require direct references. A CS0234 in an Editor-only assembly aborts batchmode
+before `-executeMethod` — exactly the observed shape. The reference is added; it is reasoned from
+source, **not yet compiled by Unity**, and another error may hide behind it (KI-034). **One dispatch
+of current `main` now yields either an APK or file/line/column annotations**; evidence in
 `Docs/evidence/cloud-build-2026-10-19/`.
 
 The earlier 15 Oct Unity run also exposed a package compile error: Input System 1.12.0 referenced
@@ -155,17 +162,18 @@ run the supported desktop Unity Editor itself. A manual, dedicated-Windows-runne
 APK workflow is prepared in `.github/workflows/android-phone-build.yml`; it has
 not been run and requires secure owner setup, not a phone-only or free hosted build.
 
-Latest local checks: **88/88** diagnostics tests, **23/23** mocked pipeline tests, **18/18**
-mutations for the 19 Oct batch (**22/22** for Batch H) and a green dress rehearsal; the last
-headless C# run (16 Oct) passed **164/164** tests and this batch changed no C#. The three latest
+Latest local checks: **91/91** diagnostics tests, **23/23** mocked pipeline tests, **19/19**
+mutations for the 19 Oct batch (**22/22** for Batch H) and a 20/20 dress rehearsal; the last
+headless C# run (16 Oct) passed **164/164** tests, and the only C#-side change since is one added
+asmdef reference (PR #15). The three latest
 cloud runs failed in *Setup Project*, and their diagnose jobs could not fetch the editor log
 because `gh api` refused a body containing terminal escape sequences — found, reproduced against
 gh's own source and fixed on 19 Oct (KI-041, D-036). The workflow pre-creates
 `error_logs/apk-build-errors.log` and publishes the sanitised job log, its excerpt tail, the fetch
 transcript and the report as `Wayfinder-APK-error-logs`
-(`Docs/evidence/cloud-build-2026-10-19/`). The Unity failure itself is still undiagnosed and needs
-one dispatch; the mobile pause/focus and authored-water wiring remain Unity-unverified, and no real
-APK or device result exists.
+(`Docs/evidence/cloud-build-2026-10-19/`). The Unity failure is now attributed to a missing asmdef
+reference but is unverified by a real editor run and needs one dispatch; the mobile pause/focus and
+authored-water wiring remain Unity-unverified, and no real APK or device result exists.
 
 ## Quick start (owner machine)
 
