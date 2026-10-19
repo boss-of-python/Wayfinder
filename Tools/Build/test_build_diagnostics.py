@@ -430,7 +430,44 @@ esac
         self.assertIn("?<redacted>", result.stdout)
         self.assertNotIn("SECRET", result.stdout)
         self.assertFalse((self.root / "Logs/job.txt").exists())
-        self.assertEqual(3, self.calls.read_text().count("/actions/jobs/4242/logs"))
+        # Two gh calls per attempt: first with --allow-escape-sequences, then plain as a
+        # fallback for gh versions too old to know the flag. 3 attempts -> 6 calls.
+        self.assertEqual(6, self.calls.read_text().count("/actions/jobs/4242/logs"))
+
+    def write_curl(self, fail=False):
+        curl = self.root / "fake-curl"
+        curl.write_text(f"""#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$CURL_CALLS"
+if [ "{str(fail).lower()}" = "true" ]; then echo 'curl: (22) The requested URL returned error: 403' >&2; exit 22; fi
+out=""
+while [ $# -gt 0 ]; do if [ "$1" = "-o" ]; then out="$2"; fi; shift; done
+cat "$GH_JOB_LOG" > "$out"
+""")
+        curl.chmod(curl.stat().st_mode | stat.S_IEXEC)
+        return curl
+
+    def test_log_download_prefers_curl_so_escape_sequences_cannot_block_it(self):
+        # Runs 39139527909/39141218150/39141401948: `gh api .../logs` refused every download with
+        # "the response contains terminal escape sequences", so the Unity failure stayed invisible.
+        # With a token in the environment the fetcher must use curl, which writes bytes verbatim.
+        curl_calls = self.root / "curl-calls.txt"
+        env = dict(self.env, WAYFINDER_CURL=str(self.write_curl()),
+                   GH_TOKEN="test-token", CURL_CALLS=str(curl_calls))
+        result = self.fetch(env=env)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        written = (self.root / "Logs/job.txt").read_text()
+        self.assertIn("Build failed, with exit code 1", written)
+        self.assertIn("actions/jobs/4242/logs", curl_calls.read_text())
+        self.assertNotIn("/actions/jobs/4242/logs", self.calls.read_text())
+
+    def test_curl_failure_falls_back_to_gh(self):
+        curl_calls = self.root / "curl-calls.txt"
+        env = dict(self.env, WAYFINDER_CURL=str(self.write_curl(fail=True)),
+                   GH_TOKEN="test-token", CURL_CALLS=str(curl_calls))
+        result = self.fetch(env=env)
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        self.assertIn("Build failed, with exit code 1", (self.root / "Logs/job.txt").read_text())
+        self.assertIn("/actions/jobs/4242/logs", self.calls.read_text())
 
     def test_workflow_gives_the_log_a_longer_retry_window(self):
         diagnose = WORKFLOW.read_text()
