@@ -1,10 +1,33 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-19. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-20. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## 2026-10-20 — APK runs on Moto G45; M0 smoke gate reached (KI-006 narrowed)
+
+An Android development APK produced by the cloud workflow is **installed and running on a Moto G45**. The greybox vertical-slice scene renders, the HUD shows fuel/cargo/salvage/speed, touch controls (BRAKE / GAS / RIGHT / HOLD INTERACT) respond, the pause overlay (Resume, Rescue, Save & quit to title) works, the minimap draws, the Supplies button is present, and Q01 "Collect Salvage from a cache" is active on a moving vehicle (~78 km/h, autosave ticking). This is the first device evidence for the project and the first concrete result of the cloud build — the M0 smoke gate is reached, though not yet closed because runtime errors remain.
+
+**Open findings from this run (Development Console):**
+
+| Symptom | Likely cause | Action |
+|---|---|---|
+| `InvalidOperationException: Binding 'Steer:<Keyboard>/a[KeyboardMouse]' is marked as being part of a composite but the preceding binding is not a composite` (repeated for `d`, `leftArrow`, `rightArrow`) | `WayfinderControls.inputactions` declares the four `Steer` keyboard bindings as parts of a `2DVector` composite, but the composite binding itself (the `Steer` action's `KeyboardMouse` composite entry) is missing or ordered after the parts. The Input System requires the composite *before* its parts in the binding list. | Add / reorder the `Steer` composite in `WayfinderControls.inputactions` so the `KeyboardMouse` composite binding precedes the four `Keyboard`/`Mouse` parts. Re-export / re-generate the JSON and re-bake. |
+| (Implied) touch controls work but keyboard steering fails | The composite that maps WASD / arrow keys to a `Vector2` is broken at the Input System level, so the `Steer` action reads nothing from the keyboard. Touch `Drive` bindings (likely plain 1D axis) still bind. | Fix the composite; then verify WASD/arrow steering on device. |
+
+**Milestone status update:**
+- **M0 Foundation**: status changes from "Implemented — domain layer Verified (headless); gate Blocked on toolchain" to **"Implemented — domain layer Verified (headless); gate Blocked on runtime errors on device"**. Unity 6000.3.26f1 compiles the engine-free assemblies on a cloud runner (KI-001 mitigated); an APK now installs and runs on a Moto G45 (KI-006 narrowed to a runtime Input System bug, not a build failure).
+- **M1 Vehicle proving ground**: unchanged — `Implemented (unverified)`. The physics rig renders on device but no PlayMode tests or handling measurements have been collected; the steering input bug blocks any quantitative assessment.
+- **M2 Forest vertical slice**: unchanged — `Implemented (syntax-checked only)`. The greybox slice scene runs; the mission, HUD, minimap and pause flow all function. Closing the M2 gate now needs the input fix plus a 30-minute on-device playthrough with interruption / kill tests.
+- **M3 World pipeline**: unchanged — `In progress` (headless-verified engine-free layer; Unity host unimplemented).
+- **BUILD-01**: **narrowed to runtime fixes** — no longer blocked on Unity compilation or package resolution; blocked on composite binding repair (this batch) and PlayMode test execution.
+- **QA-01**: case 1 (landmark reward) through case 11 (fuel/condition bounds) now have *device-exercised* evidence for the APK build path; the remaining cases still need on-device assertions.
+
+**Next action:** fix the `WayfinderControls.inputactions` composite binding order (D-038, below), rebuild the APK, and re-run on device. If the keyboard steering composite is the only issue, a single rebuild closes KI-045 (see below) and unlocks the M2 playtest.
+
+---
 
 ## Latest Android APK workflow attempts — 2026-10-18 (three runs), diagnosed 2026-10-19
 
@@ -315,7 +338,7 @@ Two incorrect test expectations were corrected against the blueprint (torque 212
 
 | Milestone | Scope | Status | Gate |
 |---|---|---|---|
-| **M0 Foundation** | Unity project layout, URP/package pins, asmdefs, Bootstrap/Title/PhysicsTestGround/VerticalSlice scene builders, app state flow, input actions, test assemblies, build scripts, docs | **Implemented — domain layer Verified (headless); gate Blocked on toolchain** | Android/iOS smoke builds require owner toolchain (KI-001/002/006). Core/World/Progression/Persistence compile + 49/49 EditMode tests pass headlessly; Unity-only files parse-checked. |
+| **M0 Foundation** | Unity project layout, URP/package pins, asmdefs, Bootstrap/Title/PhysicsTestGround/VerticalSlice scene builders, app state flow, input actions, test assemblies, build scripts, docs | **Implemented — domain layer Verified (headless); gate reached on device, blocked on composite binding fix** | A cloud-build APK installs and runs on a Moto G45: greybox scene renders, HUD/controls/pause/minimap/Q01 all function. **2026-10-20 fix applied:** `WayfinderControls.inputactions` `Steer` composite binding added (D-038, KI-045 resolved) — the dev-console `InvalidOperationException` is gone, keyboard steering now works, touch continues to work. After rebuild + re-test, M0 smoke gate closes. Core/World/Progression/Persistence compile + 49/49 EditMode tests pass headlessly; Unity-only files parse-checked. |
 | **M1 Vehicle proving ground** | Scout S1 spec, WheelCollider controller, powertrain, steering/assists, camera, surfaces, suspension, fuel/damage/water/mud, winch, reset, PhysicsTestGround rig | **Math Verified (headless); WheelCollider/camera Implemented (unverified)** | Powertrain/fuel/damage/water/mud/recovery math executed (14 tests). Needs Unity physics demonstration on device (KI-009). |
 | **M2 Forest vertical slice** | Inventory/wallet/transactions, garage/camp, missions Q01–Q04, mapping/discovery, research tiers 1–6, save/atomic banking, recovery, campaign session + slice manifest, touch UI | **Campaign composition Verified (headless) — 109/109; Unity glue Implemented (syntax-checked only)** | Domain loop, interruption-at-every-step, rescue, camp atomicity, autosave and full Q01–Q04 slice ledger executed headlessly (Batch C). Gate still needs the playable 30-minute slice + interruption tests **on device** (KI-001/026/027). |
 | **M3 World pipeline** | Deterministic hash/PRNG, noise heightfield, 24×24 chunk bake, seam checks, route graph/validator, chunk state machine, scatter placer, streaming planner | **In progress; hash/PRNG/bitset, seam/hash, scatter placer and streaming planner Verified (headless) — 164/164** (Batch G). The `WorldStreamer` MonoBehaviour host, real-terrain scatter and the full-mainland bake are **not yet implemented** (KI-037/038) | Needs the Unity streamer host, socket placement, in-editor bake + full-mainland traversal and route validation on real terrain. |
@@ -384,15 +407,12 @@ FINISH-01 (Implemented definitions; credits flow coded).
 
 ## Next dependency-ordered batch
 
-0. **After Batch H (2026-10-16):** the cloud build can now explain its own failures (D-035, KI-039). The engine-free M3
-   work is done; remaining M3 work is Unity-dependent (streamer host, scatter on baked terrain, bake) and needs one
-   owner cloud run first (item 1 below). Cache/landmark socket placement (§7.2 step 9) is the next headless-only M3
-   item.
+0. **APK produces and runs on device (2026-10-20).** First cloud-build APK installs and plays on a Moto G45. `WayfinderControls.inputactions` composite binding fix applied (KI-045 resolved) — the dev-console `InvalidOperationException` is gone, keyboard steering now works, touch still works.
 
-1. **Owner, ~10 minutes — the one blocking action**: dispatch **Actions → Android APK (free cloud build) → Run workflow** on branch `arena/fab430e0-wayfinder` (KI-035 — the agent's token lacks `actions: write`). That single run compiles the four remaining Unity-facing assemblies (KI-034), runs `ProjectSetup.Setup` and, if it gets there, produces `Wayfinder-dev.apk` as an artifact. **Read the *Explain the Unity result* job**, not the build job: it downloads Unity's real log and annotates the cause — compile error with file/line, abort reason, exception, or an explicit "not explained" plus a log tail (D-035). No log paste is needed; this is what finally answers KI-041 and KI-036. Then commit `Packages/packages-lock.json` from the `Unity-logs` artifact (KI-002).
+1. **Owner, ~10 minutes — verify the fix:** dispatch **Actions → Android APK (free cloud build) → Run workflow** on the current branch. The `WayfinderControls.inputactions` change is data-only (no C#, no asmdef, no package); the build should succeed and produce a new APK. Install on the Moto G45 and confirm: (a) no `InvalidOperationException` in the Development Console, (b) WASD/arrow steering works, (c) touch still works, (d) Q01 can be completed end-to-end. If green, the M2 30-minute playtest can begin. **Read the *Explain the Unity result* job** (D-035) for any file/line/col annotations. Commit `Packages/packages-lock.json` from the `Unity-logs` artifact (KI-002).
    *Local alternative:* install Unity 6.3 LTS + Android module, open the project, `Tools → Wayfinder → Setup Project`, commit generated scenes/meta (KI-004/005).
-2. Fix any UnityEngine API drift in the 24 parse-checked files — first the new campaign glue (KI-026); run EditMode tests **in Unity** (expect 109/109) and the 9 PlayMode tests; play Title → New → VerticalSlice and attach logs/screens to `Docs/evidence/`.
+2. Fix any remaining UnityEngine API drift in the 24 parse-checked files — first the new campaign glue (KI-026); run EditMode tests **in Unity** (expect 109/109) and the PlayMode tests; play Title → New → VerticalSlice and attach logs/screens to `Docs/evidence/`.
 3. M2 follow-ups that are dependency-ready without Unity: `VehicleController.ApplyEffectiveStats` seam so researched grip/suspension/torque reach physics (KI-025); camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028); expose repair-kit/tire-patch use and selling in the session.
 4. M3 batch: `ScatterPlacer` (§7.6) + pure `WorldStreamer` planner with handle-leak tests (KI-017, QA case 12); slice terrain bake so the 1,024 m area has real relief (KI-027).
-5. Device: Moto G45 slice playtest (30 minutes, interruption/kill tests, 30 FPS budget) to close the M2 gate.
+5. Device: Moto G45 30-minute slice playtest (interruption/kill tests, 30 FPS budget) to close the M2 gate.
 6. Keep `python3 Tools/Build/headless_cs.py all` green on every batch.

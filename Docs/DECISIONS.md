@@ -249,6 +249,36 @@ case the API cannot: it survives in the workspace artifact even if the job log i
 dispatch is what proves it, and what finally names the Unity failure (KI-041).
 
 
+## 2026-10-20 — D-038 APK runs on device; fix composite bindings, then M2 playtest (next actions)
+
+**Decision.** The first APK from the cloud workflow installs and runs on a Moto G45 (device: Moto G45, Android build from `.github/workflows/android-cloud-build.yml`). The greybox vertical-slice scene renders, the HUD shows fuel / cargo / salvage / speed / saved-indicator, touch controls (BRAKE / GAS / RIGHT / HOLD INTERACT) respond, the pause overlay (Resume, Rescue, Save & quit to title) works, the minimap draws, the Supplies button is present, and Q01 "Collect Salvage from a cache" is active on a moving vehicle (~78 km/h, autosave ticking). **The build pipeline is now producing a usable APK.**
+
+**Development Console finding (cosmetic + keyboard-steering blocker):** `InvalidOperationException: Binding 'Steer:<Keyboard>/a[KeyboardMouse]' is marked as being part of a composite but the preceding binding is not a composite` repeated for `d`, `leftArrow`, `rightArrow`. The `WayfinderControls.inputactions` `Steer` action's four keyboard bindings (`a`, `d`, `leftArrow`, `rightArrow`) were tagged `isPartOfComposite: true` but no composite binding preceded them. Touch and gamepad `Steer` bindings (`<VirtualJoystick>/x`, `<Gamepad>/leftStick/x`) are plain bindings (not parts) and continued to work; the exception was noise in the console but silent keyboard steering failure.
+
+**Fix (applied 2026-10-20):** inserted a `2DVector` `KeyboardMouse` composite binding at the top of the `Steer` binding list, matching the working `UI/Navigate` pattern already in the same file:
+
+```json
+{ "name": "KeyboardMouse", "id": "0f1a2b3c-0010-4000-8000-000000000001",
+  "path": "2DVector", "groups": "KeyboardMouse", "action": "Steer",
+  "isComposite": true, "isPartOfComposite": false },
+```
+
+followed by the existing four keyboard parts (now correctly parented). Verified by JSON parse + structural check (`KI-045_composite_binding_order`): every `isPartOfComposite` binding has a preceding `isComposite` binding. The file is a data-only change — no C#, no asmdef, no package.
+
+**What to proceed next (in dependency order):**
+
+1. ~~**Fix the Input System composite binding order.**~~ **Done (2026-10-20).** `WayfinderControls.inputactions` now has the `KeyboardMouse` composite preceding its four keyboard parts.
+2. **Rebuild the APK and re-run on the Moto G45.** Confirm: (a) the Development Console no longer shows the composite binding exception, (b) WASD / arrow-key steering produces non-zero `Steer` values on the vehicle, (c) the existing touch controls continue to work, and (d) Q01 can be progressed (drive to the cache, collect, return, bank). This is one owner cloud-build dispatch.
+3. **Close KI-045 (composite binding error) and narrow KI-034.** Once the binding order is fixed and the APK is rebuilt, the Input System exception is gone and the only remaining KI-034 surface is the four Unity-facing assemblies still uncompiled. The APK-producing build already proves `Wayfinder.Editor` now compiles (the `ContentImporter` CS0234 from PR #15 was fixed and `ProjectSetup.Setup` is running — the pause overlay and minimap are editor-authored). Re-running the headless C# harness (`headless_cs.py all`) on top of any binding-related C# change (there should be none) keeps evidence green.
+4. **M2 device playtest — 30 minutes.** With steering working, play Title → New → Vertical Slice → drive Q01 → collect cache → return → bank at home garage → research tier 1 → depart on Q02. Observe the HUD for fuel/cargo correctness, verify autosave tick and pause/resume, and that rescue recovers to the home garage. If this completes, the M2 gate moves from "gate Blocked" to "gate reached; playtest evidence collected".
+5. **Then M3 Unity host work.** Write the `WorldStreamer` MonoBehaviour that drives the verified `ChunkStreamPlanner` (KI-037). The planner has been tested headlessly (164/164, 15/15 mutants) and only needs the Addressables-backed host to be the last engine-free gap closed. This is the highest-impact remaining work item and depends on the APK being reproducible.
+
+**Rationale.** The build pipeline has been the bottleneck since October 15 — every prior investigation was blocked on "no APK, no log, no device evidence". With an APK now running, the cheapest action is a data-only fix (binding order) that removes the only visible runtime error, then a rebuild that proves the pipeline is repeatable, then a 30-minute playtest that either closes the M2 gate or surfaces the next real defect. No new Unity assembly, no new package, no new infrastructure is needed for steps 1–4. Step 5 is the first item that requires new engine-facing C# since Batch C (campaign glue).
+
+**Status:** Step 1 **executed** (2026-10-20); step 2 awaits one owner cloud-build dispatch + ~30 minutes on device; step 5 is the next headless-verifiable C# batch, to be designed as Batch J.
+
+---
+
 ## 2026-10-19 — D-036 Fetch Unity's log past gh's escape-sequence guard, and treat absence as evidence
 
 **Decision:**

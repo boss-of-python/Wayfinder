@@ -23,6 +23,7 @@
                 { "name": "WinchReel", "type": "Value", "id": "0f1a2b3c-0002-4000-8000-000000000010", "expectedControlType": "Axis", "processors": "", "interactions": "", "initialStateCheck": true }
             ],
             "bindings": [
+                { "name": "KeyboardMouse", "id": "0f1a2b3c-0010-4000-8000-000000000001", "path": "2DVector", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Steer", "isComposite": true, "isPartOfComposite": false },
                 { "name": "A", "id": "0f1a2b3c-0003-4000-8000-000000000001", "path": "<Keyboard>/a", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Steer", "isComposite": false, "isPartOfComposite": true },
                 { "name": "D", "id": "0f1a2b3c-0003-4000-8000-000000000002", "path": "<Keyboard>/d", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Steer", "isComposite": false, "isPartOfComposite": true },
                 { "name": "leftArrow", "id": "0f1a2b3c-0003-4000-8000-000000000003", "path": "<Keyboard>/leftArrow", "interactions": "", "processors": "", "groups": "KeyboardMouse", "action": "Steer", "isComposite": false, "isPartOfComposite": true },
