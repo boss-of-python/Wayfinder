@@ -1,0 +1,20 @@
+== Wayfinder economy simulation (§11.5) ==
+Total research cost: 32200 Salvage
+
+--- pattern: conservative ---
+  tiers by 1 h: 3 (target ≥ 3) | by 5 h: 8 (target ≥ 5) | by 12 h: 13 (target ≥ 10)
+  full tree after 34.8 h, bank 24
+
+--- pattern: typical ---
+  tiers by 1 h: 4 (target ≥ 3) | by 5 h: 9 (target ≥ 5) | by 12 h: 15 (target ≥ 10)
+  full tree after 22.0 h, bank 113
+
+--- pattern: thorough ---
+  tiers by 1 h: 4 (target ≥ 3) | by 5 h: 10 (target ≥ 5) | by 12 h: 16 (target ≥ 10)
+  full tree after 16.0 h, bank 2
+
+deadlock scan: OK (free garage services + no-cost repeatable jobs + Salvage-only research)
+arbitrage scan: OK (no recipe creates currency)
+
+NOTE: this is a model (KI-010). It cannot certify fun or playtime.
+ECONOMY SIMULATION COMPLETED WITH NO DEADLOCKS

@@ -578,7 +578,44 @@ namespace Wayfinder.Tests
             TestContext.WriteLine("fog share per stage: " + string.Join(", ",
                 fogShare.Select(f => f.ToString("0.000", CultureInfo.InvariantCulture))));
         }
+
+        [Test]
+        public void MapRevision_IsADirtyFlagRaisedByCommitsOnly_SYS_WRD_002()
+        {
+            var s = NewGame(new SaveService(_root));
+            int start = s.MapRevision;
+
+            Ok(s.PlaceMapMarker(1200f, 2400f, "lookout", out string first), "place");
+            Assert.AreEqual(start + 1, s.MapRevision, "a placed marker marks the map dirty once");
+
+            Assert.IsFalse(s.RemoveMapMarker("marker.99").Success);
+            Assert.AreEqual(start + 1, s.MapRevision, "a rejected command must not dirty the map");
+
+            Ok(s.SetRouteTarget(first), "route");
+            Assert.AreEqual(start + 2, s.MapRevision);
+
+            Ok(s.SetRouteTarget(first), "same route again");
+            Assert.AreEqual(start + 2, s.MapRevision, "re-selecting the same target changes nothing");
+
+            Ok(s.RemoveMapMarker(first), "remove");
+            Assert.AreEqual(start + 3, s.MapRevision);
+
+            Ok(s.Depart(), "depart");
+            int beforeReveal = s.MapRevision;
+            Assert.Greater(s.RevealAround(1024f, 2304f, vista: true), 0, "a vista reveals cells");
+            Assert.Greater(s.MapRevision, beforeReveal, "revealed cells mark the map dirty");
+
+            int afterReveal = s.MapRevision;
+            Assert.AreEqual(0, s.RevealAround(1024f, 2304f, vista: true),
+                "revealing the same cells again discovers nothing new");
+            Assert.AreEqual(afterReveal, s.MapRevision, "no new cells, no dirty flag");
+
+            var reloaded = Reload(_root);
+            Assert.GreaterOrEqual(reloaded.MapRevision, 2,
+                "a restored save is a committed map change; views must rebuild after loading");
+        }
     }
+
 
     /// <summary>
     /// Evidence dump for the map (test-only): when WAYFINDER_MAP_SNAPSHOT_DIR is set, writes the
@@ -686,5 +723,6 @@ namespace Wayfinder.Tests
             for (int x = (int)(cx - half); x <= (int)(cx + half); x++)
                 Put(px, r, x, y, c);
         }
+
     }
 }

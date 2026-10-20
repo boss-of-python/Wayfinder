@@ -252,5 +252,199 @@ namespace Wayfinder.Tests
                 mud.Step(0f, -1f, 0.25f, 0.1f);
             Assert.GreaterOrEqual(mud.SinkFraction, 0f);
         }
+
+        // ------------------------------------------------------------------ SYS-SIM-001
+
+        [Test]
+        public void SurfaceLookup_UndefinedLabelFallsBackInsteadOfIndexingPastTheTable()
+        {
+            var unknown = (SurfaceType)9999;
+            Assert.IsFalse(SurfaceTable.IsDefined(unknown));
+            Assert.AreEqual(SurfaceType.PackedDirt, SurfaceTable.Sanitize(unknown));
+            Assert.AreEqual(SurfaceType.PackedDirt, SurfaceTable.Get(unknown).Surface,
+                "an out-of-range label must resolve to the neutral authored surface");
+            Assert.IsFalse(SurfaceTable.TryGet((SurfaceType)(-3), out var fallback));
+            Assert.AreEqual(SurfaceType.PackedDirt, fallback.Surface);
+            Assert.IsTrue(SurfaceTable.TryGet(SurfaceType.Ice, out var ice));
+            Assert.AreEqual(0.12f, ice.DryGrip, 1e-6f);
+        }
+
+        [Test]
+        public void SurfaceTable_EveryDeclaredLabelHasItsOwnRow()
+        {
+            foreach (SurfaceType surface in Enum.GetValues(typeof(SurfaceType)))
+            {
+                Assert.IsTrue(SurfaceTable.IsDefined(surface), surface + " must have a table row");
+                Assert.AreEqual(surface, SurfaceTable.Get(surface).Surface,
+                    "the table is indexed by enum value; rows must not be reordered independently");
+            }
+            Assert.AreEqual(Enum.GetValues(typeof(SurfaceType)).Length, SurfaceTable.Count);
+        }
+
+        [Test]
+        public void SurfaceCoefficients_AreClampedAndNaNNeverReachesTheSolver()
+        {
+            var wild = new SurfaceCoefficients(SurfaceType.Ice, float.NaN, 12f, -5f);
+            Assert.AreEqual(0f, wild.DryGrip, "NaN collapses to no grip, never to maximum grip");
+            Assert.AreEqual(1f, wild.WetMultiplier);
+            Assert.AreEqual(0f, wild.RollingResistance);
+            Assert.LessOrEqual(wild.EffectiveGrip(true), SurfaceTable.EffectiveGripCap);
+
+            Assert.AreEqual(0f, SurfaceTable.ClampFrictionStiffness(float.NaN));
+            Assert.AreEqual(SurfaceTable.MaxFrictionStiffness, SurfaceTable.ClampFrictionStiffness(99f));
+            Assert.AreEqual(0f, SurfaceTable.ClampFrictionStiffness(-1f));
+            Assert.AreEqual(1.1f, SurfaceTable.ClampFrictionStiffness(1.1f), 1e-6f);
+        }
+
+        [Test]
+        public void SurfaceTransition_FadesOverFifteenHundredthsAndSnapsForWater()
+        {
+            var fade = new SurfaceTransition();
+            Assert.IsFalse(fade.Step(SurfaceType.IntactAsphalt, 0.02f), "first observation never fades");
+            Assert.AreEqual(1f, fade.Progress);
+            Assert.AreEqual(SurfaceTable.Get(SurfaceType.IntactAsphalt).DryGrip, fade.EffectiveGrip(false), 1e-6f);
+
+            Assert.IsTrue(fade.Step(SurfaceType.Ice, 0.02f), "a boundary restarts the fade");
+            Assert.AreEqual(0f, fade.Progress);
+            Assert.IsFalse(fade.Step(SurfaceType.Ice, SurfaceTransition.CrossfadeSeconds * 0.5f),
+                "holding the same surface is not a new boundary");
+            Assert.AreEqual(0.5f, fade.Progress, 1e-4f);
+            float midGrip = fade.EffectiveGrip(false);
+            Assert.Less(midGrip, SurfaceTable.Get(SurfaceType.IntactAsphalt).DryGrip);
+            Assert.Greater(midGrip, SurfaceTable.Get(SurfaceType.Ice).DryGrip);
+
+            fade.Step(SurfaceType.Ice, SurfaceTransition.CrossfadeSeconds);
+            Assert.AreEqual(1f, fade.Progress);
+            Assert.AreEqual(0.12f, fade.EffectiveGrip(false), 1e-6f, "after 0.15 s the target applies exactly");
+
+            // §4.4: water safety-critical changes bypass the fade.
+            var snap = new SurfaceTransition();
+            snap.Step(SurfaceType.Grass, 0.02f);
+            snap.Step(SurfaceType.DeepMud, 0.02f, immediate: true);
+            Assert.AreEqual(1f, snap.Progress);
+            Assert.AreEqual(SurfaceTable.Get(SurfaceType.DeepMud).DryGrip, snap.EffectiveGrip(false), 1e-6f);
+        }
+
+        [Test]
+        public void SurfaceTransition_IsFrameRateIndependentAndSurvivesBadDeltas()
+        {
+            var slow = new SurfaceTransition();
+            var fast = new SurfaceTransition();
+            slow.Step(SurfaceType.Gravel, 0.02f);
+            fast.Step(SurfaceType.Gravel, 0.02f);
+            slow.Step(SurfaceType.Sand, 0.02f);
+            fast.Step(SurfaceType.Sand, 0.02f);
+            for (int i = 0; i < 30; i++) slow.Step(SurfaceType.Sand, 0.005f);   // 200 Hz
+            for (int i = 0; i < 3; i++) fast.Step(SurfaceType.Sand, 0.05f);     // 20 Hz
+            Assert.AreEqual(1f, slow.Progress, 1e-6f);
+            Assert.AreEqual(1f, fast.Progress, 1e-6f);
+
+            var bad = new SurfaceTransition();
+            bad.Step(SurfaceType.Rock, 0.02f);
+            bad.Step(SurfaceType.Grass, float.NaN);
+            bad.Step(SurfaceType.Grass, -1f);
+            Assert.IsFalse(float.IsNaN(bad.EffectiveGrip(true)), "a bad delta must never produce NaN grip");
+            Assert.AreEqual(1f, bad.Progress, "a bad delta completes rather than freezing the blend");
+        }
+
+        [Test]
+        public void SurfaceTransition_SecondBoundaryMidFadeContinuesFromTheBlendedValue()
+        {
+            var fade = new SurfaceTransition();
+            fade.Step(SurfaceType.IntactAsphalt, 0.02f);
+            fade.Step(SurfaceType.Gravel, 0.02f);
+            fade.Step(SurfaceType.Gravel, SurfaceTransition.CrossfadeSeconds * 0.5f);
+            float mid = fade.EffectiveGrip(false);
+
+            fade.Step(SurfaceType.Sand, 0.02f);
+            Assert.AreEqual(0f, fade.Progress, "a third surface starts a new fade");
+            Assert.AreEqual(mid, fade.EffectiveGrip(false), 1e-5f,
+                "a boundary crossed mid-fade must continue from the coefficient in use, not snap back");
+
+            fade.Step(SurfaceType.Sand, SurfaceTransition.CrossfadeSeconds);
+            Assert.AreEqual(SurfaceTable.Get(SurfaceType.Sand).DryGrip, fade.EffectiveGrip(false), 1e-6f);
+        }
+
+        // ------------------------------------------------------------------ SYS-SIM-002
+
+        [Test]
+        public void IdleAutoStop_StopsTheEngineAfterFifteenSimulatedSecondsParked()
+        {
+            var model = new IdleAutoStopModel();
+            float t = 0f;
+            bool stopped = false;
+            while (t < 14.9f && !stopped)
+            {
+                stopped = model.Step(0f, 0f, 0f, true, 0.1f, out _);
+                t += 0.1f;
+            }
+            Assert.IsFalse(stopped, "idling for less than 15 s must not stop the engine");
+            Assert.Greater(model.Progress, 0.99f);
+
+            for (int i = 0; i < 5 && !stopped; i++) stopped = model.Step(0f, 0f, 0f, true, 0.1f, out _);
+            Assert.IsTrue(stopped, "§5.1: auto-stop after 15 s parked");
+            Assert.IsTrue(model.AutoStopped);
+            Assert.IsFalse(model.Step(0f, 0f, 0f, false, 0.1f, out _), "the stop fires once, not every tick");
+        }
+
+        [Test]
+        public void IdleAutoStop_DoesNotStopWhileDrivingThrottlingOrBraking()
+        {
+            var driving = new IdleAutoStopModel();
+            for (int i = 0; i < 300; i++)
+                Assert.IsFalse(driving.Step(0f, 0f, 5f, true, 0.1f, out _));
+            Assert.IsFalse(driving.AutoStopped, "rolling at 5 m/s is not parked");
+            Assert.AreEqual(0f, driving.ParkedSeconds, 1e-6f);
+
+            var revving = new IdleAutoStopModel();
+            for (int i = 0; i < 300; i++)
+                Assert.IsFalse(revving.Step(0.2f, 0f, 0f, true, 0.1f, out _));
+            Assert.IsFalse(revving.AutoStopped, "throttle above the drag threshold is not idle");
+
+            var held = new IdleAutoStopModel();
+            for (int i = 0; i < 300; i++)
+                Assert.IsFalse(held.Step(0f, 1f, 0f, true, 0.1f, out _));
+            Assert.IsFalse(held.AutoStopped, "a held brake is driver intent (it also selects reverse)");
+
+            var off = new IdleAutoStopModel();
+            for (int i = 0; i < 300; i++)
+                Assert.IsFalse(off.Step(0f, 0f, 0f, false, 0.1f, out _));
+            Assert.IsFalse(off.AutoStopped, "a manually stopped engine is not an auto-stop");
+            Assert.AreEqual(0f, off.ParkedSeconds, 1e-6f);
+        }
+
+        [Test]
+        public void IdleAutoStop_PedalRestartsAndParkedFuelDrainIsZero()
+        {
+            var model = new IdleAutoStopModel();
+            bool stopped = false;
+            for (int i = 0; i < 200 && !stopped; i++) stopped = model.Step(0f, 0f, 0f, true, 0.1f, out _);
+            Assert.IsTrue(stopped);
+
+            Assert.IsFalse(model.Step(0f, 0f, 0f, false, 0.1f, out bool restart));
+            Assert.IsFalse(restart, "no pedal, no restart");
+            Assert.IsFalse(model.Step(0.5f, 0f, 0f, false, 0.1f, out restart),
+                "a pedal never asks for another stop; it asks for a restart");
+            Assert.IsTrue(restart);
+            Assert.IsFalse(model.AutoStopped);
+            Assert.AreEqual(0f, model.ParkedSeconds, 1e-6f);
+
+            // The whole point: an auto-stopped engine burns nothing at idle (§5.1), while a running
+            // idle still burns the base rate — the formula itself is unchanged.
+            Assert.AreEqual(0f, FuelModel.LitersPerSecond(0f, 0f, 0f, engineOn: false));
+            Assert.AreEqual(FuelModel.BaseDrainPerSecond, FuelModel.LitersPerSecond(0f, 0f, 0f, engineOn: true), 1e-7f);
+        }
+
+        [Test]
+        public void IdleAutoStop_ClearReleasesTheLatchWithoutRestarting()
+        {
+            var model = new IdleAutoStopModel();
+            for (int i = 0; i < 200; i++) model.Step(0f, 0f, 0f, true, 0.1f, out _);
+            Assert.IsTrue(model.AutoStopped);
+            model.Clear();
+            Assert.IsFalse(model.AutoStopped);
+            Assert.IsFalse(model.Step(0f, 0f, 0f, false, 0.1f, out bool restart));
+            Assert.IsFalse(restart, "clearing is not a restart request");
+        }
     }
 }

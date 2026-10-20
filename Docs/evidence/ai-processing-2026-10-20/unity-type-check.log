@@ -1,0 +1,21 @@
+[headless-cs] compile the Unity API stubs (hand-written; see Tools/Build/unity_api_stubs)
+[headless-cs]     ../.cache/wayfinder-headless-cs/out/unity-stubs/UnityEngine.CoreModule.dll
+[headless-cs]     ../.cache/wayfinder-headless-cs/out/unity-stubs/UnityEngine.UI.dll
+[headless-cs]     ../.cache/wayfinder-headless-cs/out/unity-stubs/Unity.InputSystem.dll
+[headless-cs]     ../.cache/wayfinder-headless-cs/out/unity-stubs/Unity.RenderPipelines.Universal.Runtime.dll
+[headless-cs]     ../.cache/wayfinder-headless-cs/out/unity-stubs/UnityEditor.dll
+[headless-cs]     ../.cache/wayfinder-headless-cs/out/unity-stubs/UnityEngine.TestRunner.dll
+[headless-cs] Wayfinder.Core: OK — 10 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Simulation: OK — 13 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.World: OK — 5 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Progression: OK — 7 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Persistence: OK — 2 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Campaign: OK — 18 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Platform: OK — 5 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Presentation: OK — 11 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Editor: OK — 6 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Tests.EditMode: OK — 15 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Tests.Editor: OK — 1 file(s), 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Tests.PlayMode: OK — 3 file(s), 0 error(s), 0 warning(s)
+[headless-cs] report: Logs/headless/unity-type-check.json
+[headless-cs] SUMMARY unity-type-check=OK

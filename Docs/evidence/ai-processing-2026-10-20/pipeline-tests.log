@@ -1,0 +1,19 @@
+..Running setup; log: /tmp/tmpifse6kjc/Logs/unity-pipeline/setup.log
+.......Editor pin missing; setup/smoke will pin the verified installed version.
+Pinned installed editor: 6000.3.2f1
+Running android-release; log: /tmp/tmpzvqn_haa/Logs/unity-pipeline/android-release.log
+.Build artifact: /tmp/tmpzvqn_haa/Builds/Android/Wayfinder.aab
+Running android-dev; log: /tmp/tmpa96z75cc/Logs/unity-pipeline/android-dev.log
+.Running android-dev; log: /tmp/tmpn93bo5kz/Logs/unity-pipeline/android-dev.log
+......Unity tests passed: 3 (result.xml)
+Pinned installed editor: 6000.3.2f1
+Running setup; log: /tmp/tmpzoj4is2m/Logs/unity-pipeline/setup.log
+.Running setup; log: /tmp/tmpvb724j2n/Logs/unity-pipeline/setup.log
+.Running android-dev; log: /tmp/tmp0ukoeiob/Logs/unity-pipeline/android-dev.log
+.Running EditMode; log: /tmp/tmpps7k90aa/Logs/unity-pipeline/EditMode.log
+..Running setup; log: /tmp/tmp9rmndtzi/Logs/unity-pipeline/setup.log
+.
+----------------------------------------------------------------------
+Ran 23 tests in 0.012s
+
+OK

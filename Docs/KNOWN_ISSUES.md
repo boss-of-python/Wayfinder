@@ -254,3 +254,63 @@ DEF-005, DEF-006, DEF-013, DEF-014 and DEF-015 changed files Unity compiles and 
 reports 12/12 clean with 0 warnings, which removes the most likely class of KI-034 error. It is
 **not** a Unity compilation: the stubs were shaped by the errors this code produced, so they prove
 the absence of the errors they can see. One PlayMode or editor run is required to close this.
+
+---
+
+## Batch 2026-10-20 — AI processing format triage (KI-045 … KI-050)
+
+Source: `AI Processing Format.md` (attached, 8 issues). Full per-issue reasoning is in
+[Docs/AI_PROCESSING_TRIAGE.md](AI_PROCESSING_TRIAGE.md); evidence in
+`Docs/evidence/ai-processing-2026-10-20/`. Three entries were already satisfied or inapplicable to
+the named file; five produced real changes. These are the risks those changes leave behind.
+
+## KI-045 — The surface cross-fade and friction clamps have never run under Unity physics (open, KI-034)
+
+SYS-SIM-001 was fixed in the engine-free maths (`SurfaceTable`, new `SurfaceTransition`) and wired
+into `VehicleController.FixedUpdate`. The maths is executed (5 new EditMode tests, mutations M1/M2
+kill them); the wiring is **parse-checked only**. Nobody has yet driven across a mud seam at speed in
+the editor or on a phone to see whether 0.15 s reads as smooth or as a lag, and whether
+`ClampFrictionStiffness` at 2.0 is the right ceiling for this tire model. If the clamp is wrong the
+symptom will be under-steer at low grip, not a crash.
+**Smallest next step:** one PlayMode run of the physics test ground crossing the seam, logging
+`SpeedKph` and per-wheel `stiffness` for two seconds.
+
+## KI-046 — Idle auto-stop has no cue and no PlayMode evidence (open)
+
+`IdleAutoStopModel` is executed (4 tests) and wired at the top of `FixedUpdate`; the vehicle's
+`State` becomes `Stalled` when the engine stops. There is **no audio or HUD cue** that the engine
+stopped itself rather than failed, and no PlayMode test that the engine restarts on a pedal through
+the real `InputRouter`. `Progress` is exposed for a cue that has not been built. Behaviour is also
+unreviewed for feel: 15 s is long enough that a player may not connect the stall with idling.
+
+## KI-047 — The map's revision rebuild is view-side and unverified (open)
+
+`CampaignSession.MapRevision` is executed and pinned (marker/route/reveal/load). `MapPresenter.Tick`
+now rebuilds on a revision change, but `MapTextureBinding.cs` is Unity-only, so "the marker appears
+on the commit frame" is a source claim. The 4 Hz rebuild remains for the moving player arrow; if a
+device profile shows that cost, splitting the player arrow out of `RebuildMarkers` is the next step.
+
+## KI-048 — The migration pipeline has no shipped v2 to prove itself against (open)
+
+`ISaveMigrator`, atomic commit, gap failure and `ValidatePipeline` are executed against synthetic
+v1→v2→v3 steps. The built-in registry is empty because schema 1 is current, so the first real
+migration will still be the first time this code meets a real legacy file. When schema 2 lands:
+register the step, bump `CurrentSchemaVersion`, add a fixture save written by the v1 build, and make
+`ValidatePipeline(CurrentSchemaVersion, Steps)` a required check in the release script.
+
+## KI-049 — Android target API 36 is pinned but unproven in the build image (open, KI-006)
+
+`ProjectSetup` now writes `minSdkVersion = 29` and `targetSdkVersion = 36`, and the workflow passes
+the same level to unity-builder. No run has executed this yet. If the pinned editor image does not
+carry the API 36 platform, setup or the Gradle step will fail with Unity's own "SDK not installed"
+error — which is the intended, loud failure mode, but it is still a failure until an owner dispatch
+proves the image has it. `minSdk 29` follows the blueprint's Android 10+ floor and is independent of
+the Play target requirement.
+
+## KI-050 — SYS-WRD-001 cannot be satisfied as written until a streaming host exists (open)
+
+The reported "main-thread matrix work in `ChunkStreamPlanner.Update()`" does not exist: the planner
+is pure, has no `Update()` and budgets activations per step (`WorldStreamingTests`). Moving it to the
+Job System would add untestable Unity-only code to a file that currently compiles headless. The real
+gap is the missing MonoBehaviour host (KI-034); until it exists there is nothing on the frame path to
+profile.

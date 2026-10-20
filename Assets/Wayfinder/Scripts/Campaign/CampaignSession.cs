@@ -147,6 +147,8 @@ namespace Wayfinder.Campaign
             envelope = SaveMigrations.MigrateToCurrent(envelope);
             var session = new CampaignSession(saves, content, slot);
             CampaignSnapshot.Apply(session, envelope.payload);
+            // A restored save is a committed map change: views built before the load must rebuild.
+            session.InvalidateMap();
             session.Revision = envelope.revision;
             return new CampaignOpenResult(session,
                 status == LoadResultStatus.LoadedBackup ? CampaignOpenStatus.LoadedBackup : CampaignOpenStatus.LoadedCurrent,

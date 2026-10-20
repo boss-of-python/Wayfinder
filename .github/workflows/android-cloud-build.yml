@@ -17,6 +17,16 @@ env:
   # (2026-10-15: editor 6000.3.26f1 / de8167e7440c imported the project and
   # compiled the six engine-free Wayfinder assemblies — see Docs/KNOWN_ISSUES.md KI-002).
   UNITY_VERSION: 6000.3.26f1
+  # Android target API level. Pinned in two places on purpose (SYS-CICD-001):
+  #   * ProjectSetup.AndroidTargetSdkApiLevel writes PlayerSettings on every setup run — that is
+  #     authoritative, because "Auto" resolves to whatever SDK the editor image happens to carry;
+  #   * this value is also handed to unity-builder (it accepts androidTargetSdkVersion) and is
+  #     checked against the C# constant by Tools/Build/test_build_diagnostics.py, so the workflow
+  #     and the editor can never silently disagree.
+  # The JDK, NDK and SDK *builds* themselves are supplied by the pinned editor image
+  # (unityci/editor:<UNITY_VERSION>-android), so they are pinned transitively by UNITY_VERSION;
+  # the setup step prints the resolved min/target levels into Logs/ (uploaded with Unity-logs).
+  ANDROID_TARGET_SDK: '36'
 
 jobs:
   apk:
@@ -95,6 +105,7 @@ jobs:
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
+          androidTargetSdkVersion: ${{ env.ANDROID_TARGET_SDK }}
           buildMethod: Wayfinder.Editor.ProjectSetup.Setup
           versioning: 'None'
           allowDirtyBuild: true
@@ -109,6 +120,7 @@ jobs:
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
+          androidTargetSdkVersion: ${{ env.ANDROID_TARGET_SDK }}
           buildMethod: Wayfinder.Editor.BuildCommands.BuildAndroidDev
           versioning: 'None'
           allowDirtyBuild: true

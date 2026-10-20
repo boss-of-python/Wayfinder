@@ -13,6 +13,24 @@ namespace Wayfinder.Campaign
         /// <summary>Up to ten player markers + route target; persisted in the save (D-027).</summary>
         public MapMarkerService MapMarkers { get; } = new MapMarkerService();
 
+        int _mapRevision = 1;
+
+        /// <summary>
+        /// Monotonic counter of committed map changes: markers placed/removed, route target changed,
+        /// cells revealed, landmarks discovered, caches collected, and a load (§16.3, SYS-WRD-002).
+        /// <para>
+        /// The map views used to poll the domain on a 0.25 s timer, so a placed marker could take a
+        /// quarter of a second to appear and every poll rebuilt every icon whether anything had
+        /// changed or not. A view now rebuilds when this number moves — a dirty flag driven by the
+        /// commit, exactly like the other §16.3 events — and the timer is left only for the player
+        /// arrow, which genuinely moves every frame.
+        /// </para>
+        /// </summary>
+        public int MapRevision => _mapRevision;
+
+        /// <summary>Marks map state dirty after a change that bypassed the domain (load, terrain swap).</summary>
+        public void InvalidateMap() => _mapRevision++;
+
         /// <summary>
         /// Terrain used for reveal line-of-sight AND for drawing the map, so the map never shows
         /// relief the reveal ignored. Defaults to the slice greybox profile; the M3 terrain bake will
@@ -38,14 +56,22 @@ namespace Wayfinder.Campaign
         {
             var result = MapMarkers.TryAdd(x, z, label, out var marker);
             markerId = result.Success ? marker.Id : string.Empty;
-            if (result.Success) _autosave.MarkDirty();
+            if (result.Success)
+            {
+                _autosave.MarkDirty();
+                _mapRevision++;
+            }
             return result;
         }
 
         public CommandResult RemoveMapMarker(string markerId)
         {
             var result = MapMarkers.Remove(markerId);
-            if (result.Success) _autosave.MarkDirty();
+            if (result.Success)
+            {
+                _autosave.MarkDirty();
+                _mapRevision++;
+            }
             return result;
         }
 
@@ -54,7 +80,11 @@ namespace Wayfinder.Campaign
         {
             if ((markerId ?? string.Empty) == MapMarkers.RouteTargetId) return CommandResult.Ok();
             var result = MapMarkers.SetRouteTarget(markerId);
-            if (result.Success) _autosave.MarkDirty();
+            if (result.Success)
+            {
+                _autosave.MarkDirty();
+                _mapRevision++;
+            }
             return result;
         }
     }

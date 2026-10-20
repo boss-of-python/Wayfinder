@@ -10,7 +10,15 @@ For a Moto G45, see [MOTO_G45_BUILD_AND_TEST.md](MOTO_G45_BUILD_AND_TEST.md). Yo
 still need an installed/licensed Unity desktop (borrowed or cloud); the phone can
 control it and install its APK. The optional workflow is manual and self-hosted,
 not a GitHub-hosted editor or a phone-only compiler. The latest headless domain suite
-passes 164/164 tests (Batch G); older counts below are historical snapshots.
+passes 205/205 tests (20 Oct 2026 triage batch); older counts below are historical snapshots.
+
+**Android API levels are pinned in code, not left on Auto.** `ProjectSetup` writes
+`minSdkVersion = 29` (blueprint OS floor: Android 10+) and `targetSdkVersion = 36`, and prints both
+into the setup log. The workflow passes the same target level to unity-builder and a repository test
+fails if the two disagree. The JDK, NDK and SDK build tools come from the pinned editor image, so
+they follow `UNITY_VERSION`; a host `setup-java` step would not change the JDK Unity uses. If the
+image lacks API 36, the build fails with Unity's own "SDK not installed" error — that is the intended
+loud failure (KI-049).
 
 ## Free cloud build route (GameCI, GitHub-hosted runner)
 

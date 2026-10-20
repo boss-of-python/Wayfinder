@@ -59,6 +59,9 @@ namespace Wayfinder.Simulation
         readonly float[] _slip = new float[4];
         readonly float[] _wheelTorque = new float[4];
         readonly SurfaceType[] _surfaces = new SurfaceType[4];
+        /// <summary>Per-wheel §4.4 cross-fade, so a material boundary is never a one-tick jolt (SYS-SIM-001).</summary>
+        readonly SurfaceTransition[] _surfaceFade = new SurfaceTransition[4];
+        readonly IdleAutoStopModel _idleAutoStop = new IdleAutoStopModel();
 
         /// <summary>
         /// Wet-surface flag for grip composition (§4.4). Until the weather system drives this it is
@@ -74,6 +77,8 @@ namespace Wayfinder.Simulation
         public WaterCrossingModel Water => _water;
         public RolloverMonitor Rollover => _rollover;
         public Powertrain PowertrainSystem => _powertrain;
+        /// <summary>§5.1 auto-stop: after 15 s parked at zero throttle the engine stops itself.</summary>
+        public IdleAutoStopModel IdleAutoStop => _idleAutoStop;
         public VehicleState State { get; private set; } = VehicleState.Parked;
 
         void Awake()
@@ -83,6 +88,13 @@ namespace Wayfinder.Simulation
             if (spec == null) spec = VehicleSpec.ScoutS1();
             _fuelLiters = spec.FuelCapacityLiters;
             _powertrain.Reset(spec);
+            // Wheels start on the neutral authored surface, not on enum value 0 (asphalt), so the
+            // first cross-fade starts from a defined state (SYS-SIM-001).
+            for (int i = 0; i < 4; i++)
+            {
+                _surfaces[i] = SurfaceType.PackedDirt;
+                _surfaceFade[i].SnapTo(SurfaceType.PackedDirt);
+            }
         }
 
         /// <summary>Latest normalized command from InputRouter (read per rendered frame, §3.2).</summary>
@@ -115,8 +127,25 @@ namespace Wayfinder.Simulation
         public float FuelCapacityLiters => spec == null ? 0f : ResolveStats().FuelCapacityLiters;
         public void RefuelFully() => _fuelLiters = FuelCapacityLiters;
         public void SetFuel(float liters) => _fuelLiters = MathUtil.Clamp(liters, 0f, FuelCapacityLiters);
-        public void SetSurfaceAtWheel(int index, SurfaceType surface) => _surfaces[index] = surface;
-        public void SetEngineOn(bool on) => _engineOn = on;
+        /// <summary>
+        /// Test/host seam for the per-wheel surface. Bounds-checked and sanitised: an index or a
+        /// label outside the table used to write an arbitrary slot or poison the friction path
+        /// (SYS-SIM-001).
+        /// </summary>
+        public void SetSurfaceAtWheel(int index, SurfaceType surface)
+        {
+            if (index < 0 || index >= _surfaces.Length) return;
+            _surfaces[index] = SurfaceTable.Sanitize(surface);
+            _surfaceFade[index].SnapTo(_surfaces[index]);
+        }
+
+        public void SetEngineOn(bool on)
+        {
+            _engineOn = on;
+            // An explicit start supersedes an auto-stop countdown; the model must not keep a stale
+            // latch and immediately "wake" from a pedal the driver never pressed.
+            if (on) _idleAutoStop.Clear();
+        }
         /// <summary>
         /// Water above intake for 2 s: engine stops and condition drops 10 once (§5.3). The water
         /// model's latch is deliberately NOT cleared here — it is cleared by
@@ -138,7 +167,14 @@ namespace Wayfinder.Simulation
             if (spec == null) return;
             float dt = Time.fixedDeltaTime;
 
+            // A zero/NaN fixed step (paused time scale, a corrupted project setting) must not reach
+            // the friction and fuel maths: it produced infinities in the slip ratio and a zero-length
+            // "impulse" spike at surface boundaries (SYS-SIM-001).
+            if (dt <= 0f || float.IsNaN(dt)) dt = 1f / 60f;
+
+            StepIdleAutoStop(dt);
             SampleGrounded();
+            StepSurfaceTransitions(dt);
             var stats = ResolveStats();
 
             bool reverseIndicated;
@@ -188,6 +224,39 @@ namespace Wayfinder.Simulation
             UpdateState();
         }
 
+        /// <summary>
+        /// §5.1 idle auto-stop. Fifteen seconds parked at zero throttle stops the engine, so the
+        /// parked drain becomes zero instead of the 0.003 L/s base rate (SYS-SIM-002). Any pedal
+        /// restarts it unless the engine is dead or the tank is empty.
+        /// </summary>
+        void StepIdleAutoStop(float dt)
+        {
+            bool stopRequested = _idleAutoStop.Step(
+                _throttleCommand, _brakeCommand, SpeedMetersPerSecond, _engineOn, dt, out bool restartRequested);
+
+            if (stopRequested)
+            {
+                if (_engineOn) SetEngineOn(false);
+                return;
+            }
+
+            if (restartRequested && !_engineOn && !_damage.EngineDisabled && _fuelLiters > 0f)
+                SetEngineOn(true);
+        }
+
+        /// <summary>
+        /// Feeds each wheel's observed surface into its §4.4 cross-fade. Water is the safety-critical
+        /// exception: while the hull is in water the coefficients snap instead of blending. The water
+        /// depth read here is the previous tick's — one tick of lag on a snap is harmless, whereas
+        /// blending a wet-to-dry traction change is exactly what §4.4 forbids.
+        /// </summary>
+        void StepSurfaceTransitions(float dt)
+        {
+            bool immediate = WaterDepthMeters > 0.01f;
+            for (int i = 0; i < 4; i++)
+                _surfaceFade[i].Step(_surfaces[i], dt, immediate);
+        }
+
         void ApplyWheelForces(EffectiveVehicleStats stats, bool reverseIndicated)
         {
             SteeringModel.AckermannAngles(_steerCommand, SpeedKph, spec.WheelbaseM, spec.TrackM,
@@ -222,7 +291,8 @@ namespace Wayfinder.Simulation
             wheel.motorTorque = motorTorque;
 
             int index = WheelIndex(wheel);
-            float surfaceGrip = SurfaceTable.Get(_surfaces[index]).EffectiveGrip(SurfaceWet);
+            SurfaceType surface = SurfaceTable.Sanitize(_surfaces[index]);
+            float surfaceGrip = SurfaceTable.Get(surface).EffectiveGrip(SurfaceWet);
             float brakeScale = MathUtil.Clamp01(surfaceGrip / 0.9f + 0.1f); // ABS-ish assist envelope
             wheel.brakeTorque = brakeCmd * (wheel == wheelFrontLeft || wheel == wheelFrontRight
                 ? spec.BrakeTorqueFrontNmPerWheel
@@ -234,12 +304,22 @@ namespace Wayfinder.Simulation
             // deep mud and asphalt no longer share one packed-dirt coefficient (DEF-005). Before
             // 2026-10-19 the whole vehicle was resolved for `PackedDirt, wet:false` and the per-wheel
             // surface only scaled brake torque.
-            float grip = _resolver.GripFor(tireSet, _surfaces[index], SurfaceWet, stats.TireGripFactor, out float lateral);
+            float grip = _resolver.GripFor(tireSet, surface, SurfaceWet, stats.TireGripFactor, out float lateral);
+
+            // §4.4 cross-fade: scale the fully composed grip by the blended/raw coefficient ratio, so
+            // tire-set, research and condition bonuses are all carried through the fade instead of
+            // being re-implemented here. `rawGrip` is 0 only for a zero-grip table entry.
+            if (_surfaceFade[index].IsInitialised && surfaceGrip > 1e-4f)
+                grip *= MathUtil.Clamp(_surfaceFade[index].EffectiveGrip(SurfaceWet) / surfaceGrip, 0f, 1f);
+
+            // Every stiffness the solver sees is bounded: NaN → 0, and nothing above the documented
+            // envelope (SYS-SIM-001 — an out-of-range stiffness is what makes a seam read as a jolt).
             var fwd = wheel.forwardFriction;
-            fwd.stiffness = grip * (1f + _mud.SinkFraction * -0.5f) * _mud.TractionMultiplier;
+            fwd.stiffness = SurfaceTable.ClampFrictionStiffness(
+                grip * (1f + _mud.SinkFraction * -0.5f) * _mud.TractionMultiplier);
             wheel.forwardFriction = fwd;
             var side = wheel.sidewaysFriction;
-            side.stiffness = grip * lateral * _mud.TractionMultiplier;
+            side.stiffness = SurfaceTable.ClampFrictionStiffness(grip * lateral * _mud.TractionMultiplier);
             wheel.sidewaysFriction = side;
         }
 
@@ -306,13 +386,15 @@ namespace Wayfinder.Simulation
             {
                 var wheel = GetWheel(i);
                 _grounded[i] = false;
-                _surfaces[i] = SurfaceType.PackedDirt;
                 if (wheel == null || !wheel.GetGroundHit(out WheelHit hit)) continue;
                 _grounded[i] = true;
                 groundSum += hit.point.y;
                 groundedCount++;
-                if (hit.collider != null && hit.collider.TryGetComponent<SurfaceLabel>(out var label))
-                    _surfaces[i] = label.surface;
+                // Keep the last known surface while airborne: resetting to packed dirt here made a
+                // jump-blip restart the cross-fade from the wrong coefficient (SYS-SIM-001). A label
+                // whose enum value is not in the table is sanitised instead of indexed blindly.
+                if (hit.collider != null && hit.collider.TryGetComponent<SurfaceLabel>(out var label) && label != null)
+                    _surfaces[i] = SurfaceTable.Sanitize(label.surface);
             }
             _groundHeightY = groundedCount > 0 ? groundSum / groundedCount
                 : transform.position.y - spec.WheelRadiusM - spec.SuspensionTravelM * .5f;

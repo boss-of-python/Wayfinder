@@ -59,8 +59,10 @@ namespace Wayfinder.Presentation
         public const float UploadIntervalSeconds = 0.25f;
         public const float MarkerIntervalSeconds = 0.25f;
 
+        readonly CampaignSession _session;
         float _sinceUpload, _sinceMarkers;
         bool _uploadPending;
+        int _seenMapRevision;
 
         public ExplorationMap Map { get; }
         public MapTextureBinding Binding { get; }
@@ -70,8 +72,10 @@ namespace Wayfinder.Presentation
 
         public MapPresenter(CampaignSession session)
         {
+            _session = session;
             Map = new ExplorationMap(session);
             Binding = new MapTextureBinding(Map.Raster);
+            _seenMapRevision = session != null ? session.MapRevision : 0;
         }
 
         public void SetLayers(MapLayers layers)
@@ -84,6 +88,7 @@ namespace Wayfinder.Presentation
         {
             Map.RebuildMarkers(Layers);
             _sinceMarkers = 0f;
+            _seenMapRevision = _session != null ? _session.MapRevision : 0;
             MarkersChanged?.Invoke();
         }
 
@@ -96,6 +101,15 @@ namespace Wayfinder.Presentation
                 Binding.Sync();
                 _uploadPending = false;
                 _sinceUpload = 0f;
+            }
+            // A committed map change (marker placed/removed, route set, cells revealed, save
+            // loaded) rebuilds on this frame: the domain counter is the dirty flag (§16.3,
+            // SYS-WRD-002). The 0.25 s cadence remains only because the player arrow itself moves
+            // every frame; it no longer decides when a marker change becomes visible.
+            if (_session != null && _session.MapRevision != _seenMapRevision)
+            {
+                RebuildMarkersNow();
+                return;
             }
             _sinceMarkers += unscaledDeltaSeconds;
             if (_sinceMarkers >= MarkerIntervalSeconds) RebuildMarkersNow();

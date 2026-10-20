@@ -12,7 +12,7 @@ Unity 6.3 LTS · C# · URP · **no ads, no in-app purchases, no accounts, no bac
 | `Wayfinder_Production_Blueprint.txt` | Authoritative product specification (v1.0, 14 Oct 2026) |
 | `AI_IMPLEMENTATION_HANDOFF.txt` | AI implementation protocol this repo follows |
 | `Assets/Wayfinder/` | Unity project source: scripts, tests, content JSON, input actions |
-| `Docs/` | Implementation status, decisions, known issues, evidence, build & run, requirement map, asset manifest |
+| `Docs/` | Implementation status, decisions, known issues, evidence, build & run, requirement map, asset manifest, AI-issue triage |
 | `Tools/` | Headless validators, economy simulator, content generator, build scripts, toolchain pin |
 
 Read **`Docs/BUILD_AND_RUN.md`** first — it states exactly what is verified today versus what
@@ -39,8 +39,9 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   no deadlocks and no arbitrage. See `Docs/EVIDENCE_M0.md`.
 - **Verified without Unity (headless C#):** the non-Unity assemblies (Core, pure Simulation
   math, World, Progression, Persistence) compile with a real Roslyn C# 9 compiler at warning level 4
-  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 188 EditMode NUnit tests
-  pass** (59 before Batch C, 109 before Batch D, 143 before Batch G) (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
+  with zero warnings, pass a .NET Standard 2.1 API-profile check, and **all 205 EditMode NUnit tests
+  pass** (59 before Batch C, 109 before Batch D, 143 before Batch G, 188 before the 20 Oct triage)
+  (`python3 Tools/Build/headless_cs.py all`; raw artifacts in `Docs/evidence/headless-cs/`,
   write-ups in `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/UNITY_HANDOFF.md`). Running them found and fixed a save-checksum bug that
   would have blocked every save (KI-013), a water-stall re-drain (KI-014) and an inventory stack bug
   (KI-015).
@@ -49,6 +50,14 @@ runtime integration, Unity/device gates, final assets and signed AAB packaging r
   package pin and **compiled all six engine-free Wayfinder assemblies** — so `VehicleController`
   and `ChaseCameraBehaviour` are now Unity-compiled, not parse-checked. Evidence:
   `Docs/evidence/cloud-build-2026-10-15/`.
+- **20 Oct 2026 — AI issue-directory triage:** the eight `SYS-*` entries of the attached
+  `AI Processing Format.md` were checked against the code and answered in
+  `Docs/AI_PROCESSING_TRIAGE.md`: five produced the requested change (unchecked surface-table indexing
+  and a missing §4.4 traction cross-fade, §5.1 parked-engine auto-stop, an atomic gap-checked
+  migration pipeline, a map dirty flag, pinned Android API levels and a real batchmode exit code), two
+  already existed and were hardened instead (atomic save writes, schema migration hook), and one
+  (chunk-streaming main-thread work) does not exist in the named file, which is pure and
+  step-budgeted. 205/205 headless tests, 8/8 mutations.
 - **Not yet verified:** the four Input System-dependent assemblies (`Platform`, `Presentation`,
   `Editor`, PlayMode/EditMode test assemblies — KI-034), scene generation, PlayMode physics,
   device builds, touch play, thermal performance. **No APK exists yet** (KI-006). Nothing here
@@ -162,10 +171,9 @@ run the supported desktop Unity Editor itself. A manual, dedicated-Windows-runne
 APK workflow is prepared in `.github/workflows/android-phone-build.yml`; it has
 not been run and requires secure owner setup, not a phone-only or free hosted build.
 
-Latest local checks: **91/91** diagnostics tests, **23/23** mocked pipeline tests, **19/19**
-mutations for the 19 Oct batch (**22/22** for Batch H) and a 20/20 dress rehearsal; the last
-headless C# run (16 Oct) passed **188/188** tests, and the only C#-side change since is one added
-asmdef reference (PR #15). The three latest
+Latest local checks: **93/93** diagnostics tests, **23/23** mocked pipeline tests, **8/8**
+mutations for the 20 Oct triage batch (**19/19** for the 19 Oct batch, **22/22** for Batch H) and a
+20/20 dress rehearsal; the headless C# run of **20 Oct passed 205/205** tests. The three latest
 cloud runs failed in *Setup Project*, and their diagnose jobs could not fetch the editor log
 because `gh api` refused a body containing terminal escape sequences — found, reproduced against
 gh's own source and fixed on 19 Oct (KI-041, D-036). The workflow pre-creates
@@ -184,7 +192,7 @@ python3 Tools/Build/pin_toolchain.py --editor-version 6000.3.<patch>f1
 # 3. Open this folder in Unity → menu Tools → Wayfinder → Setup Project
 #    then play: Title → slot "New" → VerticalSlice (greybox campaign slice)
 # 4. Run headless checks any time (no Unity needed):
-python3 Tools/Build/headless_cs.py all           # real C# 9 compile + 188 EditMode NUnit tests
+python3 Tools/Build/headless_cs.py all           # real C# 9 compile + 205 EditMode NUnit tests
 python3 Tools/Validation/validate_content.py
 python3 Tools/Validation/formula_checks.py
 python3 Tools/Balance/economy_sim.py

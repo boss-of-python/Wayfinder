@@ -16,6 +16,21 @@ namespace Wayfinder.Editor
         public const string CampaignContentResourcesDir = "Assets/Wayfinder/Resources/Content";
         public const string CanonicalContentDir = "Assets/Wayfinder/Content";
         public const string PipelinePath = "Assets/Wayfinder/Settings/WayfinderURP.asset";
+
+        /// <summary>
+        /// Android API floor: the blueprint's OS floor is Android 10+ (§1.4/Appendix), which is API 29.
+        /// Pinned here so a Unity default change cannot silently move it (SYS-CICD-001).
+        /// </summary>
+        public const int AndroidMinSdkApiLevel = 29;
+
+        /// <summary>
+        /// Android target API level. Pinned deliberately instead of "Auto": Auto resolves to whatever
+        /// SDK the editor image happens to carry, so two runs of the same commit could target
+        /// different levels (SYS-CICD-001). The value is duplicated in
+        /// .github/workflows/android-cloud-build.yml (ANDROID_TARGET_SDK) and a repository test
+        /// fails if the two disagree.
+        /// </summary>
+        public const int AndroidTargetSdkApiLevel = 36;
         public const string RendererPath = "Assets/Wayfinder/Settings/WayfinderRenderer.asset";
 
         /// <summary>
@@ -52,6 +67,7 @@ namespace Wayfinder.Editor
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             SetDefaultIdentifier(NamedBuildTarget.Android);
+            PinAndroidSdkLevels();
 
             // The free CI build uses a Linux Android-only Unity image. Do not ask that editor
             // to configure the iOS backend unless its iOS build support is actually installed.
@@ -106,6 +122,21 @@ namespace Wayfinder.Editor
                 AssetDatabase.ImportAsset(destination, ImportAssetOptions.ForceSynchronousImport);
             }
             Debug.Log($"[Wayfinder] Campaign content copied to {CampaignContentResourcesDir}.");
+        }
+
+        /// <summary>
+        /// Writes the pinned minimum/target API levels and prints what the editor resolved, so a
+        /// cloud-build log states the SDK levels it actually used instead of leaving them implicit
+        /// in the editor image (SYS-CICD-001). A missing target platform then fails the build with
+        /// Unity's own "SDK not installed" message rather than drifting to a different level.
+        /// </summary>
+        static void PinAndroidSdkLevels()
+        {
+            PlayerSettings.Android.minSdkVersion = (AndroidSdkVersions)AndroidMinSdkApiLevel;
+            PlayerSettings.Android.targetSdkVersion = (AndroidSdkVersions)AndroidTargetSdkApiLevel;
+            Breadcrumb($"android sdk: min={PlayerSettings.Android.minSdkVersion} " +
+                       $"target={PlayerSettings.Android.targetSdkVersion} " +
+                       $"(pinned {AndroidMinSdkApiLevel}/{AndroidTargetSdkApiLevel})");
         }
 
         static void SetDefaultIdentifier(NamedBuildTarget target)

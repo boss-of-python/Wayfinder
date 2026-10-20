@@ -134,8 +134,32 @@ namespace Wayfinder.Editor
                           $"size={report.summary.totalSize}, errors={report.summary.totalErrors}, warnings={report.summary.totalWarnings}\n";
             File.AppendAllText("Logs/build_report.txt", line);
             if (report.summary.result != BuildResult.Succeeded)
-                throw new BuildFailedException($"{platform} build failed: {report.summary.result}. See Logs/build_report.txt.");
+                FailBuild(platform, report);
             Debug.Log($"[Wayfinder] {platform} build succeeded → {report.summary.outputPath}");
+        }
+        /// <summary>
+        /// A failed <c>BuildPlayer</c> must not be able to look like success to CI (SYS-CICD-002).
+        /// <para>
+        /// Batchmode is the important half: an editor that merely returns a failed report — or throws
+        /// from an entry point that game-ci launched with <c>-quit</c> — has historically exited 0 in
+        /// some configurations, which turns "APK build failed" into a green workflow with no artefact.
+        /// So in batchmode this method records the breadcrumb and calls
+        /// <c>EditorApplication.Exit(1)</c>, which no caller can ignore. In the interactive editor the
+        /// same failure is thrown so the Console shows it and the editor is not killed.
+        /// </para>
+        /// </summary>
+        static void FailBuild(string platform, BuildReport report)
+        {
+            var failure = new BuildFailedException(
+                $"{platform} build failed: {report.summary.result}. See Logs/build_report.txt.");
+            EditorFailureLog.Record("Wayfinder.Editor.BuildCommands." + platform, failure);
+
+            if (Application.isBatchMode)
+            {
+                Debug.LogError("[Wayfinder] batchmode build failed; exiting with code 1 so CI cannot pass.");
+                EditorApplication.Exit(1);
+            }
+            throw failure;
         }
     }
 }

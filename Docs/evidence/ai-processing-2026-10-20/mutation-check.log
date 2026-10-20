@@ -1,0 +1,10 @@
+[M1] killed — blind array indexing on an undefined surface label (the reported SYS-SIM-001 crash)
+[M2] killed — apply the new surface coefficient on the same tick (no §4.4 cross-fade)
+[M3] killed — never auto-stop a parked engine (the §5.1 idle drain the report calls a bug)
+[M4] killed — relabel a save through a missing migration step instead of failing
+[M5] killed — stop marking the map dirty when a marker is committed (the polling SYS-WRD-002 asks to remove)
+[M6] killed — let a failed BuildPlayer return without a non-zero batchmode exit (SYS-CICD-002)
+[M7] killed — leave the Android target API level on Auto (SYS-CICD-001 version drift)
+[M8] killed — let the workflow and ProjectSetup declare different target API levels
+
+8/8 mutations killed by the suite

@@ -1,10 +1,49 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-19. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-20. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## Batch 2026-10-20 — AI processing format triage (SIM-01/02, SAVE-01/02, WRD-01/02, BUILD-01)
+
+Requirements touched: **SIM-02** (surface traction), **SIM-04** (fuel/condition), **SAVE-01**,
+**SAVE-02**, **MAP-02** (map state), **BUILD-01** (Android build determinism and exit codes).
+Decision **D-038**; full per-issue reasoning in [AI_PROCESSING_TRIAGE.md](AI_PROCESSING_TRIAGE.md).
+
+Three of the eight attached `SYS-*` entries described mechanisms this repository already had and were
+left alone after verification; five produced real changes:
+
+- **Surface lookup is no longer an unchecked array index (SYS-SIM-001).** `SurfaceTable` gained
+  `IsDefined`/`Sanitize`/`TryGet` and a bounds-safe `Get`, coefficients are clamped and NaN-safe in
+  the constructor, and every `WheelCollider` stiffness now passes `ClampFrictionStiffness`. The §4.4
+  0.15 s cross-fade — written in `SurfaceTable.Blend` but never called — is now applied per wheel by
+  a new pure `SurfaceTransition`, with a water snap path for the safety-critical exception.
+- **§5.1 auto-stop replaces the requested idle multiplier (SYS-SIM-002).** `AutoStopIdleSeconds` was
+  declared and never read; a new pure `IdleAutoStopModel` stops the engine after 15 s parked, wakes on
+  a pedal, and is wired into `FixedUpdate`. Parked drain becomes zero the documented way, and the
+  specified drain formula and its QA example are untouched.
+- **Save hardening (SYS-SAV-001).** Atomic temp-write/verify/replace and backup recovery already
+  existed with interruption tests; added stale-`.tmp` cleanup before every write and after failed
+  writes, so a killed process cannot leave a buffer to explain on the next boot.
+- **Migration pipeline made honest and atomic (SYS-SAV-002).** New `ISaveMigrator` contract; a
+  missing step now throws instead of relabelling the save, and a mid-pipeline failure no longer
+  leaves a half-applied payload. `ValidatePipeline` reports gaps and duplicate starts.
+- **Map dirty flag (SYS-WRD-002).** `CampaignSession.MapRevision` rises only on committed map changes
+  (markers, route, reveal, landmark, cache, load); `MapPresenter` rebuilds on the commit frame instead
+  of waiting up to 250 ms for its poll. The timer remains only for the moving player arrow.
+- **Android determinism and exit codes (SYS-CICD-001/002).** `minSdk 29` / `targetSdk 36` are pinned
+  in `ProjectSetup`, logged, mirrored in the workflow, and cross-checked by a test. `BuildPlayer`
+  failure now records the breadcrumb and calls `EditorApplication.Exit(1)` in batchmode.
+
+**Verified (headless):** 205/205 EditMode tests (188 before; 17 new), 0 warnings, .NET Standard 2.1
+profile OK, 93/93 diagnostics tests, 23/23 pipeline tests, content/formula/economy checks pass, and
+**8/8 mutations killed**. Evidence: `Docs/evidence/ai-processing-2026-10-20/`.
+
+**Not verified:** the five changed Unity-only files are parse-checked, not compiled by Unity; no
+PlayMode run of the cross-fade or auto-stop; no APK; the pinned API 36 is unproven against the CI
+image. New open issues KI-045 … KI-050. KI-006/KI-009/KI-034 remain the gate.
 
 ## Latest Android APK workflow attempts — 2026-10-18 (three runs), diagnosed 2026-10-19
 

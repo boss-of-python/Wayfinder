@@ -18,6 +18,7 @@ job downloads the finished job log (Tools/Build/fetch_job_log.sh) and annotates 
 Stdlib only (no PyYAML): the workflow checks below are structural text assertions.
 """
 from pathlib import Path
+import re
 import stat
 import subprocess
 import tempfile
@@ -814,6 +815,40 @@ class EditorEntryPointTests(unittest.TestCase):
     def test_the_breadcrumb_rethrows_so_unity_still_fails_the_build(self):
         source = (self.EDITOR / "EditorFailureLog.cs").read_text()
         self.assertIn("Record(method, error);\n                throw;", source)
+
+    def test_a_failed_build_player_exits_non_zero_in_batchmode(self):
+        """SYS-CICD-002: a failed BuildPipeline.BuildPlayer may not look like success to CI.
+
+        BuildReport.summary.result must be inspected, the failure recorded, and batchmode must exit
+        with code 1 — Unity has historically exited 0 after a failed player build, which turns
+        "APK failed" into a green workflow with no artefact.
+        """
+        build = (self.EDITOR / "BuildCommands.cs").read_text()
+        self.assertIn("report.summary.result != BuildResult.Succeeded", build)
+        self.assertIn("Application.isBatchMode", build)
+        # The call itself, not the doc comment that mentions it: a mutation removing `Exit(1)`
+        # must not be able to hide behind prose.
+        self.assertIn("EditorApplication.Exit(1);", build)
+
+    def test_android_sdk_levels_are_pinned_and_agree_with_the_workflow(self):
+        """SYS-CICD-001: the target API level comes from the repo, not from the editor image.
+
+        ProjectSetup writes PlayerSettings (authoritative) and the workflow declares the same
+        number for unity-builder; if the two drift the pin is no longer a pin.
+        """
+        setup = (self.EDITOR / "ProjectSetup.cs").read_text()
+        self.assertNotIn("AndroidApiLevelAuto", setup, "Auto lets the level drift between runs")
+        self.assertIn("PlayerSettings.Android.minSdkVersion", setup)
+        self.assertIn("PlayerSettings.Android.targetSdkVersion", setup)
+        constant = re.search(r"AndroidTargetSdkApiLevel\s*=\s*(\d+)", setup)
+        self.assertIsNotNone(constant, "the target API level must be a named constant")
+        workflow = WORKFLOW.read_text()
+        declared = re.search(r"ANDROID_TARGET_SDK:\s*'(\d+)'", workflow)
+        self.assertIsNotNone(declared, "the workflow must declare the target API level once")
+        self.assertEqual(constant.group(1), declared.group(1),
+                         "ProjectSetup and the workflow must pin the same Android target API")
+        self.assertEqual(2, workflow.count("androidTargetSdkVersion:"),
+                         "both Unity steps must receive the pinned target API level")
 
 
 class CloudBuildWorkflowTests(unittest.TestCase):

@@ -191,6 +191,12 @@ namespace Wayfinder.Persistence
                     payload = payload
                 };
 
+                // A .tmp left by a killed process is never trusted (§17.4 step 6) and must not be
+                // mistaken for this revision's buffer (SYS-SAV-001). FileMode.Create would truncate
+                // it, but deleting first also removes a read-only or partially-locked leftover that
+                // would otherwise fail the write with an IOException.
+                CleanupStaleTemp(slot);
+
                 string canonical = CanonicalJson.Serialize(payload);
                 envelope.payloadChecksum = CanonicalJson.Sha256Hex(canonical);
                 string envelopeJson = JsonConvert.SerializeObject(envelope, SaveJson.WriteSettings);
@@ -232,10 +238,13 @@ namespace Wayfinder.Persistence
             }
             catch (IOException ex)
             {
+                // Do not leave a half-written buffer behind for the next boot to explain away.
+                TryDelete(PathFor(slot, TempFileName));
                 return new SaveResult(SaveResultStatus.FailedWrite, revision, ex.Message);
             }
             catch (UnauthorizedAccessException ex)
             {
+                TryDelete(PathFor(slot, TempFileName));
                 return new SaveResult(SaveResultStatus.FailedWrite, revision, ex.Message);
             }
             // DEF-022: only IO and access failures were handled, so anything else — a corrupt-grid
@@ -338,6 +347,12 @@ namespace Wayfinder.Persistence
             catch (IOException) { }
         }
 
+        /// <summary>
+        /// Removes a temp buffer left by an interrupted write (§17.4 step 6: temp files are never
+        /// trusted). Called before every write, and safe to call on boot.
+        /// </summary>
+        public void CleanupStaleTemp(SaveSlotId slot) => TryDelete(PathFor(slot, TempFileName));
+
         /// <summary>Manual slot deletion requires confirmation upstream (§17.5); this just performs it.</summary>
         public void DeleteSlot(SaveSlotId slot)
         {
@@ -347,37 +362,126 @@ namespace Wayfinder.Persistence
     }
 
     /// <summary>
+    /// One forward schema step: reads a payload at <see cref="FromVersion"/> and rewrites it for
+    /// <c>FromVersion + 1</c> (§17.5, SYS-SAV-002). Steps are pure payload transforms; they never
+    /// write to disk and never touch currency outside an explicit refund rule.
+    /// </summary>
+    public interface ISaveMigrator
+    {
+        /// <summary>Schema version this step consumes; it produces <c>FromVersion + 1</c>.</summary>
+        int FromVersion { get; }
+
+        /// <summary>Rewrites one payload in place. Must preserve stable content IDs.</summary>
+        void Apply(JObject payload);
+    }
+
+    /// <summary>Delegate-backed <see cref="ISaveMigrator"/>, so a step stays a lambda.</summary>
+    public sealed class SaveMigration : ISaveMigrator
+    {
+        readonly Action<JObject> _apply;
+
+        public SaveMigration(int fromVersion, Action<JObject> apply)
+        {
+            if (fromVersion < 1) throw new ArgumentOutOfRangeException(nameof(fromVersion), "schema versions start at 1");
+            _apply = apply ?? throw new ArgumentNullException(nameof(apply));
+            FromVersion = fromVersion;
+        }
+
+        public int FromVersion { get; }
+
+        public void Apply(JObject payload) => _apply(payload ?? throw new ArgumentNullException(nameof(payload)));
+    }
+
+    /// <summary>
     /// Sequential pure migrations v1→v2→… (§17.5). Preserve stable IDs; removed items get explicit
     /// replacement/refund rules; moving a landmark never removes its discovered flag.
+    /// <para>
+    /// <b>Gaps now fail loudly (SYS-SAV-002).</b> The previous loop incremented <c>schemaVersion</c>
+    /// whether or not a step existed, so a save written at v1 and read by a build at v3 was
+    /// relabelled "v3" with no transformation applied and then written back at v3 — a silent schema
+    /// lie that makes the <i>next</i> load trust un-migrated data. A missing step is now an
+    /// <see cref="InvalidOperationException"/>, which <c>CampaignSession.Continue</c> surfaces
+    /// instead of overwriting.
+    /// </para>
     /// </summary>
     public static class SaveMigrations
     {
-        public delegate void Migration(JObject payload);
-
-        static readonly SortedDictionary<int, Migration> Steps = new SortedDictionary<int, Migration>
+        /// <summary>Built-in steps, keyed by the version they consume. None are required at schema 1.</summary>
+        static readonly ISaveMigrator[] BuiltIn =
         {
-            // [1] = payload => { /* v1 → v2 example; none required at schema 1 */ },
+            // new SaveMigration(1, payload => { /* v1 → v2 */ }),
         };
 
+        public static IReadOnlyList<ISaveMigrator> Steps => BuiltIn;
+
         /// <summary>Runs migrations from the envelope's schema to the current schema, in order.</summary>
-        public static SaveEnvelope MigrateToCurrent(SaveEnvelope envelope)
+        public static SaveEnvelope MigrateToCurrent(SaveEnvelope envelope) =>
+            Migrate(envelope, SaveService.CurrentSchemaVersion, BuiltIn);
+
+        /// <summary>
+        /// Runs <paramref name="steps"/> until <paramref name="targetVersion"/> is reached. Public and
+        /// target-versioned so the pipeline itself is testable before a second schema exists.
+        /// </summary>
+        public static SaveEnvelope Migrate(SaveEnvelope envelope, int targetVersion, IEnumerable<ISaveMigrator> steps)
         {
             if (envelope == null) throw new ArgumentNullException(nameof(envelope));
-            if (envelope.schemaVersion > SaveService.CurrentSchemaVersion)
+            if (targetVersion < 1) throw new ArgumentOutOfRangeException(nameof(targetVersion));
+            if (envelope.schemaVersion > targetVersion)
                 throw new InvalidOperationException("schema too new; open read-only recovery instead");
 
-            // Payload-level migrations run here as JObject transforms when schema grows past 1.
-            while (envelope.schemaVersion < SaveService.CurrentSchemaVersion)
+            var ordered = (steps ?? Array.Empty<ISaveMigrator>())
+                .Where(s => s != null)
+                .OrderBy(s => s.FromVersion)
+                .ToArray();
+
+            // Atomic: every step runs against a working copy, and the envelope is only updated once
+            // the whole chain succeeded. A failure mid-pipeline therefore leaves the caller holding
+            // exactly the save it loaded — never a half-migrated payload labelled with a new version.
+            var working = JObject.FromObject(envelope.payload);
+            int version = envelope.schemaVersion;
+            while (version < targetVersion)
             {
-                if (Steps.TryGetValue(envelope.schemaVersion, out var step))
-                {
-                    var obj = JObject.FromObject(envelope.payload);
-                    step(obj);
-                    envelope.payload = obj.ToObject<SavePayload>(SaveJson.Reader());
-                }
-                envelope.schemaVersion++;
+                int from = version;
+                ISaveMigrator step = ordered.FirstOrDefault(s => s.FromVersion == from);
+                if (step == null)
+                    throw new InvalidOperationException(
+                        $"no save migration from v{from} to v{from + 1}; this build cannot upgrade that save");
+
+                step.Apply(working);
+                version = from + 1;
             }
+
+            // SaveJson.Reader() carries ObjectCreationHandling.Replace: without it, ToObject APPENDS
+            // the migrated arrays to the DTO field initialisers (the KI-013 bug).
+            envelope.payload = working.ToObject<SavePayload>(SaveJson.Reader())
+                              ?? throw new InvalidOperationException("save migration produced no payload");
+            envelope.schemaVersion = version;
             return envelope;
+        }
+
+        /// <summary>
+        /// Static audit of a step list against a target version: duplicate starts, steps that can
+        /// never run, and gaps. Returns human-readable problems; an empty list means the pipeline is
+        /// sound. Exercised by tests today; the release check calls it once a second schema exists.
+        /// </summary>
+        public static IReadOnlyList<string> ValidatePipeline(int targetVersion, IEnumerable<ISaveMigrator> steps)
+        {
+            var problems = new List<string>();
+            var byVersion = new Dictionary<int, ISaveMigrator>();
+            foreach (var step in steps ?? Array.Empty<ISaveMigrator>())
+            {
+                if (step == null) { problems.Add("null migration step"); continue; }
+                if (byVersion.ContainsKey(step.FromVersion))
+                    problems.Add($"duplicate migration from v{step.FromVersion}");
+                else
+                    byVersion[step.FromVersion] = step;
+                if (step.FromVersion < 1 || step.FromVersion >= targetVersion)
+                    problems.Add($"migration from v{step.FromVersion} can never run (target v{targetVersion})");
+            }
+            for (int from = 1; from < targetVersion; from++)
+                if (!byVersion.ContainsKey(from))
+                    problems.Add($"missing migration from v{from} to v{from + 1}");
+            return problems;
         }
 
         /// <summary>QA case 19: migrating an old save must preserve discovery flags and researched modules.</summary>

@@ -68,6 +68,7 @@ namespace Wayfinder.Campaign
             Expedition.Stats.CachesCollected++;
             if (contents.SalvageUnits > 0) ReportMission(MissionConditionType.CollectQuestItem, ItemCatalog.SalvageBundle);
             _autosave.MarkDirty();
+            InvalidateMap();
             return result;
         }
 
@@ -89,6 +90,7 @@ namespace Wayfinder.Campaign
                 if (sliceLandmark.Id == landmarkId && sliceLandmark.Vista)
                     RevealAround(landmark.Position.X, landmark.Position.Z, vista: true);
             _autosave.MarkDirty();
+            InvalidateMap();
             return CommandResult.Ok();
         }
 
@@ -109,6 +111,7 @@ namespace Wayfinder.Campaign
             if (mappingGain > 0)
                 Notice(CampaignNoticeKind.MappingReward, $"Mapping reward +{mappingGain} Salvage pending", mappingGain);
             _autosave.MarkDirty();
+            InvalidateMap();
             return newly;
         }
 
