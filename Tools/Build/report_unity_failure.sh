@@ -170,10 +170,14 @@ if [ -n "$aborted" ]; then
 fi
 
 # An -executeMethod that Unity cannot resolve (renamed/uncompiled Editor assembly) aborts
-# before any of our code runs, and says so in one line.
+# before any of our code runs, and says so in one line. Ignore prior workflow annotations
+# (`##[notice]` / `::notice`) when re-reading the full job log in the second job, so Job 1's
+# own "Wayfinder breadcrumb absent ... unresolvable -executeMethod" text cannot self-match.
 method_errors="$(grep -hE 'executeMethod' $logs 2>/dev/null \
+  | detimestamp \
+  | grep -vE '^(##\[(notice|warning|error|debug)\]|::(notice|warning|error|debug)[ :])' \
   | grep -iE 'could not be found|not found|does not exist|no such method' \
-  | detimestamp | sort -u | head -3)"
+  | sort -u | head -3)"
 if [ -n "$method_errors" ]; then
   while IFS= read -r line; do
     [ -z "$line" ] && continue
@@ -185,6 +189,20 @@ EOF
 fi
 
 # ---- 3. package resolution (an unpinnable version fails here, before any compile) ---------
+android_sdk_errors="$(grep -hoE "Failed to find package 'platforms;android-[0-9]*'.*" $logs 2>/dev/null | detimestamp | sort -u | head -3)"
+if [ -n "$android_sdk_errors" ]; then
+  say "- Android SDK platform lookup failed:"
+  say '```'
+  printf '%s\n' "$android_sdk_errors" >>"$summary"
+  say '```'
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    emit_cause "title=Android SDK missing platform::$line"
+  done <<EOF
+$android_sdk_errors
+EOF
+fi
+
 resolution="$(grep -hoiE '(cannot perform upm operation|unable to find package|package [^ ]+ cannot be found|no matching version|cannot find package|failed to resolve packages|package has invalid dependencies)[:]?.*' $logs 2>/dev/null \
   | detimestamp | sort -u | head -10)"
 if [ -n "$resolution" ]; then
@@ -260,6 +278,17 @@ $crash_lines
 EOF
 fi
 
+# ---- 5b. GameCI post-container output validation -----------------------------------------
+# game-ci/cli runs UnityBuildValidation.validateBuild(stdout) after `docker run` exits 0 and
+# throws if custom -executeMethod output lacks "Build succeeded!" or "# Build results #".
+# Runs 39196653335, 39220887587, 39222439832 and 39397525479 compiled all 12 assemblies cleanly
+# and exited 0 inside Unity, then failed solely on this post-check.
+validation_failed="$(grep -hoE 'There was an error building the project\. Please read the logs for details\.' $logs 2>/dev/null | sort -u | head -1)"
+if [ -n "$validation_failed" ] && [ "$causes_emitted" -eq 0 ]; then
+  say "- GameCI post-build check failed: \`$validation_failed\` (Unity exited cleanly without printing \`Build succeeded!\` or a \`# Build results #\` block)."
+  emit_cause "title=GameCI post-build validation::$validation_failed — Unity completed without printing 'Build succeeded!' or '# Build results #'."
+fi
+
 # ---- 6. warnings in our own code (this repository holds itself to zero, D-014) ------------
 warning_lines="$(grep -hoE 'Assets/Wayfinder[^ ]*\([0-9]+,[0-9]+\): warning CS[0-9]+: .*' $logs 2>/dev/null | detimestamp | sort -u)"
 warning_count="$(printf '%s\n' "$warning_lines" | grep -c . || true)"
@@ -277,20 +306,38 @@ EOF
 fi
 
 # ---- 7. what Unity actually compiled (proves which assemblies are Unity-verified) ---------
+# GitHub Actions caps `::notice` annotations at 10 per step across ALL notices, so emitting 12
+# individual assembly notices drops the last assemblies and hides later diagnostic tail notices.
 compiled="$(grep -hoE 'Csc Library/Bee/artifacts/[^ ]*/Wayfinder\.[A-Za-z.]+\.dll' $logs 2>/dev/null \
   | sed -E 's#.*/(Wayfinder\.[A-Za-z.]+)\.dll#\1#' | sort -u)"
 if [ -n "$compiled" ]; then
+  compiled_count="$(printf '%s\n' "$compiled" | grep -c . || true)"
   say "- Wayfinder assemblies Unity compiled:"
   while IFS= read -r asm; do
     [ -z "$asm" ] && continue
     say "  - $asm"
-    echo "::notice title=Unity compiled::$asm"
   done <<EOF
 $compiled
 EOF
+  if [ "$compiled_count" -le 6 ]; then
+    while IFS= read -r asm; do
+      [ -z "$asm" ] && continue
+      echo "::notice title=Unity compiled::$asm"
+    done <<EOF
+$compiled
+EOF
+  else
+    compiled_flat="$(printf '%s\n' "$compiled" | paste -sd ', ' -)"
+    echo "::notice title=Unity compiled::${compiled_count} assemblies: ${compiled_flat}"
+  fi
 fi
 
-# ---- 8. did the APK appear? --------------------------------------------------------------
+# ---- 8. did setup / APK complete? --------------------------------------------------------
+if [ -f "$workspace/Logs/unity-pipeline/setup-complete.json" ]; then
+  setup_stamp="$(tr -d '\r\n' <"$workspace/Logs/unity-pipeline/setup-complete.json" | cut -c1-160)"
+  say "- Setup marker: \`Logs/unity-pipeline/setup-complete.json\` ($setup_stamp)"
+  echo "::notice title=Unity setup::ProjectSetup.Setup finished cleanly ($setup_stamp)"
+fi
 for apk in "$workspace/Builds/Android/Wayfinder-dev.apk" "$workspace"/Builds/Android/*.apk "$workspace"/Builds/Android/*.aab; do
   if [ -f "$apk" ]; then
     size="$(stat -c %s "$apk" 2>/dev/null || stat -f %z "$apk" 2>/dev/null || echo '?')"

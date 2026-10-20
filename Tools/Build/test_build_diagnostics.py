@@ -398,6 +398,36 @@ class ReportUnityFailureTests(unittest.TestCase):
                       result.stdout)
         self.assertNotIn("::error title=Unity editor log missing::", result.stdout)
 
+    def test_run_39397525479_gameci_post_build_validation_and_notice_self_match_regression(self):
+        # Verbatim failure shape of runs 39196653335..39397525479:
+        # 1. All 12 Wayfinder.* assemblies compiled with zero errors/warnings.
+        # 2. Job 1 emitted its own `::notice` containing "unresolvable -executeMethod" into the log.
+        # 3. game-ci/cli threw "There was an error building the project. Please read the logs for details."
+        all_twelve = [
+            "Wayfinder.Campaign", "Wayfinder.Core", "Wayfinder.Editor", "Wayfinder.Persistence",
+            "Wayfinder.Platform", "Wayfinder.Presentation", "Wayfinder.Progression",
+            "Wayfinder.Simulation", "Wayfinder.Tests.EditMode", "Wayfinder.Tests.Editor",
+            "Wayfinder.Tests.PlayMode", "Wayfinder.World",
+        ]
+        log = self.write_log(
+            "2026-10-20T09:05:10.0Z Unity Editor version:    6000.3.26f1 (de8167e7440c)\n"
+            + "".join(f"2026-10-20T09:06:00.0Z Csc Library/Bee/artifacts/1300b0aE.dag/{a}.dll (+pdb)\n"
+                      for a in all_twelve)
+            + "2026-10-20T09:07:55.0Z Build succeeded\n"
+            + "2026-10-20T09:08:05.0Z [ERROR] Error: There was an error building the project. "
+              "Please read the logs for details.\n"
+            + "2026-10-20T09:08:23.0Z ##[notice]A Unity step failed but Logs/wayfinder-editor-failure.log "
+              "does not exist, so no C# exception was thrown inside the build method. The cause is earlier "
+              "(compile error, package resolution, licence, unresolvable -executeMethod) or a hard process kill.\n",
+            relative="error_logs/unity-job-log.txt")
+        result = run(REPORT, self.root, dict(self.env, UNITY_JOB_RESULT="failure"), logs=[log])
+        self.assertNotIn("Unity build method not found", result.stdout)
+        self.assertIn("::error title=GameCI post-build validation::", result.stdout)
+        self.assertIn("::notice title=Unity compiled::12 assemblies:", result.stdout)
+        self.assertIn("Wayfinder.World", result.stdout)
+        # Stay well below GitHub Actions' 10-notice-per-step cap across all emitted notices.
+        self.assertLessEqual(result.stdout.count("::notice "), 6, result.stdout)
+
 
 class ReporterMissingLogMessageTests(unittest.TestCase):
     def test_missing_explicit_log_does_not_blame_the_same_job(self):
@@ -815,6 +845,20 @@ class EditorEntryPointTests(unittest.TestCase):
         source = (self.EDITOR / "EditorFailureLog.cs").read_text()
         self.assertIn("Record(method, error);\n                throw;", source)
 
+    def test_custom_execute_methods_satisfy_gameci_build_validation_on_success_only(self):
+        # game-ci/cli@v0.1.72 Docker.run() calls UnityBuildValidation.validateBuild(stdout) after
+        # every `game-ci build` container exits 0, requiring "Build succeeded!" or "# Build results #".
+        # Without this, both Setup Project and BuildAndroidDev fail with exit code 1 after Unity
+        # succeeds cleanly (runs 39196653335, 39220887587, 39222439832, 39397525479).
+        setup = (self.EDITOR / "ProjectSetup.cs").read_text()
+        build = (self.EDITOR / "BuildCommands.cs").read_text()
+        self.assertIn('Console.WriteLine("Build succeeded!");', setup)
+        self.assertIn('Console.WriteLine("Build succeeded!");', build)
+        self.assertIn("Time.fixedDeltaTime = 1f / 60f;", setup)
+        # In BuildCommands.LogReport, BuildFailedException must be thrown BEFORE "Build succeeded!".
+        self.assertLess(build.index("throw new BuildFailedException"),
+                        build.index('Console.WriteLine("Build succeeded!");'))
+
 
 class CloudBuildWorkflowTests(unittest.TestCase):
     def setUp(self):
@@ -879,6 +923,27 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         self.assertIn("UNITY_VERSION: 6000.3.26f1", self.text)
         self.assertIn("buildMethod: Wayfinder.Editor.ProjectSetup.Setup", self.text)
         self.assertIn("buildMethod: Wayfinder.Editor.BuildCommands.BuildAndroidDev", self.text)
+
+    def test_android_sdk_is_preserved_verified_and_pinned_before_unity_steps(self):
+        cleanup = self.step_block("Free disk space (the Unity Android image is about 9 GB)")
+        self.assertIn("android: false", cleanup)
+        self.assertNotIn("android: true", cleanup)
+
+        sdk_step = self.step_block("Ensure Android SDK packages are installed")
+        self.assertIn("ANDROID_HOME=", sdk_step)
+        self.assertIn("ANDROID_SDK_ROOT=", sdk_step)
+        self.assertIn("platform-tools", sdk_step)
+        self.assertIn("platforms;android-35", sdk_step)
+        self.assertIn("platforms;android-34", sdk_step)
+        self.assertIn("build-tools;35.0.0", sdk_step)
+        self.assertIn("build-tools;34.0.0", sdk_step)
+        self.assertLess(self.text.index("- name: Ensure Android SDK packages are installed"),
+                        self.text.index('- name: "Unity 1 of 2'))
+
+        setup = self.step_block('"Unity 1 of 2: Setup Project (scenes, URP, player settings)"')
+        build = self.step_block('"Unity 2 of 2: Build the development APK"')
+        self.assertIn("androidTargetSdkVersion: '35'", setup)
+        self.assertIn("androidTargetSdkVersion: '35'", build)
 
     def test_cold_cache_and_unity_log_directories_are_prepared_before_cache(self):
         prepare = self.text.index("- name: Prepare Unity cache and diagnostic log folders")

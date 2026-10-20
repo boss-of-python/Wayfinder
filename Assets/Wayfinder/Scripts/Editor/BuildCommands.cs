@@ -136,6 +136,18 @@ namespace Wayfinder.Editor
             if (report.summary.result != BuildResult.Succeeded)
                 throw new BuildFailedException($"{platform} build failed: {report.summary.result}. See Logs/build_report.txt.");
             Debug.Log($"[Wayfinder] {platform} build succeeded → {report.summary.outputPath}");
+            // Satisfy game-ci/cli's UnityBuildValidation.validateBuild(stdout), which expects
+            // StdOutReporter's Build results table and/or "Build succeeded!" on container stdout.
+            string eol = Environment.NewLine;
+            Console.WriteLine(
+                $"{eol}###########################{eol}" +
+                $"#      Build results      #{eol}" +
+                $"###########################{eol}{eol}" +
+                $"Duration: {report.summary.totalTime}{eol}" +
+                $"Warnings: {report.summary.totalWarnings}{eol}" +
+                $"Errors: {report.summary.totalErrors}{eol}" +
+                $"Size: {report.summary.totalSize} bytes{eol}");
+            Console.WriteLine("Build succeeded!");
         }
     }
 }

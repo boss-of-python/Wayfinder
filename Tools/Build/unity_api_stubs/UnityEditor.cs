@@ -401,6 +401,7 @@ namespace UnityEditor.Build.Reporting
         public int totalWarnings { get; set; }
         public ulong buildStartedAt { get; set; }
         public ulong buildEndedAt { get; set; }
+        public TimeSpan totalTime => throw new NotImplementedException();
         public TimeSpan duration => throw new NotImplementedException();
         public string outputPath { get; set; }
         public string platform => throw new NotImplementedException();

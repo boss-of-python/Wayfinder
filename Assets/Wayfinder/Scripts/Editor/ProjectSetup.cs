@@ -51,6 +51,8 @@ namespace Wayfinder.Editor
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
+            PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevel35;
             SetDefaultIdentifier(NamedBuildTarget.Android);
 
             // The free CI build uses a Linux Android-only Unity image. Do not ask that editor
@@ -78,7 +80,8 @@ namespace Wayfinder.Editor
             ConfigureUrp();
             Breadcrumb("input backend");
             ConfigureInputBackend();
-            Time.fixedDeltaTime = 0.02f;
+            // Blueprint §4.1: "Physics step is fixed at 1/60 s."
+            Time.fixedDeltaTime = 1f / 60f;
             Breadcrumb("scenes");
             SceneBuilder.BuildAll();
             Breadcrumb("save assets");
@@ -87,6 +90,12 @@ namespace Wayfinder.Editor
             File.WriteAllText("Logs/unity-pipeline/setup-complete.json",
                 "{\"editorVersion\":\"" + Application.unityVersion + "\",\"completedUtc\":\"" + DateTime.UtcNow.ToString("O") + "\"}");
             Debug.Log("[Wayfinder] Setup complete. Run Unity tests, then an Android smoke build. Preserve generated settings/scenes/.meta files. Greybox vertical slice: Title → New → VerticalSlice.");
+            // game-ci/cli's Docker.run() invokes UnityBuildValidation.validateBuild(stdout) after
+            // every `game-ci build` container exits, even for setup-only custom -executeMethod
+            // steps, and throws unless stdout contains "Build succeeded!" or "# Build results #"
+            // (which game-ci's default StdOutReporter emits, not Unity itself). Reaching this
+            // line proves RunSetup completed cleanly without throwing.
+            Console.WriteLine("Build succeeded!");
         }
 
         /// <summary>
