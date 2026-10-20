@@ -59,7 +59,7 @@ jobs:
       - name: Free disk space (the Unity Android image is about 9 GB)
         uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:
-          android: true # the Unity image brings its own Android SDK
+          android: false # preserve host Android SDK packages (platforms;android-*, platform-tools, build-tools)
           dotnet: true
           haskell: true
           large-packages: true
@@ -81,10 +81,40 @@ jobs:
           restore-keys: |
             Library-Android-${{ env.UNITY_VERSION }}-
 
+      - name: Ensure Android SDK packages are installed
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          export ANDROID_HOME="$SDK_ROOT"
+          export ANDROID_SDK_ROOT="$SDK_ROOT"
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$SDK_ROOT" "$SDK_ROOT" >> "$GITHUB_ENV"
+
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" "$SDK_ROOT/tools/bin" -name sdkmanager -type f 2>/dev/null | head -n 1 || true)"
+          fi
+          if [ -z "$SDKMANAGER" ] || [ ! -x "$SDKMANAGER" ]; then
+            echo "::error title=Android SDK missing::sdkmanager not found under $SDK_ROOT"
+            exit 1
+          fi
+
+          missing=()
+          [ -d "$SDK_ROOT/platform-tools" ] || missing+=("platform-tools")
+          [ -d "$SDK_ROOT/platforms/android-35" ] || missing+=("platforms;android-35")
+          [ -d "$SDK_ROOT/platforms/android-34" ] || missing+=("platforms;android-34")
+          [ -d "$SDK_ROOT/build-tools/35.0.0" ] || missing+=("build-tools;35.0.0")
+          [ -d "$SDK_ROOT/build-tools/34.0.0" ] || missing+=("build-tools;34.0.0")
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            yes | sudo "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses >/dev/null || true
+            yes | sudo "$SDKMANAGER" --sdk_root="$SDK_ROOT" --install "${missing[@]}"
+          fi
+
       # No `customParameters: -logFile ...`: game-ci's build.sh passes `-logfile /dev/stdout`
       # before any custom parameter, and run 38875757162 showed the override produced no
       # readable editor log — only Unity's worker logs, which explain nothing. The log is
       # recovered from the Actions API by the `diagnose` job below.
+      # Explicit androidTargetSdkVersion avoids game-ci entrypoint.sh's empty-grep fallback
+      # (`sdkmanager "platforms;android-"`) before ProjectSettings/ProjectSettings.asset exists.
       - name: "Unity 1 of 2: Setup Project (scenes, URP, player settings)"
         id: unity_setup
         uses: game-ci/unity-builder@eb1b9fba120c6e62c9fb7a7a81d6c107ce004c45 # v6.0.0
@@ -95,6 +125,7 @@ jobs:
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
+          androidTargetSdkVersion: '35'
           buildMethod: Wayfinder.Editor.ProjectSetup.Setup
           versioning: 'None'
           allowDirtyBuild: true
@@ -109,6 +140,7 @@ jobs:
         with:
           unityVersion: ${{ env.UNITY_VERSION }}
           targetPlatform: Android
+          androidTargetSdkVersion: '35'
           buildMethod: Wayfinder.Editor.BuildCommands.BuildAndroidDev
           versioning: 'None'
           allowDirtyBuild: true
