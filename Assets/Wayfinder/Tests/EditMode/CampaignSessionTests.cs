@@ -305,8 +305,9 @@ namespace Wayfinder.Tests
             int wallet = s.Economy.BankedSalvage;
             Ok(s.DepositAtCamp("camp.forest.a"), "deposit");
             Assert.AreEqual(wallet + 234, s.Economy.BankedSalvage, "camp deposit banks loose Salvage (§12.4)");
-            Assert.AreEqual(1, s.Inventory.QuantityOf(CampaignSession.CampStorage, "scrap_metal"));
-            Assert.AreEqual(1, s.Inventory.QuantityOf(CampaignSession.CampStorage, "electronics"));
+            var store = CampaignSession.CampStorageFor("camp.forest.a");
+            Assert.AreEqual(1, s.Inventory.QuantityOf(store, "scrap_metal"), "stored in that camp's own store (§12.2)");
+            Assert.AreEqual(1, s.Inventory.QuantityOf(store, "electronics"));
             Assert.IsTrue(s.Expedition.IsActive, "the expedition continues after a camp deposit");
             Assert.AreEqual(s.Economy.BankedSalvage, Reload(_root).Economy.BankedSalvage, "deposit saved immediately");
         }

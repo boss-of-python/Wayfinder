@@ -139,7 +139,11 @@ namespace Wayfinder.Persistence
 
         void Step(SaveStep step) => StepHook?.Invoke(step);
 
-        public const int CurrentSchemaVersion = 1;
+        /// <summary>
+        /// Schema 2 (D-039): camp storage is per-camp (§12.2) instead of one pooled store. v1 saves
+        /// are migrated on load by <see cref="SaveMigrations"/>; a v2 build refuses v3 files read-only.
+        /// </summary>
+        public const int CurrentSchemaVersion = 2;
         public const string CurrentFileName = "current.json";
         public const string Backup1FileName = "backup1.json";
         public const string Backup2FileName = "backup2.json";
@@ -352,12 +356,100 @@ namespace Wayfinder.Persistence
     /// </summary>
     public static class SaveMigrations
     {
-        public delegate void Migration(JObject payload);
+        /// <summary>
+        /// One schema step, applied to the deserialized payload of a save written at that version.
+        /// Typed rather than JObject-based: a step is a pure structural transform of the DTO graph,
+        /// and keeping it typed means a step can never silently lose a field to a JSON round trip.
+        /// </summary>
+        public delegate void Migration(SavePayload payload);
 
         static readonly SortedDictionary<int, Migration> Steps = new SortedDictionary<int, Migration>
         {
-            // [1] = payload => { /* v1 → v2 example; none required at schema 1 */ },
+            [1] = CampStoragePerCamp,
         };
+
+        /// <summary>
+        /// v1 → v2 (D-039, §12.2): camp storage became per-camp. The pooled v1 <c>campStorage</c>
+        /// stacks move into the store of the first camp listed in <c>activatedCampIds</c> (capture
+        /// sorts that list, so the choice is deterministic), or into <c>garageStorage</c> when the
+        /// player never established a camp. Stacks merge by (itemId, missionInstanceId) and every
+        /// unit survives — §17.5: a migration never destroys player property. The pooled field is
+        /// left empty so the step cannot double-apply.
+        /// </summary>
+        static void CampStoragePerCamp(SavePayload p)
+        {
+            var pooled = ReadStacks(p.campStorage);
+            p.campStorage = new List<ItemStackDto>();
+            if (pooled.Count == 0) return;
+
+            string campId = FirstActivatedCamp(p.activatedCampIds);
+            if (string.IsNullOrEmpty(campId))
+            {
+                p.garageStorage = MergeStacks(p.garageStorage, pooled);
+                return;
+            }
+
+            p.campStores ??= new List<CampStoreDto>();
+            CampStoreDto store = null;
+            foreach (var candidate in p.campStores)
+                if (candidate != null && string.Equals(candidate.campId, campId, StringComparison.Ordinal))
+                {
+                    store = candidate;
+                    break;
+                }
+            if (store == null)
+            {
+                store = new CampStoreDto { campId = campId };
+                p.campStores.Add(store);
+            }
+            store.items = MergeStacks(store.items, pooled);
+        }
+
+        /// <summary>Rows that carry nothing (no id, no quantity, malformed) preserve nothing, so they are dropped.</summary>
+        static List<ItemStackDto> ReadStacks(List<ItemStackDto> stacks)
+        {
+            var list = new List<ItemStackDto>();
+            if (stacks == null) return list;
+            foreach (var d in stacks)
+            {
+                if (d == null || string.IsNullOrEmpty(d.itemId) || d.quantity <= 0) continue;
+                list.Add(new ItemStackDto
+                {
+                    itemId = d.itemId,
+                    quantity = d.quantity,
+                    missionInstanceId = d.missionInstanceId ?? string.Empty
+                });
+            }
+            return list;
+        }
+
+        static string FirstActivatedCamp(List<string> activatedCampIds)
+        {
+            if (activatedCampIds == null) return null;
+            foreach (var id in activatedCampIds)
+                if (!string.IsNullOrEmpty(id)) return id;
+            return null;
+        }
+
+        /// <summary>Merges stacks by (itemId, missionInstanceId), keeping the destination's own order first.</summary>
+        static List<ItemStackDto> MergeStacks(List<ItemStackDto> destination, List<ItemStackDto> stacks)
+        {
+            var merged = destination ?? new List<ItemStackDto>();
+            foreach (var incoming in stacks)
+            {
+                ItemStackDto match = null;
+                foreach (var existing in merged)
+                    if (existing != null && existing.itemId == incoming.itemId &&
+                        (existing.missionInstanceId ?? string.Empty) == incoming.missionInstanceId)
+                    {
+                        match = existing;
+                        break;
+                    }
+                if (match != null) match.quantity += incoming.quantity;
+                else merged.Add(incoming);
+            }
+            return merged;
+        }
 
         /// <summary>Runs migrations from the envelope's schema to the current schema, in order.</summary>
         public static SaveEnvelope MigrateToCurrent(SaveEnvelope envelope)
@@ -366,14 +458,15 @@ namespace Wayfinder.Persistence
             if (envelope.schemaVersion > SaveService.CurrentSchemaVersion)
                 throw new InvalidOperationException("schema too new; open read-only recovery instead");
 
-            // Payload-level migrations run here as JObject transforms when schema grows past 1.
             while (envelope.schemaVersion < SaveService.CurrentSchemaVersion)
             {
                 if (Steps.TryGetValue(envelope.schemaVersion, out var step))
                 {
-                    var obj = JObject.FromObject(envelope.payload);
-                    step(obj);
-                    envelope.payload = obj.ToObject<SavePayload>(SaveJson.Reader());
+                    envelope.payload ??= new SavePayload();
+                    step(envelope.payload);
+                    // The checksum covers the payload, so a migrated payload needs a fresh one: the
+                    // envelope in memory must stay self-consistent for any later verify (§17.4).
+                    envelope.payloadChecksum = CanonicalJson.Sha256Hex(CanonicalJson.Serialize(envelope.payload));
                 }
                 envelope.schemaVersion++;
             }

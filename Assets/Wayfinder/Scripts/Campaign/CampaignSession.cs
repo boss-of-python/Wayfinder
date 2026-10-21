@@ -25,11 +25,12 @@ namespace Wayfinder.Campaign
     {
         public static readonly InventoryId Cargo = new InventoryId("cargo");
         public static readonly InventoryId GarageStorage = new InventoryId("garageStorage");
-        public static readonly InventoryId CampStorage = new InventoryId("campStorage");
+        /// <summary>Container-name prefix of a camp's own store (§12.2, D-039).</summary>
+        public const string CampStoragePrefix = "campStorage:";
 
         public const int GarageStorageSlots = 10000;          // "Garage storage is unlimited" (§10.4)
         public const float GarageStorageMassKg = 1000000f;
-        public const int CampStorageSlots = 10000;            // camp storage is mass-limited (500 kg)
+        public const int CampStorageSlots = 10000;            // a camp store is mass-limited, per camp (content, default 500 kg)
         public const string TutorialFlag = "tutorial.active";
         public const string ScoutVehicleId = "vehicle.scout.s1";
         public const float MaxPlausibleStepMeters = 50f;      // larger pose jumps are resets, not distance
@@ -282,8 +283,40 @@ namespace Wayfinder.Campaign
             FuelCapacityLiters = stats.FuelCapacityLiters;
             Inventory.ConfigureContainer(Cargo, stats.CargoSlots, stats.PayloadKg);
             Inventory.ConfigureContainer(GarageStorage, GarageStorageSlots, GarageStorageMassKg);
-            Inventory.ConfigureContainer(CampStorage, CampStorageSlots, CampService.CampStorageCapacityKg);
+            foreach (var campId in ActivatedCampsInOrder()) ConfigureCampStore(campId);
         }
+
+        /// <summary>
+        /// The store of ONE camp (§12.2, D-039): what you leave at camp A is not waiting at camp B.
+        /// The v1 pooled <c>"campStorage"</c> container no longer exists — <see cref="SaveMigrations"/>
+        /// step 1 moved its stacks into the first activated camp's store (or into garage storage).
+        /// </summary>
+        public static InventoryId CampStorageFor(string campId) =>
+            new InventoryId(CampStoragePrefix + (campId ?? string.Empty));
+
+        /// <summary>Activated camp ids in the deterministic order captures and migrations use.</summary>
+        internal List<string> ActivatedCampsInOrder()
+        {
+            var list = new List<string>(Garage.ActivatedCamps);
+            list.Sort(StringComparer.Ordinal);
+            return list;
+        }
+
+        /// <summary>
+        /// Configures one camp's own store with the capacity its content declares. Idempotent, so it
+        /// runs on load, on establishment and defensively before any deposit.
+        /// </summary>
+        internal void ConfigureCampStore(string campId)
+        {
+            if (string.IsNullOrEmpty(campId)) return;
+            Inventory.ConfigureContainer(CampStorageFor(campId), CampStorageSlots, CampStoreCapacityKg(campId));
+        }
+
+        /// <summary>A camp's own store capacity in kg (§12.2); the service default when content omits it.</summary>
+        public float CampStoreCapacityKg(string campId) =>
+            Content.Camps.TryGetValue(campId ?? string.Empty, out var camp) && camp.StorageCapacityKg > 0f
+                ? camp.StorageCapacityKg
+                : CampService.CampStorageCapacityKg;
 
         /// <summary>
         /// Configures any stat resolver — the garage display's or the Unity <c>VehicleController</c>'s —

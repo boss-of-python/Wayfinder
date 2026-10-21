@@ -320,7 +320,7 @@ namespace Wayfinder.Campaign
                     break;
                 case MapMarkerKind.CampActive:
                     m.SelectionBody = string.Format(CultureInfo.InvariantCulture,
-                        "Safe hub — save and deposit ({0:0} kg camp storage){1}", CampService.CampStorageCapacityKg, where);
+                        "Safe hub — save and deposit ({0:0} kg camp storage){1}", s.CampStoreCapacityKg(marker.Id), where);
                     break;
                 case MapMarkerKind.CampSite:
                     m.SelectionBody = "Camp socket — establish with a camp kit" + where;
