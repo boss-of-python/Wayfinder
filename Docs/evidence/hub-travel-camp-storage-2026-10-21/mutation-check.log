@@ -1,0 +1,30 @@
+CAUGHT    A1   content service gate dropped  (tests 35/36) by HubTravel_IsRefused_WhenTheDestinationContentWithholdsTheService
+CAUGHT    A2   water / deep-mud refusal dropped  (tests 35/36) by HubTravel_IsRefused_OutOfWaterOrDeepMud
+CAUGHT    A3   extraction target re-based mid-expedition  (tests 35/36) by HubTravel_MidExpedition_KeepsTheExpeditionAndItsExtractionTarget
+CAUGHT    A4   garage-only service gates revert to InGarage (Garage.cs)  (tests 35/36) by ACampOffersNoGarageServices_WhileParkedThere
+CAUGHT    A5   selling gate reverts to InGarage (Supplies.cs)  (tests 35/36) by ACampOffersNoGarageServices_WhileParkedThere
+CAUGHT    A6   camp activation ignored when locating the hub  (tests 35/36) by CurrentHubId_IsTheCamp_OnlyInsideItsSocketRadius_AndOnlyOnceActivated
+CAUGHT    A7   camp socket radius ignored  (tests 33/36) by CurrentHubId_IsTheCamp_OnlyInsideItsSocketRadius_AndOnlyOnceActivated, CurrentHubId_IsTheGarageWhenParked_AndNullInTheOpenField, HubTravel_IsRefused_InTheOpenField_WhereFullRescueIsTheOnlyWayOut
+CAUGHT    A8   HubTravelled notice dropped  (tests 35/36) by HubTravel_EmitsItsNotice_OnlyWhenTheMoveIsCommitted
+CAUGHT    A9   safe pose not re-based on arrival  (tests 35/36) by HubTravel_FromTheHomeGarage_ToAnActivatedCamp_MovesTheVehicleAndRebasesDeparture
+CAUGHT    A10  progression activation gate dropped  (tests 34/36) by HubTravel_EmitsItsNotice_OnlyWhenTheMoveIsCommitted, HubTravel_IsRefused_ToAHubThatIsNotActivated_OrUnknown_OrItself
+CAUGHT    A11  travel allowed from the open field (origin falls back to LastGarageId)  (tests 35/36) by HubTravel_IsRefused_InTheOpenField_WhereFullRescueIsTheOnlyWayOut
+CAUGHT    A12  'you are not at a hub' refusal dropped  (tests 35/36) by HubTravel_IsRefused_InTheOpenField_WhereFullRescueIsTheOnlyWayOut
+CAUGHT    A13  non-hub refusal reports InvalidTarget instead of WrongState  (tests 35/36) by HubTravel_IsRefused_InTheOpenField_WhereFullRescueIsTheOnlyWayOut
+CAUGHT    A14  SpawnFor ignores camp sockets  (tests 34/36) by HubTravel_FromTheHomeGarage_ToAnActivatedCamp_MovesTheVehicleAndRebasesDeparture, HubTravel_IsACriticalSave_AndSurvivesReload
+CAUGHT    A15  hub travel committed without the verified save  (tests 35/36) by HubTravel_RollsBackCompletely_WhenTheVerifiedSaveFails
+CAUGHT    B1   per-camp store id collapses back to the pooled v1 id  (tests 32/36) by APayloadThatStillCarriesPooledRows_AdoptsThemIntoTheFirstCamp, ASchema1SaveWithPooledCampStorage_MigratesIntoTheFirstActivatedCamp, CampStoresSurviveSaveAndReload_SeparatelyPerCamp
+CAUGHT    B2   store capacity ignores content and uses the shared constant  (tests 35/36) by EachStoreIsSizedByItsOwnContent_NotByASharedConstant
+CAUGHT    B3   EstablishCamp does not configure the new camp's store  (tests 34/36) by EachStoreIsSizedByItsOwnContent_NotByASharedConstant, EveryCampKeepsItsOwnStore_AndThePooledV1ContainerIsGone
+CAUGHT    B4   deposit targets the pooled store  (tests 31/36) by ADepositIsStillACriticalSave_ThatRollsTheCampStoreBack, CampStoresSurviveSaveAndReload_SeparatelyPerCamp, EachStoreIsSizedByItsOwnContent_NotByASharedConstant
+CAUGHT    B5   migration always falls back to garage storage  (tests 33/36) by ASchema1SaveWithPooledCampStorage_MigratesIntoTheFirstActivatedCamp, Migration_Step1_KeepsMissionScopedStacksApart_AndDropsRowsThatCarryNothing, Migration_Step1_MovesPooledCampStorageIntoTheFirstActivatedCamp_QA19
+CAUGHT    B6   migration appends instead of merging stacks  (tests 35/36) by Migration_Step1_MovesPooledCampStorageIntoTheFirstActivatedCamp_QA19
+CAUGHT    B7   migration leaves the pooled rows in place (double-apply)  (tests 32/36) by ASchema1SaveWithNoActivatedCamp_MigratesPooledStorageIntoGarageStorage, ASchema1SaveWithPooledCampStorage_MigratesIntoTheFirstActivatedCamp, Migration_Step1_FallsBackToGarageStorage_WhenNoCampWasEstablished_QA19
+CAUGHT    B8   migration keeps rows that carry nothing  (tests 35/36) by Migration_Step1_KeepsMissionScopedStacksApart_AndDropsRowsThatCarryNothing
+CAUGHT    B9   migration does not recompute the payload checksum  (tests 35/36) by Migration_Step1_MovesPooledCampStorageIntoTheFirstActivatedCamp_QA19
+CAUGHT    B10  restore ignores the per-camp stores  (tests 32/36) by ADepositIsStillACriticalSave_ThatRollsTheCampStoreBack, ASchema1SaveWithPooledCampStorage_MigratesIntoTheFirstActivatedCamp, CampStoresSurviveSaveAndReload_SeparatelyPerCamp
+CAUGHT    B11  restore drops pooled rows instead of adopting them  (tests 35/36) by APayloadThatStillCarriesPooledRows_AdoptsThemIntoTheFirstCamp
+CAUGHT    B12  capture mirrors camp stores back into the pooled field  (tests 34/36) by CampStoresSurviveSaveAndReload_SeparatelyPerCamp, HubTravelLeavesBothCampStoresIntact
+
+27/27 mutants caught; survivors: none
+tree clean after run

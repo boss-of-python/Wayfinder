@@ -1,5 +1,13 @@
 # Wayfinder — Executed Evidence: headless C# compile + EditMode tests (2026-10-14)
 
+> **Update 2026-10-21 (Batch J — hub travel + per-camp storage, KI-028):** 7 assemblies / 0 warnings,
+> **216/216** EditMode tests (188 → 216), .NET Standard 2.1 profile OK, 30 Unity-dependent files parse,
+> `validate_content.py` + `formula_checks.py` clean. New fixtures `CampaignHubTravelTests` (15) and
+> `CampaignCampStorageTests` (9) plus 4 schema-migration tests in `PersistenceTests`. **27/27** mutation
+> checks caught (15 hub travel, 12 per-camp storage/migration); two survivors were fixed by strengthening
+> the tests. First executed `SaveMigrations` step (schema 1 → 2) — the JObject-based first draft silently
+> lost the migrated store, which is why the delegate is typed on `SavePayload` (D-040).
+>
 > **Update 2026-10-15 (Batch D continuation — supplies/selling/research wiring):** 7 assemblies / 60
 > files, 0 warnings, **143/143** EditMode tests, 13/13 mutation check; KI-032 found and fixed.
 > Artifacts: `Docs/evidence/supplies-and-stats-2026-10-15/`.
