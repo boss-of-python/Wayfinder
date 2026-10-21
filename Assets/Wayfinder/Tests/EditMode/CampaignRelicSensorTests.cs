@@ -396,22 +396,37 @@ namespace Wayfinder.Tests
         }
 
         [Test]
-        public void TheSensorIsSilentWhenParked_AndThePoseOverloadAgreesWithTheExplicitOne()
+        public void TheSensorSweepsFromTheVehiclesOwnPose_AndIsSilentWhenParked()
         {
+            var site = Content.Sites.Values.First();
+            var onSite = new Pose(new WorldPoint(site.Position.X, 0f, site.Position.Z), 0f);
+
+            // Parked: the sensor does not sweep at all. That has to stay true with the pose sitting on
+            // top of a signal, otherwise "parked" and "nowhere near anything" are indistinguishable and
+            // a sweep that ignores the parked state passes silently.
+            var parked = NewGame(_saves);
+            parked.Expedition.Pose = onSite;
+            Assert.AreEqual(0, parked.SensorScan().Count,
+                "parked: there is no field to sense, even with the pose on top of a signal");
+
             var s = NewGame(_saves);
-            Assert.AreEqual(0, s.SensorScan().Count, "parked: there is no field to sense");
-
             s.Depart();
-            var pose = s.Expedition.Pose.Position;
-            var viaPose = s.SensorScan();
-            var viaArgs = s.SensorScan(pose.X, pose.Z);
-
-            CollectionAssert.AreEqual(viaArgs.Select(r => r.Id).ToArray(),
-                viaPose.Select(r => r.Id).ToArray(),
-                "the parameterless overload sweeps from the vehicle's own pose");
-            Assert.IsTrue(viaPose.All(r => r.Pulsing), "only pulsing signals are reported");
+            s.Expedition.Pose = onSite;
+            var hits = s.SensorScan();
+            Assert.IsTrue(hits.Any(r => r.Id == site.Id),
+                "the sweep follows the vehicle, so a site underneath it pulses");
+            CollectionAssert.AreEqual(
+                s.SensorScan(site.Position.X, site.Position.Z).Select(r => r.Id).ToArray(),
+                hits.Select(r => r.Id).ToArray(),
+                "the pose overload and the explicit overload agree at the same position");
+            Assert.IsTrue(hits.All(r => r.Pulsing), "only pulsing signals are reported");
             Assert.AreEqual(s.ResolveStats().SignalRadiusM, SensorLoop.BaseSignalRadiusM, 1e-3f,
                 "an unresearched vehicle sweeps at the 80 m baseline");
+
+            // Drive 300 m away: the same site goes quiet, so the sweep cannot be reading a fixed point.
+            s.Expedition.Pose = new Pose(new WorldPoint(site.Position.X + 300f, 0f, site.Position.Z), 0f);
+            Assert.IsFalse(s.SensorScan().Any(r => r.Id == site.Id),
+                "after driving away the site is out of range");
         }
 
         [Test]
