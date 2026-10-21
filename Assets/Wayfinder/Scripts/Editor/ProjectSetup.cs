@@ -14,6 +14,8 @@ namespace Wayfinder.Editor
         public const string ControlsOutputPath = "Assets/Wayfinder/Resources/WayfinderControls.json";
         /// <summary>Runtime copies of the campaign catalog; CampaignHost loads them as TextAssets.</summary>
         public const string CampaignContentResourcesDir = "Assets/Wayfinder/Resources/Content";
+        /// <summary>Runtime TextAsset copies of the 30 3D streaming meshes for synchronous Android/iOS loading.</summary>
+        public const string StreamingModelsResourcesDir = "Assets/Wayfinder/Resources/StreamingModels";
         public const string CanonicalContentDir = "Assets/Wayfinder/Content";
         public const string PipelinePath = "Assets/Wayfinder/Settings/WayfinderURP.asset";
         public const string RendererPath = "Assets/Wayfinder/Settings/WayfinderRenderer.asset";
@@ -76,6 +78,7 @@ namespace Wayfinder.Editor
             CopyCampaignContent();
             Breadcrumb("3D streaming assets");
             VerifyStreamingAssets();
+            CopyStreamingAssetsToResources();
             Breadcrumb("quality tiers");
             ConfigureQualityTiers();
             Breadcrumb("URP asset");
@@ -120,7 +123,7 @@ namespace Wayfinder.Editor
         }
 
         /// <summary>
-        /// Verifies that all 10 required 3D streaming mesh assets exist under Assets/StreamingAssets/Models/
+        /// Verifies that all 30 required 3D streaming mesh assets exist under Assets/StreamingAssets/Models/
         /// and match the canonical manifest (streaming_assets.json) in SHA-256, triangle budget and bounds.
         /// </summary>
         [MenuItem("Tools/Wayfinder/Verify 3D Streaming Assets")]
@@ -138,6 +141,29 @@ namespace Wayfinder.Editor
             {
                 throw new BuildFailedException($"Required 3D streaming asset check failed: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Mirrors the verified Wavefront <c>.obj</c> files from <c>Assets/StreamingAssets/Models/</c> into
+        /// <c>Assets/Wayfinder/Resources/StreamingModels/*.txt</c> so <see cref="Wayfinder.Presentation.StreamingMeshLoader"/>
+        /// can load them synchronously via <c>Resources.Load&lt;TextAsset&gt;</c> on Android/iOS player builds.
+        /// </summary>
+        [MenuItem("Tools/Wayfinder/Refresh 3D Streaming Assets")]
+        public static void CopyStreamingAssetsToResources()
+        {
+            var content = Wayfinder.Campaign.CampaignContent.FromDirectory(CanonicalContentDir);
+            Directory.CreateDirectory(StreamingModelsResourcesDir);
+            AssetDatabase.Refresh();
+            foreach (var def in content.StreamingAssets.Values)
+            {
+                string src = Path.Combine(Wayfinder.World.StreamingAssetCatalog.DefaultStreamingAssetsRoot,
+                    def.RelativePath.Replace('/', Path.DirectorySeparatorChar));
+                string stem = Path.GetFileNameWithoutExtension(def.RelativePath);
+                string dst = StreamingModelsResourcesDir + "/" + stem + ".txt";
+                File.Copy(src, dst, overwrite: true);
+                AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceSynchronousImport);
+            }
+            Debug.Log($"[Wayfinder] {content.StreamingAssets.Count} 3D streaming models copied to {StreamingModelsResourcesDir}.");
         }
 
         static void SetDefaultIdentifier(NamedBuildTarget target)

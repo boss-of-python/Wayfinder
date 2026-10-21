@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Deterministic generator for Wayfinder's 20 required 3D streaming assets (§14.2, §14.3, LEGAL-01).
+"""Deterministic generator for Wayfinder's 30 required 3D streaming assets (§14.2, §14.3, LEGAL-01).
 
 Emits:
-  * 20 pure-ASCII Wavefront .obj meshes under `Assets/StreamingAssets/Models/` (LF line endings,
+  * 30 pure-ASCII Wavefront .obj meshes under `Assets/StreamingAssets/Models/` (LF line endings,
     1 unit = 1 meter, +Z forward, +Y up, consistent placement datum, valid v/vt/vn/f indices,
     non-degenerate triangles, zero third-party geometry).
   * `Assets/Wayfinder/Content/streaming_assets.json` (canonical manifest required by
@@ -489,6 +489,159 @@ def build_canyon_hoodoo() -> MeshBuilder:
     return m
 
 
+def _build_wheel_mesh(asset_id: str, description: str, radius: float, hub_r: float, half_w: float, segments: int = 12) -> MeshBuilder:
+    m = MeshBuilder(asset_id, description)
+    ring_l, ring_r, hub_l, hub_r_pts = [], [], [], []
+    for i in range(segments):
+        a = 2.0 * math.pi * i / segments
+        y = radius * math.cos(a)
+        z = radius * math.sin(a)
+        hy = hub_r * math.cos(a)
+        hz = hub_r * math.sin(a)
+        ring_l.append((-half_w, y, z))
+        ring_r.append((half_w, y, z))
+        hub_l.append((-half_w * 0.85, hy, hz))
+        hub_r_pts.append((half_w * 0.85, hy, hz))
+
+    for i in range(segments):
+        nxt = (i + 1) % segments
+        m.add_quad(ring_l[i], ring_r[i], ring_r[nxt], ring_l[nxt])
+        m.add_quad(hub_l[i], ring_l[i], ring_l[nxt], hub_l[nxt])
+        m.add_triangle((-half_w * 0.85, 0.0, 0.0), hub_l[i], hub_l[nxt])
+        m.add_quad(ring_r[i], hub_r_pts[i], hub_r_pts[nxt], ring_r[nxt])
+        m.add_triangle((half_w * 0.85, 0.0, 0.0), hub_r_pts[nxt], hub_r_pts[i])
+    return m
+
+
+def build_mule_wheel() -> MeshBuilder:
+    return _build_wheel_mesh(
+        "veh.mule.m2.wheel",
+        "Mule M2 heavy-duty cargo truck tire and steel rim, 0.42 m radius, axle-centered (§4.2, §14.3)",
+        radius=0.42,
+        hub_r=0.23,
+        half_w=0.16,
+        segments=12,
+    )
+
+
+def build_lynx_wheel() -> MeshBuilder:
+    return _build_wheel_mesh(
+        "veh.lynx.l3.wheel",
+        "Lynx L3 beadlock crawler tire and rim, 0.40 m radius, axle-centered (§4.2, §14.3)",
+        radius=0.40,
+        hub_r=0.21,
+        half_w=0.15,
+        segments=12,
+    )
+
+
+def build_atlas_wheel() -> MeshBuilder:
+    return _build_wheel_mesh(
+        "veh.atlas.a4.wheel",
+        "Atlas A4 deep-lug expedition tire and planetary hub, 0.48 m radius, axle-centered (§4.2, §14.3)",
+        radius=0.48,
+        hub_r=0.26,
+        half_w=0.19,
+        segments=12,
+    )
+
+
+def build_outpost_garage() -> MeshBuilder:
+    m = MeshBuilder("env.hub.outpost_garage", "Regional biome outpost garage bay with Quonset-style arched roof and loading dock (§12.1, §14.2)")
+    # Raised reinforced concrete apron slab (10m x 9m)
+    m.add_box(-5.00, 0.00, -4.50, 5.00, 0.24, 4.50)
+    # Left tool bay wall, right logistics wall, rear bulkhead
+    m.add_box(-4.80, 0.24, -4.30, -3.70, 3.40, 4.30)
+    m.add_box(2.40, 0.24, -4.30, 4.80, 3.40, 4.30)
+    m.add_box(-3.70, 0.24, -4.30, 2.40, 3.40, -3.40)
+    # Side cargo loading dock platform + awning
+    m.add_box(4.80, 0.00, -2.20, 6.10, 0.85, 2.20)
+    # Bevelled industrial roof + ridge vent
+    m.add_prism_roof_z(-5.10, 5.10, 3.40, 4.55, -4.50, 4.50)
+    m.add_box(-0.55, 4.40, -2.50, 0.55, 4.85, 2.50)
+    return m
+
+
+def build_highland_observatory() -> MeshBuilder:
+    m = MeshBuilder("env.landmark.highland_observatory", "Highland ridge weather observatory dome, stone plinth and anemometer mast (§6.2, §8.2)")
+    # Octagonal stone foundation plinth (Y=0)
+    m.add_frustum_y(0.0, 0.0, 0.00, 1.20, 3.40, 3.40, 3.10, 3.10, segments=8)
+    # Cylindrical instrument drum wall
+    m.add_frustum_y(0.0, 0.0, 1.20, 3.80, 2.65, 2.65, 2.65, 2.65, segments=8)
+    # Two-stage geodesic-style weather dome
+    m.add_frustum_y(0.0, 0.0, 3.80, 5.30, 2.70, 2.70, 1.75, 1.75, segments=8)
+    m.add_frustum_y(0.0, 0.0, 5.30, 6.20, 1.75, 1.75, 0.35, 0.35, segments=8)
+    # Entry vestibule + anemometer mast
+    m.add_box(-1.10, 0.00, 2.40, 1.10, 2.70, 3.80)
+    m.add_box(2.20, 1.20, -0.25, 2.50, 7.10, 0.25)
+    return m
+
+
+def build_wetland_pump_station() -> MeshBuilder:
+    m = MeshBuilder("env.landmark.wetland_pump_station", "Wetlands flood-control sluice gate, pump house and intake manifolds (§6.2, §8.2)")
+    # Concrete sluice headwall & basin deck (Y=0)
+    m.add_box(-3.60, 0.00, -2.80, 3.60, 0.90, 2.80)
+    # Elevated pump control room
+    m.add_box(-2.40, 0.90, -2.20, 1.60, 3.50, 1.40)
+    m.add_prism_roof_z(-2.55, 1.75, 3.50, 4.30, -2.35, 1.55)
+    # Twin vertical intake standpipes + discharge header
+    m.add_frustum_y(2.35, -0.95, 0.90, 3.80, 0.48, 0.48, 0.48, 0.48, segments=8)
+    m.add_frustum_y(2.35, 0.95, 0.90, 3.80, 0.48, 0.48, 0.48, 0.48, segments=8)
+    m.add_box(1.60, 2.60, -1.25, 2.95, 3.20, 1.25)
+    return m
+
+
+def build_solar_beacon_pod() -> MeshBuilder:
+    m = MeshBuilder("env.prop.solar_beacon_pod", "Autonomous field telemetry pod with tripod base, battery box and solar wing (§8.2, §9.1)")
+    # Weighted hexagonal tripod footpad (Y=0)
+    m.add_frustum_y(0.0, 0.0, 0.00, 0.22, 0.72, 0.72, 0.52, 0.52, segments=6)
+    # Insulated battery & logger enclosure
+    m.add_box(-0.36, 0.22, -0.32, 0.36, 0.86, 0.32)
+    # Sensor mast
+    m.add_box(-0.07, 0.86, -0.07, 0.07, 2.45, 0.07)
+    # Tilted solar array panel wing + top strobe head
+    m.add_box(-0.68, 1.55, -0.42, 0.68, 1.68, 0.42)
+    m.add_frustum_y(0.0, 0.0, 2.45, 2.72, 0.14, 0.14, 0.08, 0.08, segments=6)
+    return m
+
+
+def build_cargo_pallet_stack() -> MeshBuilder:
+    m = MeshBuilder("env.prop.cargo_pallet_stack", "Timber logistics pallet with strapped supply cases and fuel jerrycans (§10.3, §12.3)")
+    # Standard 1.4m x 1.2m timber forklift pallet runners & deck (Y=0)
+    m.add_box(-0.70, 0.00, -0.60, -0.52, 0.10, 0.60)
+    m.add_box(-0.09, 0.00, -0.60, 0.09, 0.10, 0.60)
+    m.add_box(0.52, 0.00, -0.60, 0.70, 0.10, 0.60)
+    m.add_box(-0.70, 0.10, -0.60, 0.70, 0.16, 0.60)
+    # Lower heavy equipment case + upper ration/parts crates + jerrycan pair
+    m.add_box(-0.64, 0.16, -0.54, 0.18, 0.74, 0.54)
+    m.add_box(-0.58, 0.74, -0.48, 0.12, 1.18, 0.18)
+    m.add_box(0.22, 0.16, -0.50, 0.64, 0.68, -0.04)
+    m.add_box(0.22, 0.16, 0.04, 0.64, 0.68, 0.50)
+    return m
+
+
+def build_highland_larch() -> MeshBuilder:
+    m = MeshBuilder("env.tree.highland_larch", "Windswept subalpine highland larch with gnarly trunk and asymmetric crown (§6.2, §7.6)")
+    # Root flare & leaning subalpine trunk (Y=0)
+    m.add_frustum_y(0.0, 0.0, 0.00, 1.80, 0.34, 0.34, 0.21, 0.21, segments=7)
+    m.add_frustum_y(0.10, 0.05, 1.80, 3.90, 0.21, 0.21, 0.13, 0.13, segments=7)
+    # Windswept needle clusters shifted slightly leeward (+X/+Z)
+    m.add_frustum_y(0.18, 0.08, 2.40, 4.60, 1.35, 1.15, 0.42, 0.36, segments=7)
+    m.add_frustum_y(0.26, 0.12, 4.10, 6.10, 1.05, 0.90, 0.28, 0.24, segments=7)
+    m.add_frustum_y(0.32, 0.15, 5.60, 7.20, 0.68, 0.58, 0.00, 0.00, segments=7, cap_top=False)
+    return m
+
+
+def build_basalt_column_cluster() -> MeshBuilder:
+    m = MeshBuilder("env.rock.basalt_column_cluster", "Hexagonal highland volcanic basalt column cluster (§6.2, §7.6)")
+    # Central tall hexagonal prism + 3 stepped surrounding hexagonal columns (all rooted at Y=0)
+    m.add_frustum_y(0.00, 0.00, 0.00, 2.45, 0.62, 0.62, 0.58, 0.58, segments=6)
+    m.add_frustum_y(0.78, 0.32, 0.00, 1.75, 0.52, 0.52, 0.49, 0.49, segments=6)
+    m.add_frustum_y(-0.68, 0.45, 0.00, 1.35, 0.48, 0.48, 0.45, 0.45, segments=6)
+    m.add_frustum_y(-0.25, -0.72, 0.00, 0.95, 0.55, 0.55, 0.52, 0.52, segments=6)
+    return m
+
+
 ASSET_SPECS = [
     {
         "id": "veh.scout.s1.chassis",
@@ -669,6 +822,96 @@ ASSET_SPECS = [
         "maxTrianglesLod0": 2000,
         "pivotConvention": "ground_datum_y0",
         "builder": build_canyon_hoodoo,
+    },
+    {
+        "id": "veh.mule.m2.wheel",
+        "name": "Mule M2 Heavy Cargo Wheel",
+        "category": "vehicle_wheel",
+        "filename": "mule_m2_wheel.obj",
+        "maxTrianglesLod0": 4500,
+        "pivotConvention": "axle_center",
+        "builder": build_mule_wheel,
+    },
+    {
+        "id": "veh.lynx.l3.wheel",
+        "name": "Lynx L3 Beadlock Crawler Wheel",
+        "category": "vehicle_wheel",
+        "filename": "lynx_l3_wheel.obj",
+        "maxTrianglesLod0": 4500,
+        "pivotConvention": "axle_center",
+        "builder": build_lynx_wheel,
+    },
+    {
+        "id": "veh.atlas.a4.wheel",
+        "name": "Atlas A4 Expedition Planetary Wheel",
+        "category": "vehicle_wheel",
+        "filename": "atlas_a4_wheel.obj",
+        "maxTrianglesLod0": 4500,
+        "pivotConvention": "axle_center",
+        "builder": build_atlas_wheel,
+    },
+    {
+        "id": "env.hub.outpost_garage",
+        "name": "Regional Outpost Garage & Dock",
+        "category": "building",
+        "filename": "outpost_garage_bay.obj",
+        "maxTrianglesLod0": 25000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_outpost_garage,
+    },
+    {
+        "id": "env.landmark.highland_observatory",
+        "name": "Highland Weather Observatory Dome",
+        "category": "landmark",
+        "filename": "highland_weather_dome.obj",
+        "maxTrianglesLod0": 25000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_highland_observatory,
+    },
+    {
+        "id": "env.landmark.wetland_pump_station",
+        "name": "Wetlands Sluice & Pump Station",
+        "category": "landmark",
+        "filename": "wetland_pump_station.obj",
+        "maxTrianglesLod0": 25000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_wetland_pump_station,
+    },
+    {
+        "id": "env.prop.solar_beacon_pod",
+        "name": "Autonomous Solar Telemetry Pod",
+        "category": "prop",
+        "filename": "solar_telemetry_pod.obj",
+        "maxTrianglesLod0": 1500,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_solar_beacon_pod,
+    },
+    {
+        "id": "env.prop.cargo_pallet_stack",
+        "name": "Strapped Logistics Cargo Pallet",
+        "category": "prop",
+        "filename": "cargo_pallet_stack.obj",
+        "maxTrianglesLod0": 1500,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_cargo_pallet_stack,
+    },
+    {
+        "id": "env.tree.highland_larch",
+        "name": "Windswept Subalpine Highland Larch",
+        "category": "tree",
+        "filename": "highland_windswept_larch.obj",
+        "maxTrianglesLod0": 4000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_highland_larch,
+    },
+    {
+        "id": "env.rock.basalt_column_cluster",
+        "name": "Hexagonal Basalt Column Cluster",
+        "category": "rock",
+        "filename": "highland_basalt_columns.obj",
+        "maxTrianglesLod0": 2000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_basalt_column_cluster,
     },
 ]
 

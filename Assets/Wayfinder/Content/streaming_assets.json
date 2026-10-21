@@ -538,5 +538,275 @@
     "sha256": "74993f9eeec61b9a68ec495053fe43debb4a65c77c4d4d78ce72d9431ed559f0",
     "license": "Project-owned generated",
     "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "veh.mule.m2.wheel",
+    "name": "Mule M2 Heavy Cargo Wheel",
+    "category": "vehicle_wheel",
+    "relativePath": "Models/mule_m2_wheel.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "axle_center",
+    "vertexCount": 288,
+    "uvCount": 288,
+    "normalCount": 96,
+    "triangleCount": 96,
+    "maxTrianglesLod0": 4500,
+    "boundsMin": [
+      -0.16,
+      -0.42,
+      -0.42
+    ],
+    "boundsMax": [
+      0.16,
+      0.42,
+      0.42
+    ],
+    "sha256": "518cf0ed00b9c9da8d736b96291c029fb6660a77a90370ee490d4926a5fce623",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "veh.lynx.l3.wheel",
+    "name": "Lynx L3 Beadlock Crawler Wheel",
+    "category": "vehicle_wheel",
+    "relativePath": "Models/lynx_l3_wheel.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "axle_center",
+    "vertexCount": 288,
+    "uvCount": 288,
+    "normalCount": 96,
+    "triangleCount": 96,
+    "maxTrianglesLod0": 4500,
+    "boundsMin": [
+      -0.15,
+      -0.4,
+      -0.4
+    ],
+    "boundsMax": [
+      0.15,
+      0.4,
+      0.4
+    ],
+    "sha256": "7def973b5862aae7dcb4481507aa47fe528fdbca2670d33440f3c2ed79954666",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "veh.atlas.a4.wheel",
+    "name": "Atlas A4 Expedition Planetary Wheel",
+    "category": "vehicle_wheel",
+    "relativePath": "Models/atlas_a4_wheel.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "axle_center",
+    "vertexCount": 288,
+    "uvCount": 288,
+    "normalCount": 96,
+    "triangleCount": 96,
+    "maxTrianglesLod0": 4500,
+    "boundsMin": [
+      -0.19,
+      -0.48,
+      -0.48
+    ],
+    "boundsMax": [
+      0.19,
+      0.48,
+      0.48
+    ],
+    "sha256": "81c140f7155174d87024830385a476724d41840841e6b28259ac11114884ad50",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.hub.outpost_garage",
+    "name": "Regional Outpost Garage & Dock",
+    "category": "building",
+    "relativePath": "Models/outpost_garage_bay.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 240,
+    "uvCount": 240,
+    "normalCount": 80,
+    "triangleCount": 80,
+    "maxTrianglesLod0": 25000,
+    "boundsMin": [
+      -5.1,
+      0.0,
+      -4.5
+    ],
+    "boundsMax": [
+      6.1,
+      4.85,
+      4.5
+    ],
+    "sha256": "ac87668404968a905ab88404d92ab5785082bf82112824860d2ade8259e48bd0",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.landmark.highland_observatory",
+    "name": "Highland Weather Observatory Dome",
+    "category": "landmark",
+    "relativePath": "Models/highland_weather_dome.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 456,
+    "uvCount": 456,
+    "normalCount": 152,
+    "triangleCount": 152,
+    "maxTrianglesLod0": 25000,
+    "boundsMin": [
+      -3.4,
+      0.0,
+      -3.4
+    ],
+    "boundsMax": [
+      3.4,
+      7.1,
+      3.8
+    ],
+    "sha256": "55bd8ea0b2d4b6e0eb28837312b2c53cb4e9dfd38e17930988423016d9355fb0",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.landmark.wetland_pump_station",
+    "name": "Wetlands Sluice & Pump Station",
+    "category": "landmark",
+    "relativePath": "Models/wetland_pump_station.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 324,
+    "uvCount": 324,
+    "normalCount": 108,
+    "triangleCount": 108,
+    "maxTrianglesLod0": 25000,
+    "boundsMin": [
+      -3.6,
+      0.0,
+      -2.8
+    ],
+    "boundsMax": [
+      3.6,
+      4.3,
+      2.8
+    ],
+    "sha256": "7d0fd57f4d8058f06c9f3da7322a2cee23864617358d1747c324ea78ca241efa",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.prop.solar_beacon_pod",
+    "name": "Autonomous Solar Telemetry Pod",
+    "category": "prop",
+    "relativePath": "Models/solar_telemetry_pod.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 252,
+    "uvCount": 252,
+    "normalCount": 84,
+    "triangleCount": 84,
+    "maxTrianglesLod0": 1500,
+    "boundsMin": [
+      -0.72,
+      0.0,
+      -0.6235
+    ],
+    "boundsMax": [
+      0.72,
+      2.72,
+      0.6235
+    ],
+    "sha256": "d42f60994a3879eaf9fde6f6f5fbe38ed33ad1583d312b3857eca112046ce0b4",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.prop.cargo_pallet_stack",
+    "name": "Strapped Logistics Cargo Pallet",
+    "category": "prop",
+    "relativePath": "Models/cargo_pallet_stack.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 288,
+    "uvCount": 288,
+    "normalCount": 96,
+    "triangleCount": 96,
+    "maxTrianglesLod0": 1500,
+    "boundsMin": [
+      -0.7,
+      0.0,
+      -0.6
+    ],
+    "boundsMax": [
+      0.7,
+      1.18,
+      0.6
+    ],
+    "sha256": "853e0746a4b3cce73b43a334290cdd51d5b9d0f255c3625ed8b2245b38e24369",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.tree.highland_larch",
+    "name": "Windswept Subalpine Highland Larch",
+    "category": "tree",
+    "relativePath": "Models/highland_windswept_larch.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 378,
+    "uvCount": 378,
+    "normalCount": 126,
+    "triangleCount": 126,
+    "maxTrianglesLod0": 4000,
+    "boundsMin": [
+      -1.0363,
+      0.0,
+      -1.0412
+    ],
+    "boundsMax": [
+      1.53,
+      7.2,
+      1.2012
+    ],
+    "sha256": "6ae17deb0881e61353fce7a4ef6bf4d46542e25ec0f04198ff35dae38601b4ed",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.rock.basalt_column_cluster",
+    "name": "Hexagonal Basalt Column Cluster",
+    "category": "rock",
+    "relativePath": "Models/highland_basalt_columns.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 288,
+    "uvCount": 288,
+    "normalCount": 96,
+    "triangleCount": 96,
+    "maxTrianglesLod0": 2000,
+    "boundsMin": [
+      -1.16,
+      0.0,
+      -1.1963
+    ],
+    "boundsMax": [
+      1.3,
+      2.45,
+      0.8657
+    ],
+    "sha256": "0f7b51389a276c85095e7ed57bf44d9259c8312356a94847ef34eaec2df2c013",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
   }
 ]
