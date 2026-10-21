@@ -4,12 +4,18 @@ name: Android APK (free cloud build)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'arena/**'
+    paths-ignore:
+      - 'Docs/**'
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-cloud-build
+  group: android-cloud-build-${{ github.ref }}
   cancel-in-progress: false
 
 env:
