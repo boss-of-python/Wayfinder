@@ -77,12 +77,12 @@ namespace Wayfinder.World
     }
 
     /// <summary>
-    /// Pure C# parser and build/runtime verifier for the 10 required 3D streaming assets (§14.2, §14.3).
+    /// Pure C# parser and build/runtime verifier for the 20 required 3D streaming assets (§14.2, §14.3).
     /// No UnityEngine dependency — executes in headless tests, CI validation, and Unity editor setup.
     /// </summary>
     public static class StreamingAssetCatalog
     {
-        public const int RequiredAssetCount = 10;
+        public const int RequiredAssetCount = 20;
         public const string DefaultStreamingAssetsRoot = "Assets/StreamingAssets";
 
         public static readonly string[] RequiredAssetIds =
@@ -96,7 +96,17 @@ namespace Wayfinder.World
             "env.prop.salvage_cache",
             "env.prop.creek_gauge",
             "env.tree.forest_pine",
-            "env.rock.granite_outcrop"
+            "env.rock.granite_outcrop",
+            "veh.mule.m2.chassis",
+            "veh.lynx.l3.chassis",
+            "veh.atlas.a4.chassis",
+            "env.landmark.bridge_span",
+            "env.landmark.city_overpass",
+            "env.prop.fuel_depot_tank",
+            "env.prop.winch_anchor_bollard",
+            "env.prop.trail_cairn_marker",
+            "env.tree.wetland_cypress",
+            "env.rock.canyon_hoodoo"
         };
 
         public static readonly string[] AllowedCategories =
