@@ -3,9 +3,9 @@
     "id": "garage.home",
     "biome": "forest",
     "positionHint": {
-      "x": 1024,
-      "y": 0,
-      "z": 2304
+      "x": 1024.0,
+      "y": 132.88,
+      "z": 2304.0
     },
     "isHome": true,
     "services": [
@@ -20,15 +20,16 @@
       "paint",
       "routePlanning",
       "hubTravel"
-    ]
+    ],
+    "validated": true
   },
   {
     "id": "garage.canyon",
     "biome": "canyon",
     "positionHint": {
-      "x": 4800,
-      "y": 0,
-      "z": 4400
+      "x": 4800.0,
+      "y": 227.12,
+      "z": 4400.0
     },
     "isHome": false,
     "services": [
@@ -43,15 +44,16 @@
       "paint",
       "routePlanning",
       "hubTravel"
-    ]
+    ],
+    "validated": true
   },
   {
     "id": "garage.city",
     "biome": "city",
     "positionHint": {
-      "x": 4600,
-      "y": 0,
-      "z": 2300
+      "x": 4600.0,
+      "y": 76.18,
+      "z": 2300.0
     },
     "isHome": false,
     "services": [
@@ -66,15 +68,16 @@
       "paint",
       "routePlanning",
       "hubTravel"
-    ]
+    ],
+    "validated": true
   },
   {
     "id": "garage.wetlands",
     "biome": "wetlands",
     "positionHint": {
-      "x": 3300,
-      "y": 0,
-      "z": 800
+      "x": 3300.0,
+      "y": 15.77,
+      "z": 800.0
     },
     "isHome": false,
     "services": [
@@ -89,15 +92,16 @@
       "paint",
       "routePlanning",
       "hubTravel"
-    ]
+    ],
+    "validated": true
   },
   {
     "id": "garage.highlands",
     "biome": "highlands",
     "positionHint": {
-      "x": 1800,
-      "y": 0,
-      "z": 5100
+      "x": 1800.0,
+      "y": 367.75,
+      "z": 5100.0
     },
     "isHome": false,
     "services": [
@@ -112,6 +116,7 @@
       "paint",
       "routePlanning",
       "hubTravel"
-    ]
+    ],
+    "validated": true
   }
 ]

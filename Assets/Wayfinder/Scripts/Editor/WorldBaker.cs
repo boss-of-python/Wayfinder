@@ -5,6 +5,7 @@ using System.Text;
 using UnityEditor;
 using UnityEngine;
 using Wayfinder.Core;
+using Wayfinder.Progression;
 using Wayfinder.World;
 
 namespace Wayfinder.Editor
@@ -54,6 +55,20 @@ namespace Wayfinder.Editor
                 BakeChunkMesh(field, cx, cz);
             }
 
+            var discovery = new DiscoveryService();
+            discovery.BakeCountableMask(field);
+            int countableCells = discovery.CountableMask.CountSet();
+
+            int routeErrors = 0;
+            string routesPath = Path.Combine(ProjectSetup.CanonicalContentDir, "routes.json");
+            if (File.Exists(routesPath))
+            {
+                var routeReport = MainlandRouteGraph.FromFile(routesPath).ValidateAll();
+                routeErrors = routeReport.Errors.Count;
+            }
+
+            report.AppendLine($"  \"countableCells\": {countableCells},");
+            report.AppendLine($"  \"routeValidationErrors\": {routeErrors},");
             report.AppendLine($"  \"seamFailures\": {seamFailures},");
             report.AppendLine($"  \"worstSeamDifferenceMeters\": {worstSeam:0.######},");
             report.AppendLine($"  \"elapsedMs\": {stopwatch.ElapsedMilliseconds}");

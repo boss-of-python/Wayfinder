@@ -3,6 +3,7 @@
     "rootNamespace": "Wayfinder.Platform",
     "references": [
         "Wayfinder.Core",
+        "Wayfinder.World",
         "Wayfinder.Persistence",
         "Wayfinder.Progression",
         "Wayfinder.Simulation",

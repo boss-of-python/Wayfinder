@@ -21,7 +21,7 @@ namespace Wayfinder.Campaign
         /// </summary>
         public IMapTerrainSource MapTerrain
         {
-            get => _mapTerrain ??= new SliceMapTerrain(Content.Slice);
+            get => _mapTerrain ??= new MainlandMapTerrain(Content);
             set
             {
                 _mapTerrain = value;

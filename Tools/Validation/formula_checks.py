@@ -326,15 +326,56 @@ def ridged(x, z, octaves, seed):
     return total / max(1e-5, norm)
 
 
-def base_height(x, z):
-    layer1 = chunk_seed(481516, 1, 0, 0, 1)
-    layer2 = chunk_seed(481516, 1, 0, 0, 2)
-    layer3 = chunk_seed(481516, 1, 0, 0, 3)
-    continental = fbm(x * 0.0006, z * 0.0006, 4, layer1)
-    ridge = ridged(x * 0.0018, z * 0.0018, 3, layer2)
-    detail = fbm(x * 0.012, z * 0.012, 2, layer3)
-    macro = (-20 + (520 - -20) * min(max(continental * 0.65 + ridge * 0.35, 0), 1))
-    return macro + detail * 6
+def _smoothstep(e0, e1, v):
+    t = min(max((v - e0) / (e1 - e0), 0.0), 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def _gauss2(x, z, cx, cz, sigma):
+    dx, dz = x - cx, z - cz
+    return math.exp(-(dx * dx + dz * dz) / (2.0 * sigma * sigma))
+
+
+def base_height(x, z, world_seed=481516, gen_ver=1):
+    s1 = chunk_seed(world_seed, gen_ver, 0, 0, 1)
+    s2 = chunk_seed(world_seed, gen_ver, 0, 0, 2)
+    s3 = chunk_seed(world_seed, gen_ver, 0, 0, 3)
+    s4 = chunk_seed(world_seed, gen_ver, 0, 0, 4)
+    s5 = chunk_seed(world_seed, gen_ver, 0, 0, 5)
+    s6 = chunk_seed(world_seed, gen_ver, 0, 0, 6)
+
+    broad = (fbm(x * 0.00055, z * 0.00055, 4, s1) - 0.5) * 110.0
+    mid = (ridged(x * 0.0018, z * 0.0018, 3, s2) - 0.5) * 26.0
+    fine = (fbm(x * 0.0088, z * 0.0088, 2, s3) - 0.5) * 5.0
+    interior = 28.0 + broad + mid + fine
+
+    highlands = 365.0 * _gauss2(x, z, 1680.0, 5360.0, 1120.0)
+    canyon = 165.0 * _gauss2(x, z, 4864.0, 4608.0, 1220.0)
+    gorge_u = (x - 4420.0) - 0.45 * (z - 4608.0)
+    dz_gorge = z - 4560.0
+    canyon_cut = -54.0 * math.exp(-(gorge_u * gorge_u) / (2.0 * 145.0 * 145.0)) * math.exp(-(dz_gorge * dz_gorge) / (2.0 * 920.0 * 920.0))
+    forest = 48.0 * _gauss2(x, z, 1100.0, 2400.0, 1100.0)
+    city = 26.0 * _gauss2(x, z, 4608.0, 2304.0, 950.0)
+    interior += highlands + canyon + canyon_cut + forest + city
+
+    wet_w = 0.72 * _gauss2(x, z, 3328.0, 768.0, 960.0)
+    marsh_ripple = (fbm(x * 0.0045, z * 0.0045, 2, s4) - 0.5) * 6.0
+    interior = interior + (11.0 + marsh_ripple - interior) * wet_w
+
+    R = 900.0
+    qx = max(0.0, R - x, x - (6144.0 - R))
+    qz = max(0.0, R - z, z - (6144.0 - R))
+    signed_margin = R - math.sqrt(qx * qx + qz * qz)
+    coast_warp = (fbm(x * 0.00085, z * 0.00085, 3, s5) - 0.5) * 240.0
+    m = signed_margin + coast_warp
+
+    headland = _smoothstep(0.52, 0.70, fbm(x * 0.00062 + 11.3, z * 0.00062 - 4.7, 3, s6))
+    cliff_bench = headland * 62.0 * _smoothstep(205.0, 255.0, m) * (1.0 - 0.35 * _smoothstep(340.0, 520.0, m))
+
+    land_blend = _smoothstep(150.0, 390.0, m)
+    seabed = -16.5 + (fbm(x * 0.0018, z * 0.0018, 2, s4) - 0.5) * 5.0
+    h = seabed + (max(4.0, interior) + cliff_bench - seabed) * land_blend
+    return max(-19.5, min(515.0, h))
 
 
 def quantize(h):

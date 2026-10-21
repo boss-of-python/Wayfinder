@@ -19,6 +19,7 @@ namespace Wayfinder.World
         public const int CanonicalWorldSeed = 481516;
         public const int GeneratorVersion = 1;
         public const float SeaLevelY = 0f;
+        public const float DecorativeCliffSlopeDegrees = 38f;
         public const float TerrainMinY = -20f;
         public const float TerrainMaxY = 520f;
 
@@ -32,7 +33,7 @@ namespace Wayfinder.World
         public const float FarProxyRadiusMeters = 1500f;
         public const float PrefetchLeadMeters = 200f;
 
-        // Region relay layout anchors (§6.1) — may move during route validation; IDs must not change.
+        // Region relay layout anchors (§6.1).
         public static readonly (float x, float z) HomeGarageAnchor = (1024f, 2304f);
         public static readonly (float x, float z) ForestRelayAnchor = (1408f, 2816f);
         public static readonly (float x, float z) CanyonRelayAnchor = (4864f, 4608f);
@@ -54,9 +55,11 @@ namespace Wayfinder.World
     }
 
     /// <summary>
-    /// Deterministic macro heightfield (§7.2 steps 2–3): low-frequency ridged + fractal noise
-    /// in world coordinates, blended by biome shaping, plus authored river/road carve hooks.
-    /// Pure C# — the editor baker meshes this; runtime reads baked data.
+    /// Deterministic continental island heightfield (§6.1, §7.2 steps 2–3, KI-027):
+    /// surrounds the 6,144 m mainland with open coastal ocean (world origin (0,0) &lt; 0 m) and steep
+    /// decorative headland cliffs (&gt;= 38°), sculpts distinct elevation bands across all five biomes
+    /// (Wetlands tidal plain, City river terrace, Forest uplands, incised Red-Rock Canyon plateau, and
+    /// Alpine Highlands crowned by Frontier Observatory), and mirrors Tools/Validation/formula_checks.py.
     /// </summary>
     public sealed class NoiseField
     {
@@ -73,17 +76,120 @@ namespace Wayfinder.World
         public ulong LayerSeed(int layerId) =>
             StableHash.ChunkSeed(_worldSeed, _generatorVersion, 0, 0, layerId);
 
-        /// <summary>Base macro height in meters for a world position (before road/POI carving).</summary>
+        /// <summary>Continental macro height in metres for a world position (§6.1, −20..520 m band).</summary>
         public float BaseHeight(float x, float z)
         {
-            float continental = Fbm(x * 0.0006f, z * 0.0006f, 4, LayerSeed(1));
-            float ridged = Ridged(x * 0.0018f, z * 0.0018f, 3, LayerSeed(2));
-            float detail = Fbm(x * 0.012f, z * 0.012f, 2, LayerSeed(3));
+            ulong s1 = LayerSeed(1);
+            ulong s2 = LayerSeed(2);
+            ulong s3 = LayerSeed(3);
+            ulong s4 = LayerSeed(4);
+            ulong s5 = LayerSeed(5);
+            ulong s6 = LayerSeed(6);
 
-            // Continental 0..1 → −20..520 m band (§6.1).
-            float macro = MathUtil.Lerp(WorldConstants.TerrainMinY, WorldConstants.TerrainMaxY,
-                MathUtil.Clamp01(continental * 0.65f + ridged * 0.35f));
-            return macro + detail * 6f;
+            float broad = (Fbm(x * 0.00055f, z * 0.00055f, 4, s1) - 0.5f) * 110f;
+            float mid = (Ridged(x * 0.0018f, z * 0.0018f, 3, s2) - 0.5f) * 26f;
+            float fine = (Fbm(x * 0.0088f, z * 0.0088f, 2, s3) - 0.5f) * 5f;
+            float interior = 28f + broad + mid + fine;
+
+            // Five regional geomorphology features
+            float highlands = 365f * Gauss2(x, z, 1680f, 5360f, 1120f);
+            float canyon = 165f * Gauss2(x, z, 4864f, 4608f, 1220f);
+            float gorgeU = (x - 4420f) - 0.45f * (z - 4608f);
+            float dzGorge = z - 4560f;
+            float canyonCut = -54f
+                * (float)Math.Exp(-(gorgeU * gorgeU) / (2.0 * 145.0 * 145.0))
+                * (float)Math.Exp(-(dzGorge * dzGorge) / (2.0 * 920.0 * 920.0));
+            float forest = 48f * Gauss2(x, z, 1100f, 2400f, 1100f);
+            float city = 26f * Gauss2(x, z, 4608f, 2304f, 950f);
+            interior += highlands + canyon + canyonCut + forest + city;
+
+            float wetW = 0.72f * Gauss2(x, z, 3328f, 768f, 960f);
+            float marshRipple = (Fbm(x * 0.0045f, z * 0.0045f, 2, s4) - 0.5f) * 6f;
+            interior = MathUtil.Lerp(interior, 11f + marshRipple, wetW);
+
+            // Organic coastline + steep decorative headland cliffs around outer capes
+            const float R = 900f;
+            float qx = Math.Max(0f, Math.Max(R - x, x - (WorldConstants.WorldSizeMeters - R)));
+            float qz = Math.Max(0f, Math.Max(R - z, z - (WorldConstants.WorldSizeMeters - R)));
+            float signedMargin = R - (float)Math.Sqrt(qx * qx + qz * qz);
+            float coastWarp = (Fbm(x * 0.00085f, z * 0.00085f, 3, s5) - 0.5f) * 240f;
+            float m = signedMargin + coastWarp;
+
+            float headland = SmoothStep(0.52f, 0.70f, Fbm(x * 0.00062f + 11.3f, z * 0.00062f - 4.7f, 3, s6));
+            float cliffBench = headland * 62f * SmoothStep(205f, 255f, m) * (1f - 0.35f * SmoothStep(340f, 520f, m));
+
+            float landBlend = SmoothStep(150f, 390f, m);
+            float seabed = -16.5f + (Fbm(x * 0.0018f, z * 0.0018f, 2, s4) - 0.5f) * 5f;
+            float h = MathUtil.Lerp(seabed, Math.Max(4f, interior) + cliffBench, landBlend);
+            return MathUtil.Clamp(h, -19.5f, 515f);
+        }
+
+        public float SlopeDegrees(float x, float z, float sampleStep = 8f)
+        {
+            float x0 = Math.Max(0f, x - sampleStep);
+            float x1 = Math.Min(WorldConstants.WorldSizeMeters, x + sampleStep);
+            float z0 = Math.Max(0f, z - sampleStep);
+            float z1 = Math.Min(WorldConstants.WorldSizeMeters, z + sampleStep);
+            float dhdx = (BaseHeight(x1, z) - BaseHeight(x0, z)) / Math.Max(1e-3f, x1 - x0);
+            float dhdz = (BaseHeight(x, z1) - BaseHeight(x, z0)) / Math.Max(1e-3f, z1 - z0);
+            return (float)(Math.Atan(Math.Sqrt(dhdx * dhdx + dhdz * dhdz)) * (180.0 / Math.PI));
+        }
+
+        /// <summary>
+        /// Bakes the reachable continental countable mask (§8.1, §8.4, KI-048): 4-connected cells
+        /// reachable from Home Garage that sit above sea level and below decorative cliff slope (38°).
+        /// </summary>
+        public BitGrid BuildCountableMask()
+        {
+            int n = WorldConstants.MapCellsPerSide;
+            float half = WorldConstants.MapCellSizeMeters * 0.5f;
+            var passable = new bool[n, n];
+            for (int z = 0; z < n; z++)
+            for (int x = 0; x < n; x++)
+            {
+                float wx = x * WorldConstants.MapCellSizeMeters + half;
+                float wz = z * WorldConstants.MapCellSizeMeters + half;
+                passable[x, z] = BaseHeight(wx, wz) > WorldConstants.SeaLevelY &&
+                                 SlopeDegrees(wx, wz, 8f) < WorldConstants.DecorativeCliffSlopeDegrees;
+            }
+
+            var mask = new BitGrid(n, n);
+            var (sx, sz) = WorldConstants.MapCellOf(WorldConstants.ForestRelayAnchor.x, WorldConstants.ForestRelayAnchor.z);
+            if (!passable[sx, sz])
+                return mask;
+
+            var q = new Queue<(int x, int z)>();
+            mask.Set(sx, sz, true);
+            q.Enqueue((sx, sz));
+            while (q.Count > 0)
+            {
+                var (cx, cz) = q.Dequeue();
+                TryVisit(cx - 1, cz);
+                TryVisit(cx + 1, cz);
+                TryVisit(cx, cz - 1);
+                TryVisit(cx, cz + 1);
+            }
+            return mask;
+
+            void TryVisit(int nx, int nz)
+            {
+                if (nx < 0 || nx >= n || nz < 0 || nz >= n) return;
+                if (!passable[nx, nz] || mask.Get(nx, nz)) return;
+                mask.Set(nx, nz, true);
+                q.Enqueue((nx, nz));
+            }
+        }
+
+        static float SmoothStep(float e0, float e1, float v)
+        {
+            float t = MathUtil.Clamp01((v - e0) / (e1 - e0));
+            return t * t * (3f - 2f * t);
+        }
+
+        static float Gauss2(float x, float z, float cx, float cz, float sigma)
+        {
+            float dx = x - cx, dz = z - cz;
+            return (float)Math.Exp(-(dx * dx + dz * dz) / (2.0 * sigma * sigma));
         }
 
         /// <summary>Deterministic value-noise layer. Same inputs always produce the same height.</summary>
@@ -143,25 +249,19 @@ namespace Wayfinder.World
     public sealed class HeightField
     {
         readonly NoiseField _noise;
-        float[] _samples; // (TileResolution × ChunksPerSide + 1)² grid over the world
+        float[] _samples;
         readonly int _gridSide;
 
         public HeightField(NoiseField noise = null)
         {
             _noise = noise ?? new NoiseField();
-            // World grid: 2 m spacing over 6144 m → 3072 samples + 1 border = 3073 per side.
             _gridSide = WorldConstants.WorldSizeMeters / (int)WorldConstants.TerrainSampleSpacingMeters + 1;
-            // DEF-023: the 3073² float grid (~37.8 MB) used to be allocated by the constructor, so
-            // merely *constructing* a HeightField — including for a query that never bakes — cost
-            // 37.8 MB. It is now allocated by Bake(), which is what actually fills it.
             _samples = null;
         }
 
         public int GridSide => _gridSide;
-        /// <summary>True once <see cref="Bake"/> has filled the grid.</summary>
         public bool IsBaked => _samples != null;
 
-        /// <summary>Bakes the macro heightfield (editor pipeline; deterministic).</summary>
         public void Bake()
         {
             if (_samples == null) _samples = new float[_gridSide * _gridSide];
@@ -174,11 +274,6 @@ namespace Wayfinder.World
             }
         }
 
-        /// <summary>
-        /// Bakes one tile's samples in tile-local order (used by the seam check and by the editor
-        /// mesh bake). Tile (cx,cz) covers [cx·chunk, cx·chunk + (res−1)·spacing] in both axes, so
-        /// tile (cx,cz) column res−1 and tile (cx+1,cz) column 0 are the same world line.
-        /// </summary>
         public SeamCheck.TerrainTile BakeTile(int chunkX, int chunkZ)
         {
             int res = WorldConstants.TerrainTileResolution;
@@ -207,24 +302,15 @@ namespace Wayfinder.World
             return Quantize((h00 * (1 - fx) + h10 * fx) * (1 - fz) + (h01 * (1 - fx) + h11 * fx) * fz);
         }
 
-        /// <summary>Quantization used for seam equality: 1 mm grid (§7.4).</summary>
         public static float Quantize(float heightMeters) =>
             (float)(Math.Round(heightMeters * 1000.0) / 1000.0);
     }
 
-    /// <summary>
-    /// Seam validation (§7.4): neighboring tiles must agree along shared borders within 1 mm
-    /// after quantization. QA evidence for GEN-02.
-    /// </summary>
+    /// <summary>Seam validation (§7.4): neighboring tiles must agree along shared borders within 1 mm.</summary>
     public static class SeamCheck
     {
         public const float MaxAllowedDifferenceMeters = 0.001f;
 
-        /// <summary>
-        /// One baked terrain tile: <see cref="HeightField.BakeTile"/> output, addressed tile-locally.
-        /// The seam check compares tiles — not one continuous sampler — so an off-by-one in the tile
-        /// bake is visible (DEF-011).
-        /// </summary>
         public sealed class TerrainTile
         {
             public readonly int Resolution;
@@ -233,18 +319,6 @@ namespace Wayfinder.World
             public float this[int x, int z] { get => Samples[z * Resolution + x]; set => Samples[z * Resolution + x] = value; }
         }
 
-        /// <summary>
-        /// Compares the shared border of two *baked tiles* after quantization (§7.4): tile(cx,cz)'s
-        /// east column against tile(cx+1,cz)'s west column, and likewise for the north border.
-        /// <para>
-        /// Until 2026-10-19 this evaluated one global <c>HeightField.Sample</c> function 2 mm either
-        /// side of a chunk border. The largest difference that can produce is slope × 0.002 m — under
-        /// the 1 mm threshold for any slope below 0.5 m/m — so the check could not fail and GEN-02
-        /// had no real evidence. Comparing tiles means a tile whose border samples come from the
-        /// wrong index genuinely mismatches. The old out-of-range guard returned <c>true</c>
-        /// (pass); an invalid chunk index is now a failure.
-        /// </para>
-        /// </summary>
         public static bool BordersMatch(HeightField field, int chunkX, int chunkZ, out float maxDifference)
         {
             maxDifference = 0f;
@@ -255,7 +329,7 @@ namespace Wayfinder.World
 
             bool hasEast = chunkX + 1 < WorldConstants.ChunksPerSide;
             bool hasNorth = chunkZ + 1 < WorldConstants.ChunksPerSide;
-            if (!hasEast && !hasNorth) return true; // last tile: no shared border to check
+            if (!hasEast && !hasNorth) return true;
 
             var tile = field.BakeTile(chunkX, chunkZ);
             bool ok = true;
@@ -274,13 +348,8 @@ namespace Wayfinder.World
             return ok;
         }
 
-        /// <summary>Which shared border two tiles are compared along.</summary>
         public enum Edge { East, North }
 
-        /// <summary>
-        /// Compares one shared border of two already-baked tiles. Split out of the chunk overload so a
-        /// test can hand it tiles that disagree and prove the check can actually fail (DEF-011).
-        /// </summary>
         public static bool BordersMatch(TerrainTile tile, TerrainTile neighbour, Edge edge, out float maxDifference)
         {
             maxDifference = 0f;
@@ -304,13 +373,6 @@ namespace Wayfinder.World
         }
     }
 
-    /// <summary>
-    /// Chunk streaming state machine (§18.3):
-    /// Unloaded → Requested → DataReady → Activating → Active → Deactivating → Unloaded,
-    /// with Failed and cancellation. Hysteresis extension (D-034): Deactivating → DataReady keeps a
-    /// chunk's data while it is outside the active ring but inside the unload radius.
-    /// Pure state logic; ChunkStreamPlanner drives it.
-    /// </summary>
     public enum ChunkState
     {
         Unloaded,
@@ -330,11 +392,6 @@ namespace Wayfinder.World
 
         public bool TryTransition(ChunkState target, out string error) => TryTransition(target, null, out error);
 
-        /// <summary>
-        /// Transition with a cause. Until 2026-10-19 the detail was taken from the *rejected* path's
-        /// <c>error</c> variable, which is always empty when the transition succeeds, so every real
-        /// failure reached <c>ChunkStreamPlanner.StreamingDefects</c> with an empty cause (DEF-012).
-        /// </summary>
         public bool TryTransition(ChunkState target, string detail, out string error)
         {
             error = string.Empty;
@@ -358,8 +415,7 @@ namespace Wayfinder.World
                 case ChunkState.Unloaded:
                     return to == ChunkState.Requested || to == ChunkState.Failed;
                 case ChunkState.Requested:
-                    return to == ChunkState.DataReady || to == ChunkState.Unloaded ||
-                           to == ChunkState.Failed; // cancellation path
+                    return to == ChunkState.DataReady || to == ChunkState.Unloaded || to == ChunkState.Failed;
                 case ChunkState.DataReady:
                     return to == ChunkState.Activating || to == ChunkState.Unloaded || to == ChunkState.Failed;
                 case ChunkState.Activating:
@@ -367,16 +423,14 @@ namespace Wayfinder.World
                 case ChunkState.Active:
                     return to == ChunkState.Deactivating || to == ChunkState.Failed;
                 case ChunkState.Deactivating:
-                    // DataReady = hysteresis retention (§18.3): objects removed, data kept so re-entry costs no IO.
                     return to == ChunkState.Unloaded || to == ChunkState.DataReady || to == ChunkState.Failed;
                 case ChunkState.Failed:
-                    return to == ChunkState.Unloaded; // retry from scratch
+                    return to == ChunkState.Unloaded;
                 default:
                     return false;
             }
         }
 
-        /// <summary>Load/unload hysteresis (§18.3): unload farther than load threshold.</summary>
         public static bool ShouldLoad(float distanceMeters, float loadRadius) => distanceMeters <= loadRadius;
         public static bool ShouldUnload(float distanceMeters, float loadRadius) => distanceMeters > loadRadius * 1.25f;
     }
