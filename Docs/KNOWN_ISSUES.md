@@ -253,9 +253,9 @@ All 68 distinct `contract_socket.*` targets across all 30 authored contracts in 
 
 ---
 
-## KI-044 — Unity-facing assemblies and cloud APK status (**updated 2026-10-21**)
+## KI-044 — Unity-facing assemblies and cloud APK compilation (**resolved 2026-10-21**, GitHub Actions run `39597749993`)
 
-`Tools/Build/unity_type_check.py` compiles all **12/12** Unity assemblies (`Core`, `Simulation`, `World`, `Progression`, `Persistence`, `Campaign`, `Platform`, `Presentation`, `Editor`, `Tests.EditMode`, `Tests.Editor`, `Tests.PlayMode`) with **0 errors and 0 warnings**, `Wayfinder.Presentation` pure view/flow logic (`PresentationModels.cs`) compiles and executes directly in the `.NET Standard 2.1` headless NUnit runner (`319/319` tests passing), and GitHub Actions Unity `6000.3.26f1` cloud builds compile the project and build `Builds/Android/Wayfinder-dev.apk`. Physical Android device playtest verification (frame timing, touch feel, audio/VFX polish) remains M5–M7 scope (`KI-001`, `KI-010`).
+All **12/12** Wayfinder assemblies (`Wayfinder.Core`, `Wayfinder.Simulation`, `Wayfinder.World`, `Wayfinder.Progression`, `Wayfinder.Persistence`, `Wayfinder.Campaign`, `Wayfinder.Platform`, `Wayfinder.Presentation`, `Wayfinder.Editor`, `Wayfinder.Tests.EditMode`, `Wayfinder.Tests.Editor`, `Wayfinder.Tests.PlayMode`) were compiled by real **Unity `6000.3.26f1`** in GitHub Actions workflow run `39597749993` (job `119214190653` on commit `bd66a3c`): `Wayfinder.Editor.ProjectSetup.Setup` finished cleanly (`2026-10-21T12:21:33.8608930Z`) and `Wayfinder.Editor.BuildCommands.BuildAndroidDev` produced `Builds/Android/Wayfinder-dev.apk` (**`50,863,818` bytes**, artifact `Wayfinder-dev-APK` ID `12345987238`). Physical Android device playtest certification (frame timing, touch feel, audio/VFX polish) remains tracked separately under M5–M7 (`KI-001`, `KI-010`).
 
 ---
 

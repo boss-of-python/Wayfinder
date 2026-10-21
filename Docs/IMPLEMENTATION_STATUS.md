@@ -31,13 +31,15 @@ Five clean, verifiable batches closed the remaining engineering, content-loading
 5. **Batch 5 — Contract Socket & Relic World Sweep Closure (`KI-043`, `KI-047` Resolved) + 6-Gate CI (`Tools/Build/run_all_checks.py`, `.github/workflows/verify-headless.yml`)**:
    - Wired uncollected world relics into `CampaignSession.SensorScan` (`80/140/220 m` pulse + `45 m` directional precision), enforced world placement + biome parity + `40 m` garage clearance across all authored contract sockets and all `25` relics in `validate_content.py`, and verified in-field contract socket completion + relic sensor sweep/recovery in `KI_043_And_KI_047_ContractSocketsAndRelics_PlacedSweptAndCompletableInField`.
    - Added one-command verification runner `Tools/Build/run_all_checks.py` and push/PR GitHub Actions workflow `.github/workflows/verify-headless.yml` (plus preflight gates in `Build.yaml` and `android-cloud-build.yml`).
-   - **All `6/6` local gates pass with `0` errors and `0` warnings**:
+   - **All `6/6` headless & static gates + live Unity `6000.3.26f1` Android APK cloud build pass with `0` errors and `0` warnings**:
      - `validate_content.py`: `0 error(s), 0 warning(s)`
      - `formula_checks.py`: `0 failure(s)` (including `relay.wetlands <-> garage.wetlands 42.5 m >= 40.0 m`)
      - `economy_sim.py`: `0` deadlocks, `0` arbitrage paths across all 3 play patterns
      - `headless_cs.py all`: **`319 / 319` EditMode NUnit tests passed (`0` failed, `0` warnings)**, **`7 / 7` `.NET Standard 2.1` profiles OK**, **`31 / 31` Unity files syntax-clean**
      - `unity_type_check.py`: **`12 / 12` full Unity assemblies compiled cleanly (`0` errors, `0` warnings)**
      - `unittest discover Tools/Build`: **`117 / 117` CI/build diagnostic tests passed**
+     - **Live GitHub Actions Verification (`39597750043`)**: `Verify Wayfinder Gates` completed `success` in `3m41s` (`0` errors, `0` warnings, `0` annotations)
+     - **Live GitHub Actions Real Unity `6000.3.26f1` Android APK Build (`39597749993`, job `119214190653`, closing `KI-044`)**: compiled all **12 Wayfinder assemblies** inside real Unity `6000.3.26f1`, completed `Wayfinder.Editor.ProjectSetup.Setup` cleanly (`2026-10-21T12:21:33.8608930Z`), built `Builds/Android/Wayfinder-dev.apk` (**`50,863,818` bytes**), and uploaded artifact `Wayfinder-dev-APK` (ID `12345987238`, `49,345,425` bytes compressed)
 
 ## 2026-10-21 — Batch P: §8.4's exploration rewards, the finale gate, and a target the game does not meet
 
