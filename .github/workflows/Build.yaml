@@ -4,13 +4,19 @@ name: Android APK (free cloud build)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'arena/**'
+    paths-ignore:
+      - 'Docs/**'
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-cloud-build
-  cancel-in-progress: false
+  group: android-cloud-build-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   # Unity 6.3 LTS release verified against this project by a real editor run
