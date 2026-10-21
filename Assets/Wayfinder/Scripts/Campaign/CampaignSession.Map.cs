@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using Wayfinder.Core;
 using Wayfinder.Progression;
@@ -29,6 +30,27 @@ namespace Wayfinder.Campaign
         }
 
         Func<float, float, float> HeightSampler => _heightSampler ??= MapTerrain.HeightAt;
+
+        /// <summary>
+        /// §8.3: the passive sensor sweep. Signals are the world's placed sites — relays, quest items,
+        /// inspect targets, deliveries and routes — and the radius is the resolved
+        /// <c>SignalRadiusM</c>, so Radar I (140 m) and Radar II (220 m) actually extend what pulses.
+        /// Before this the stat was composed by research and read by nothing. Pure: the observer
+        /// position is a parameter, so the sweep is testable without a vehicle.
+        /// </summary>
+        public List<SensorLoop.Reading> SensorScan(float observerX, float observerZ)
+        {
+            var signals = new List<SensorLoop.Signal>();
+            foreach (var site in Content.Sites.Values)
+                signals.Add(new SensorLoop.Signal(site.Id, site.Position.X, site.Position.Z));
+            return SensorLoop.Scan(signals, observerX, observerZ, ResolveStats().SignalRadiusM);
+        }
+
+        /// <summary>The same sweep from the vehicle's pose; empty when parked, since there is no field.</summary>
+        public List<SensorLoop.Reading> SensorScan() =>
+            Expedition.IsActive
+                ? SensorScan(Expedition.Pose.Position.X, Expedition.Pose.Position.Z)
+                : new List<SensorLoop.Reading>();
 
         /// <summary>
         /// Long-press → confirm → place (§13.4). Allowed in the garage and while the map pauses an

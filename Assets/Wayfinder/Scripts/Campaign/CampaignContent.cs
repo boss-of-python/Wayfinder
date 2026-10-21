@@ -90,6 +90,22 @@ namespace Wayfinder.Campaign
         public readonly List<string> Functions = new List<string>();
     }
 
+    /// <summary>
+    /// A named relic (§8.3). Relics live in a protected mission/relic ledger rather than ordinary
+    /// cargo: they have no weight and cannot be sold or lost. Five sets, one per biome, five each;
+    /// a completed set unlocks cosmetic memorabilia and journal content — never traction or fuel.
+    /// </summary>
+    public sealed class RelicDefinition
+    {
+        public string Id;
+        public string Biome;
+        public string NameKey;
+        /// <summary>Ledger key paid once for this relic, separate from any landmark reward (§8.4).</summary>
+        public string RewardKey;
+        public bool ProtectedLedger = true;
+        public bool Sellable;
+    }
+
     /// <summary>A circular site the vehicle must reach (camp socket, inspect target, relay, quest item).</summary>
     public sealed class SliceSite
     {
@@ -182,13 +198,15 @@ namespace Wayfinder.Campaign
         public static readonly string[] RequiredFiles =
         {
             "caches.json", "landmarks.json", "garages.json", "camps.json", "missions.json", "upgrades.json",
-            "vertical_slice.json", "sites.json", "contracts.json"
+            "vertical_slice.json", "sites.json", "contracts.json", "relics.json"
         };
 
         readonly Dictionary<string, CacheDefinition> _caches = new Dictionary<string, CacheDefinition>(StringComparer.Ordinal);
         readonly Dictionary<string, LandmarkDefinition> _landmarks = new Dictionary<string, LandmarkDefinition>(StringComparer.Ordinal);
         readonly Dictionary<string, GarageDefinition> _garages = new Dictionary<string, GarageDefinition>(StringComparer.Ordinal);
         readonly Dictionary<string, CampDefinition> _camps = new Dictionary<string, CampDefinition>(StringComparer.Ordinal);
+        readonly Dictionary<string, RelicDefinition> _relics = new Dictionary<string, RelicDefinition>(StringComparer.Ordinal);
+        readonly Dictionary<string, List<string>> _relicSets = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         readonly Dictionary<string, PickupContents> _pickups = new Dictionary<string, PickupContents>(StringComparer.Ordinal);
         readonly Dictionary<string, string> _missionNames = new Dictionary<string, string>(StringComparer.Ordinal);
         readonly Dictionary<string, string> _upgradeResults = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -203,6 +221,9 @@ namespace Wayfinder.Campaign
         public IReadOnlyDictionary<string, LandmarkDefinition> Landmarks => _landmarks;
         public IReadOnlyDictionary<string, GarageDefinition> Garages => _garages;
         public IReadOnlyDictionary<string, CampDefinition> Camps => _camps;
+        public IReadOnlyDictionary<string, RelicDefinition> Relics => _relics;
+        /// <summary>§8.3 relic sets: biome → that biome's relic ids, Ordinal-sorted.</summary>
+        public IReadOnlyDictionary<string, List<string>> RelicSets => _relicSets;
         /// <summary>
         /// World sites (Content/sites.json) — the inspect targets, relays, quest-item and delivery
         /// sites and visit volumes that missions outside the forest slice reference. The slice is
@@ -298,6 +319,24 @@ namespace Wayfinder.Campaign
                 Strings(c, "functions", def.Functions);
                 content._camps[def.Id] = def;
             }
+
+            foreach (JObject r in JArray.Parse(files["relics.json"]))
+            {
+                var def = new RelicDefinition
+                {
+                    Id = Str(r, "id"),
+                    Biome = Str(r, "biome"),
+                    NameKey = Str(r, "nameKey"),
+                    RewardKey = Str(r, "rewardKey"),
+                    ProtectedLedger = r.Value<bool?>("protectedLedger") ?? true,
+                    Sellable = r.Value<bool?>("sellable") ?? false
+                };
+                content._relics[def.Id] = def;
+                if (!content._relicSets.TryGetValue(def.Biome, out var set))
+                    content._relicSets[def.Biome] = set = new List<string>();
+                set.Add(def.Id);
+            }
+            foreach (var set in content._relicSets.Values) set.Sort(StringComparer.Ordinal);
 
             foreach (JObject m in JArray.Parse(files["missions.json"]))
                 content._missionNames[Str(m, "displayCode")] = Str(m, "name");
