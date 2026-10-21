@@ -1,0 +1,16 @@
+CAUGHT    M1   the sell price is 45% instead of 40%  (tests 260/266) by Selling_AtTheGarage_FortyPercentRoundedDown_NoArbitrage_S10_4, Selling_IsACriticalSave_RolledBackOnWriteFailure_AndKeepsMissionCampKits_D020, EveryItemSellsAtFortyPercentFloored_AndNeverForWhatItCost
+CAUGHT    M2   the sell price is rounded to nearest instead of down  (tests 262/266) by Selling_AtTheGarage_FortyPercentRoundedDown_NoArbitrage_S10_4, EveryItemSellsAtFortyPercentFloored_AndNeverForWhatItCost, SellingPaysThePerUnitFloor_NotTheFloorOfTheTotal
+CAUGHT    M3   the code's polymer price drifts from items.json  (tests 262/266) by SellingPaysThePerUnitFloor_NotTheFloorOfTheTotal, TheArbitragePredicateFiresOnARecipeThatWouldProfit, TheItemTableInCodeMatchesTheContentFile
+CAUGHT    M4   the code marks camp_kit unsellable while items.json says sellable  (tests 262/266) by Selling_IsACriticalSave_RolledBackOnWriteFailure_AndKeepsMissionCampKits_D020, BuyCraftSell_NeverCreatesCurrency_EndToEnd, NonSellableItemsAreRefusedByCheckSell
+CAUGHT    M5   the code's camp-kit crafting fee drifts from recipes.json  (tests 263/266) by VerticalSlice_PlaythroughQ01toQ04_AffordsTiers1to6AndSecondCamp_LedgerBalances, TheRecipeTableInCodeMatchesTheContentFile, Crafting_ChargesRecipeSalvageFee_KI022
+CAUGHT    M6   the code's tire-patch inputs drift from recipes.json  (tests 265/266) by TheRecipeTableInCodeMatchesTheContentFile
+CAUGHT    M7   the arbitrage predicate never reports a profitable recipe  (tests 265/266) by TheArbitragePredicateFiresOnARecipeThatWouldProfit
+CAUGHT    M8   crafting does not charge the salvage fee (KI-022 regression)  (tests 263/266) by VerticalSlice_PlaythroughQ01toQ04_AffordsTiers1to6AndSecondCamp_LedgerBalances, BuyCraftSell_NeverCreatesCurrency_EndToEnd, Crafting_ChargesRecipeSalvageFee_KI022
+CAUGHT    M9   crafting produces the output without consuming the inputs  (tests 264/266) by BuyCraftSell_NeverCreatesCurrency_EndToEnd, Crafting_ChargesRecipeSalvageFee_KI022
+CAUGHT    M10  the sale floors the total instead of each unit  (tests 265/266) by SellingPaysThePerUnitFloor_NotTheFloorOfTheTotal
+CAUGHT    M11  items marked unsellable in content can be sold  (tests 265/266) by TheSellableFlagAloneRefusesASale_WhateverTheCategory
+CAUGHT    M12  Salvage bundles can be sold on top of banking 1:1  (tests 265/266) by NonSellableItemsAreRefusedByCheckSell
+
+12/12 mutants caught; survivors: none
+tree clean after run
+EXIT 0

@@ -1,10 +1,61 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-21 (Batch L). Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-21 (Batch M). Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## 2026-10-21 — Batch M: §10.4's arbitrage rule, and the content tables the runtime never loads
+
+§10.4:698 asks for three things — materials sell at 40% of purchase price rounded down, crafted
+consumables sell for less than their total input purchase value, and "add an automated arbitrage test;
+crafting/reselling must never create currency". That test already existed in **three** places; reading
+all three against the sentence found two real problems (D-043).
+
+**Every existing check was weaker than the spec.** `CraftingService.CraftResaleCreatesCurrency` (QA case
+17), `validate_content.py` and `economy_sim.py`'s `arbitrage_scan` all added the crafting fee to the
+input side before comparing. §10.4 counts *materials only* — the fee is QA-17's separate concern — so a
+recipe selling above its materials but below materials + fee passed all three while breaking the rule as
+written. Today's four recipes clear both bars (repair_kit 18 < 32, tire_patch 8 < 12, recovery_boards
+14 < 34, camp_kit 40 < 89), so this was a latent hole rather than a live defect. All three checkers now
+assert both rules separately, and the two Python ones report which rule fired.
+
+**The checks read files the runtime never loads.** `ItemCatalog` (19 items) and `CraftingService.Recipes`
+(4 recipes) are hardcoded C# tables. `items.json` / `recipes.json` are read by the two Python validators
+and by the editor's `ContentImporter` (which only collects ids); `CampaignContent.RequiredFiles` lists
+neither. So every price, mass, stack-size, protected-ledger and arbitrage rule this project validated
+applied to content the game ignores, and the two representations agreed by luck — DEF-016's shape, which
+the validator's own header warns about. `EconomyArbitrageTests` now compares every field of every entry
+in both tables, so they cannot drift without a failing test (mutants M3–M6 each drift one field and are
+caught). The duplication itself is **KI-046**: loading the JSON through `CampaignContent` and deleting
+the hardcoded tables is the right fix, but it needs a Unity-side load path that cannot be verified from
+here, so the parity test buys the same protection today at a fraction of the risk.
+
+**What the 12 new tests execute.** Table parity for items and recipes; the sweeps are non-vacuous (table
+sizes pinned at 19 and 4, and the predicate is proven to fire on a deliberately profitable recipe — one
+polymer in, a camp kit out, sell 40 > materials 12); §10.4's rule with the fee excluded *and* QA-17 with
+it included; every item sells at the 40% floor and never for what it cost, at any quantity from 1 to 10;
+per-unit flooring pinned against flooring the total (three polymer pay 12, not 14); the nine unsellable
+objects refused by category, and Salvage itself refused because it banks 1:1 — selling a bundle would
+turn it into currency twice; the `sellable` flag exercised on a plain Material, which no current item
+does (all nine unsellable objects are also quest or protected, so the category refusals alone would
+reject them and the flag looked redundant — mutant M11 proved the suite could not tell); and the full
+buy → craft → sell loop per recipe, asserting the fee is
+charged exactly once (KI-022), the inputs are consumed rather than duplicated, and the wallet ends
+strictly below where it started.
+
+**Evidence.** Suite 254 → **266/266** passing, 0 warnings; **12/12** mutation checks caught
+(`Docs/evidence/arbitrage-content-parity-2026-10-21/`); a validator **negative control** injects a
+recipe the old check passed (sell 16, materials 12, materials + fee 22) and shows only the new rule
+reporting it, with `recipes.json` restored byte-identical; `validate_content.py`, `economy_sim.py` and
+`formula_checks.py` clean. Not proven here: any Unity-side behaviour (KI-026), and the M2 gate still
+needs the 30-minute on-device playtest.
+
+**Remaining dependency-ready work without Unity:** KI-046 (load the item and recipe tables from content
+instead of hardcoding them); KI-025 `VehicleController.ApplyEffectiveStats` seam for per-wheel
+grip/suspension geometry; KI-037 `WorldStreamer` host; KI-038 baker `IScatterSurface`; KI-027 slice
+terrain bake; KI-029 `IMapTerrainSource`; KI-030 route graph.
 
 ## 2026-10-21 — Batch L: §10.4 community logistics — free instant hub-to-hub transfer (KI-028 closed)
 
@@ -53,8 +104,8 @@ and `formula_checks.py` clean; 30 Unity-dependent files still parse. Not proven 
 behaviour — the driver's logistics panel is syntax-checked only (KI-026), and the M2 gate still needs
 the 30-minute on-device playtest.
 
-**Remaining dependency-ready work without Unity:** §10.4's automated arbitrage test ("crafting and
-reselling must never create currency"); KI-025 `VehicleController.ApplyEffectiveStats` seam for
+**Remaining dependency-ready work without Unity:** ~~§10.4's automated arbitrage test~~ **done
+2026-10-21 (Batch M, D-043)**; KI-025 `VehicleController.ApplyEffectiveStats` seam for
 per-wheel grip/suspension geometry; KI-037 `WorldStreamer` host; KI-038 baker `IScatterSurface`;
 KI-027 slice terrain bake; KI-029 `IMapTerrainSource`; KI-030 route graph.
 
@@ -585,7 +636,7 @@ FINISH-01 (Implemented definitions; credits flow coded).
 1. **Owner, ~10 minutes — verify the fix:** dispatch **Actions → Android APK (free cloud build) → Run workflow** on the current branch. The `WayfinderControls.inputactions` change is data-only (no C#, no asmdef, no package); the build should succeed and produce a new APK. Install on the Moto G45 and confirm: (a) no `InvalidOperationException` in the Development Console, (b) WASD/arrow steering works, (c) touch still works, (d) Q01 can be completed end-to-end. If green, the M2 30-minute playtest can begin. **Read the *Explain the Unity result* job** (D-035) for any file/line/col annotations. Commit `Packages/packages-lock.json` from the `Unity-logs` artifact (KI-002).
    *Local alternative:* install Unity 6.3 LTS + Android module, open the project, `Tools → Wayfinder → Setup Project`, commit generated scenes/meta (KI-004/005).
 2. Fix any remaining UnityEngine API drift in the 24 parse-checked files — first the new campaign glue (KI-026); run EditMode tests **in Unity** (expect 216/216) and the PlayMode tests; play Title → New → VerticalSlice and attach logs/screens to `Docs/evidence/`.
-3. M2 follow-ups that are dependency-ready without Unity: ~~camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028)~~ **done 2026-10-21 (Batch J, D-039/D-040)**; ~~expose repair-kit/tire-patch use and selling in the session~~ **done (D-029)**. ~~§10.2 module slot equipping~~ **done 2026-10-21 (Batch K, D-041)**; ~~§10.4 hub-to-hub community logistics~~ **done 2026-10-21 (Batch L, D-042)** — KI-028 fully closed. Remaining: the `VehicleController.ApplyEffectiveStats` seam so researched per-wheel grip/suspension geometry reaches physics (KI-025), and §10.4's automated arbitrage test.
+3. M2 follow-ups that are dependency-ready without Unity: ~~camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028)~~ **done 2026-10-21 (Batch J, D-039/D-040)**; ~~expose repair-kit/tire-patch use and selling in the session~~ **done (D-029)**. ~~§10.2 module slot equipping~~ **done 2026-10-21 (Batch K, D-041)**; ~~§10.4 hub-to-hub community logistics~~ **done 2026-10-21 (Batch L, D-042)** — KI-028 fully closed. ~~§10.4's automated arbitrage test~~ **done 2026-10-21 (Batch M, D-043)**. Remaining: the `VehicleController.ApplyEffectiveStats` seam so researched per-wheel grip/suspension geometry reaches physics (KI-025), and KI-046 (load the item/recipe tables from content).
 4. M3 batch: `ScatterPlacer` (§7.6) + pure `WorldStreamer` planner with handle-leak tests (KI-017, QA case 12); slice terrain bake so the 1,024 m area has real relief (KI-027).
 5. Device: Moto G45 30-minute slice playtest (interruption/kill tests, 30 FPS budget) to close the M2 gate.
 6. Keep `python3 Tools/Build/headless_cs.py all` green on every batch.

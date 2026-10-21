@@ -133,12 +133,18 @@ def arbitrage_scan():
     problems = []
     items = {i["id"]: i for i in load("items.json")}
     for recipe in load("recipes.json"):
-        input_value = recipe.get("salvageFee", 0)
+        material_value = 0
         for inp in recipe["inputs"]:
-            input_value += items[inp["itemId"]]["purchasePriceSalvage"] * inp["quantity"]
+            material_value += items[inp["itemId"]]["purchasePriceSalvage"] * inp["quantity"]
+        fee = recipe.get("salvageFee", 0)
         sell_value = int(items[recipe["output"]["itemId"]]["purchasePriceSalvage"] * 0.4) * recipe["output"]["quantity"]
-        if sell_value > input_value:
-            problems.append(f"{recipe['id']}: sell {sell_value} > inputs {input_value}")
+        # §10.4: "Crafted consumables sell for less than their total input purchase value" — materials
+        # only. QA case 17 ("must never create currency") allows the crafting fee on the input side.
+        if sell_value >= material_value:
+            problems.append(
+                f"{recipe['id']}: §10.4 sell {sell_value} >= input purchase value {material_value}")
+        if sell_value > material_value + fee:
+            problems.append(f"{recipe['id']}: sell {sell_value} > inputs + fee {material_value + fee}")
     return problems
 
 

@@ -1,0 +1,27 @@
+validate_content.py negative control — Batch M (D-043)
+Purpose: prove the strengthened §10.4 rule actually fires, and that it is STRICTLY stronger
+than the pre-existing QA-17 check. recipes.json is mutated in place and restored from the
+in-memory original; `git status` is clean afterwards.
+
+--- [1] unmodified content (exit 0) ---
+    validate_content: 0 error(s), 0 warning(s)
+    CONTENT VALIDATION PASSED
+
+injected: recipe.tire_patch output quantity 1 -> 2
+  sell value   = 2 x floor(22 x 0.40) = 2 x 8 = 16
+  materials    = 1 polymer x 12        = 12   -> §10.4 breached (16 >= 12)
+  materials+fee= 12 + 10               = 22   -> QA-17 still satisfied (16 <= 22)
+  This is the case the old check let through, so only the new rule may report it.
+--- [2] sell 16, materials 12, materials+fee 22 (exit 1) ---
+    validate_content: 1 error(s), 0 warning(s)
+      ERROR: recipe recipe.tire_patch: §10.4 — sell value 16 must be below the input purchase value 12 (the crafting fee does not count toward it)
+
+injected: recipe.tire_patch output quantity 1 -> 4 (sell 32 > 12 and > 22)
+--- [3] both rules breached (exit 1) ---
+    validate_content: 2 error(s), 0 warning(s)
+      ERROR: recipe recipe.tire_patch: §10.4 — sell value 32 must be below the input purchase value 12 (the crafting fee does not count toward it)
+      ERROR: recipe recipe.tire_patch: arbitrage — sell value 32 > inputs + fee 22
+
+--- [4] restored (exit 0) ---
+    validate_content: 0 error(s), 0 warning(s)
+    CONTENT VALIDATION PASSED
