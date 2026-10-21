@@ -1,0 +1,69 @@
+# python checks — Batch J (2026-10-21)
+
+## Tools/Validation/validate_content.py
+vertical slice: income without mapping 3436 vs spend 3130 (margin 306); materials {'polymer': 4, 'scrap_metal': 4, 'electronics': 2}
+validate_content: 0 error(s), 0 warning(s)
+CONTENT VALIDATION PASSED
+EXIT=0
+
+## Tools/Validation/formula_checks.py
+== Wayfinder formula checks ==
+[ok  ] self-lint: no tautological check() remains — literals only: 
+[ok  ] fuel: blueprint example rate = 0.02255 L/s — got 0.02255
+[ok  ] fuel: 24 L ≈ 17.7 min at example rate — got 17.74 min
+[ok  ] fuel: engine off consumes zero
+[ok  ] fuel: drain bounded ≤ 0.047 L/s — got 0.047
+[ok  ] damage: impacts < 3 m/s ignored
+[ok  ] damage: D(5) = 5.6 — got 5.6
+[ok  ] damage: D(10) clamps to 35
+[ok  ] damage: D(3) = 0
+[ok  ] research: 20 tiers
+[ok  ] research: Σ incremental cost = 32,200 (spec) — got 32200
+[ok  ] research: upgrades.json matches the spec cost table — content [200, 300, 450, 550, 700, 850, 1000, 1150, 1300, 1450, 1600, 1750, 1900, 2100, 2300, 2500, 2700, 2900, 3100, 3400]
+[ok  ] research: C# ResearchService declares 20 tiers — found 20
+[ok  ] research: C# costs match the content table — C# [200, 300, 450, 550, 700, 850, 1000, 1150, 1300, 1450, 1600, 1750, 1900, 2100, 2300, 2500, 2700, 2900, 3100, 3400]
+[ok  ] research: every tier has at least one effect — no effects: 
+[ok  ] steering: limit @0 km/h = 34° — got 34.0
+[ok  ] steering: limit @20 km/h = 26° — got 26.0
+[ok  ] steering: limit @40 km/h = 16° — got 16.0
+[ok  ] steering: limit @70 km/h = 10° — got 10.0
+[ok  ] slip: matched rolling = 0
+[ok  ] slip: locked wheel at 10 m/s = -1 — got -1.0
+[ok  ] rescue: 25% floor of 37 units = 9
+[ok  ] rescue: zero units → zero loss
+[ok  ] rescue: the C# path loses salvage_bundle units only — CampaignSession.Extraction.cs no longer contains the rescue loss path
+[ok  ] water: BaselineSafeWadingM = 0.55 (§5.3) — C# says 0.55
+[ok  ] water: UpgradedSafeWadingM = 0.85 (§5.3) — C# says 0.85
+[ok  ] water: StallSecondsAboveIntake = 2.0 (§5.3) — C# says 2.0
+[ok  ] water: ImpassableMainRouteDepthM = 1.2 (§5.3) — C# says 1.2
+[ok  ] water: SafeWadingDepthM is composed by the resolver — the resolver never resolves the intake height
+[ok  ] world: WorldConstants exposes the six layout constants — missing: 
+[ok  ] world: chunks × chunk size = world size — 256 m chunks over 6144 m
+[ok  ] map: cell size × cell count = world size — 96 × 64 m
+[ok  ] terrain: (res − 1) × spacing = chunk size — 129 samples at 2 m
+[ok  ] map: cell count² = 9216 — 9216
+[ok  ] hash: deterministic
+[ok  ] hash: distinct inputs differ
+[ok  ] hash: chunkSeed deterministic
+[ok  ] hash: layerId changes seed
+[ok  ] seam: adjacent chunk borders agree ≤ 1 mm — worst diff 0.0
+[ok  ] seam: the comparison accepts matching tiles
+[ok  ] seam: the comparison rejects a 5 mm disagreement — diff 0.0050
+[ok  ] seam: quantization grid is 1 mm
+[ok  ] heightfield: deterministic
+[ok  ] heightfield: within −20..520 m band (± detail) — got 238.23
+[ok  ] heightfield: non-degenerate relief (spread > 50 m) — spread 184.1 m, range 172.4..356.4
+
+2 check(s) are documentation mirrors, not evidence (they cannot fail on a C# change):
+  mirror: rescue: 25% floor of 37 units = 9
+  mirror: seam: adjacent chunk borders agree ≤ 1 mm
+
+0 failure(s)
+FORMULA CHECKS PASSED
+EXIT=0
+
+## git diff --check (whitespace errors)
+EXIT=0
+
+## git status --porcelain Assets (must be clean after the mutation run)
+EXIT=0

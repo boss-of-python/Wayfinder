@@ -36,7 +36,15 @@ namespace Wayfinder.Persistence
         public WorldStateDto world = new WorldStateDto();
         public ExpeditionDto expedition = new ExpeditionDto();
         public List<ItemStackDto> garageStorage = new List<ItemStackDto>();
+        /// <summary>
+        /// v1 pooled camp store, superseded by <see cref="campStores"/> in schema 2 (D-039, §12.2).
+        /// Kept so a v1 file still deserializes; <c>SaveMigrations</c> step 1 moves its stacks into a
+        /// per-camp store (or into garage storage when no camp was established) and leaves this empty.
+        /// Nothing is ever dropped (§17.5).
+        /// </summary>
         public List<ItemStackDto> campStorage = new List<ItemStackDto>();
+        /// <summary>One store per activated camp (§12.2): what you leave at camp A is not at camp B. Schema 2.</summary>
+        public List<CampStoreDto> campStores = new List<CampStoreDto>();
         public List<string> claimedRewardKeys = new List<string>();
         public List<string> appliedTransactionIds = new List<string>();
         public SimulationDto simulation = new SimulationDto();
@@ -147,6 +155,14 @@ namespace Wayfinder.Persistence
         public int cachesCollected;
         public int landmarksDiscovered;
         public int cellsRevealed;
+    }
+
+    /// <summary>One camp's own store (§12.2, schema 2). Additive at v2; v1 saves carry pooled campStorage.</summary>
+    [Serializable]
+    public sealed class CampStoreDto
+    {
+        public string campId;
+        public List<ItemStackDto> items = new List<ItemStackDto>();
     }
 
     [Serializable]

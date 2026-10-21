@@ -37,7 +37,8 @@ namespace Wayfinder.Campaign
                 completedMissionIds = new List<string>(),
                 activeMissions = new List<ActiveMissionDto>(),
                 garageStorage = Stacks(s, CampaignSession.GarageStorage),
-                campStorage = Stacks(s, CampaignSession.CampStorage),
+                campStorage = new List<ItemStackDto>(),   // v1 pooled store, superseded in schema 2 (D-039)
+                campStores = CampStoreDtos(s),
                 claimedRewardKeys = new List<string>(s.Discovery.RewardLedger.Order),
                 appliedTransactionIds = new List<string>(s.Transactions.AppliedOrder),
                 tutorialFlags = new List<string>(s.TutorialFlags),
@@ -232,8 +233,15 @@ namespace Wayfinder.Campaign
             s.Inventory.Restore(CampaignSession.Cargo, FromDtos(e.cargo), cargoCapacity);
             s.Inventory.Restore(CampaignSession.GarageStorage, FromDtos(p.garageStorage),
                 s.Inventory.CapacityOf(CampaignSession.GarageStorage));
-            s.Inventory.Restore(CampaignSession.CampStorage, FromDtos(p.campStorage),
-                s.Inventory.CapacityOf(CampaignSession.CampStorage));
+            // Per-camp stores (§12.2, D-039): each activated camp restores its own container.
+            foreach (var store in p.campStores ?? new List<CampStoreDto>())
+            {
+                if (store == null || string.IsNullOrEmpty(store.campId)) continue;
+                var container = CampaignSession.CampStorageFor(store.campId);
+                s.ConfigureCampStore(store.campId);
+                s.Inventory.Restore(container, FromDtos(store.items), s.Inventory.CapacityOf(container));
+            }
+            AdoptLegacyCampStorage(s, p);
             var ledger = new List<string>();
             foreach (var id in p.protectedLedgerItemIds ?? new List<string>())
                 if (ItemCatalog.TryGet(id ?? string.Empty, out var def) && def.ProtectedLedger) ledger.Add(id);
@@ -305,6 +313,35 @@ namespace Wayfinder.Campaign
             var list = new List<string>(values ?? Array.Empty<string>());
             list.Sort(StringComparer.Ordinal);
             return list;
+        }
+
+        /// <summary>One store per activated camp, in the deterministic order migrations use (§12.2).</summary>
+        static List<CampStoreDto> CampStoreDtos(CampaignSession s)
+        {
+            var list = new List<CampStoreDto>();
+            foreach (var campId in s.ActivatedCampsInOrder())
+                list.Add(new CampStoreDto { campId = campId, items = Stacks(s, CampaignSession.CampStorageFor(campId)) });
+            return list;
+        }
+
+        /// <summary>
+        /// Belt and braces for §17.5: a payload that still carries pooled v1 camp stacks — a file that
+        /// skipped <see cref="SaveMigrations"/>, or one edited by hand — is merged into the first
+        /// activated camp's store, or into garage storage when no camp is activated. Never dropped.
+        /// </summary>
+        static void AdoptLegacyCampStorage(CampaignSession s, SavePayload p)
+        {
+            var stacks = FromDtos(p.campStorage);
+            if (stacks.Count == 0) return;
+            var camps = s.ActivatedCampsInOrder();
+            if (camps.Count == 0)
+            {
+                foreach (var stack in stacks) s.Inventory.Add(CampaignSession.GarageStorage, stack);
+                return;
+            }
+            s.ConfigureCampStore(camps[0]);
+            var store = CampaignSession.CampStorageFor(camps[0]);
+            foreach (var stack in stacks) s.Inventory.Add(store, stack);
         }
 
         static List<ItemStackDto> Stacks(CampaignSession s, InventoryId container)

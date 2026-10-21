@@ -231,12 +231,19 @@ namespace Wayfinder.Campaign
             return RunCritical(() =>
             {
                 var result = Transactions.Execute(new EstablishCamp(NextTransactionId(), new ContentId(campId), Cargo));
-                if (result.Success) ReportMission(MissionConditionType.EstablishCamp, campId);
+                if (result.Success)
+                {
+                    ConfigureCampStore(campId);   // the new camp's own store exists immediately (§12.2)
+                    ReportMission(MissionConditionType.EstablishCamp, campId);
+                }
                 return result;
             });
         }
 
-        /// <summary>Camp deposit (§12.2/§12.4): banks Salvage + escrow, stores materials (500 kg), saves.</summary>
+        /// <summary>
+        /// Camp deposit (§12.2/§12.4): banks Salvage + escrow and stores materials in THAT camp's own
+        /// store (D-039), up to the capacity its content declares. Saved as one critical transaction.
+        /// </summary>
         public CommandResult DepositAtCamp(string campId)
         {
             if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
@@ -246,8 +253,10 @@ namespace Wayfinder.Campaign
                 // DEF-017 (part 1): the notice is built from the wallet the transaction actually
                 // produced, not from state read before it ran — a rolled-back deposit could
                 // otherwise still toast "Deposited N Salvage".
+                ConfigureCampStore(campId);
                 int bankedBefore = Economy.BankedSalvage;
-                var result = Transactions.Execute(new BankCargo(NextTransactionId(), new ContentId(campId), Cargo, CampStorage));
+                var result = Transactions.Execute(
+                    new BankCargo(NextTransactionId(), new ContentId(campId), Cargo, CampStorageFor(campId)));
                 if (result.Success)
                 {
                     int banked = Economy.BankedSalvage - bankedBefore;

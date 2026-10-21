@@ -76,6 +76,8 @@ namespace Wayfinder.Campaign
         public string Biome;
         public WorldPoint Position;
         public bool IsHome;
+        /// <summary>Services this garage offers (§10.4), e.g. "research", "crafting", "hubTravel".</summary>
+        public readonly List<string> Services = new List<string>();
     }
 
     public sealed class CampDefinition
@@ -84,6 +86,8 @@ namespace Wayfinder.Campaign
         public string Biome;
         public float StorageCapacityKg;
         public string RequiresItem;
+        /// <summary>Functions this camp offers (§10.4), e.g. "save", "deposit", "hubTravel".</summary>
+        public readonly List<string> Functions = new List<string>();
     }
 
     /// <summary>A circular site the vehicle must reach (camp socket, inspect target, relay, quest item).</summary>
@@ -278,6 +282,7 @@ namespace Wayfinder.Campaign
                     Position = Point(g["positionHint"]),
                     IsHome = g.Value<bool?>("isHome") ?? false
                 };
+                Strings(g, "services", def.Services);
                 content._garages[def.Id] = def;
             }
 
@@ -290,6 +295,7 @@ namespace Wayfinder.Campaign
                     StorageCapacityKg = c.Value<float?>("storageCapacityKg") ?? CampService.CampStorageCapacityKg,
                     RequiresItem = Str(c, "requiresItem")
                 };
+                Strings(c, "functions", def.Functions);
                 content._camps[def.Id] = def;
             }
 
@@ -457,6 +463,17 @@ namespace Wayfinder.Campaign
 
         static string Str(JObject o, string key) => o.Value<string>(key) ?? string.Empty;
 
+        /// <summary>Reads a string array into <paramref name="into"/>, skipping blanks and duplicates.</summary>
+        static void Strings(JObject o, string key, List<string> into)
+        {
+            if (!(o[key] is JArray array)) return;
+            foreach (JToken t in array)
+            {
+                string value = t.Value<string>();
+                if (!string.IsNullOrEmpty(value) && !into.Contains(value)) into.Add(value);
+            }
+        }
+
         static WorldPoint Point(JToken token)
         {
             if (!(token is JObject o)) return default;
@@ -478,6 +495,21 @@ namespace Wayfinder.Campaign
             _landmarks.TryGetValue(landmarkId ?? string.Empty, out var l) && !string.IsNullOrEmpty(l.Name) ? l.Name : landmarkId;
 
         /// <summary>World position of a garage (home falls back to the slice spawn when unknown).</summary>
+        /// <summary>The §10.4 "safe-hub travel" service/function name used in garages.json and camps.json.</summary>
+        public const string HubTravelService = "hubTravel";
+
+        /// <summary>
+        /// True when the hub's own content entry offers safe-hub travel (§10.4). Unknown hubs offer
+        /// nothing, so a typo can never grant fast travel.
+        /// </summary>
+        public bool OffersHubTravel(string hubId)
+        {
+            if (string.IsNullOrEmpty(hubId)) return false;
+            if (_garages.TryGetValue(hubId, out var garage)) return garage.Services.Contains(HubTravelService);
+            if (_camps.TryGetValue(hubId, out var camp)) return camp.Functions.Contains(HubTravelService);
+            return false;
+        }
+
         public WorldPoint GaragePosition(string garageId) =>
             _garages.TryGetValue(garageId ?? string.Empty, out var g) ? g.Position : Slice.GarageSpawn.Position;
     }

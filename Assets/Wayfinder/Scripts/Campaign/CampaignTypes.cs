@@ -62,7 +62,8 @@ namespace Wayfinder.Campaign
         ItemSold,
         GarageUnlocked,
         ContractAccepted,
-        ContractCompleted
+        ContractCompleted,
+        HubTravelled
     }
 
     /// <summary>Committed-outcome notification for the HUD queue (§13.2). Never emitted for rolled-back work.</summary>

@@ -1,10 +1,75 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-20. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-21. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## 2026-10-21 — Batch J: safe-hub travel + per-camp storage (KI-028 closed at domain level)
+
+The two M2 gaps that needed no Unity are now implemented, executed and mutation-checked headlessly:
+§10.4 safe-hub travel between activated garages and camps, and §12.2 per-camp storage with the
+project's **first real save migration** (schema 1 → 2).
+
+**Hub travel (§10.4, D-039).** `CampaignSession.CurrentHubId` answers "which hub am I at?" — the
+parked hub in garage mode, otherwise the nearest *activated* camp whose socket radius contains the
+pose, otherwise null (the open field is not a hub). `TravelToHub(destinationHubId, inWater,
+inDeepMud)` is free, instant and refuses, in order: an empty destination, a non-hub position, a
+dangerous field situation ("no fast travel out of a dangerous field situation; use full rescue"),
+self-travel, a hub `GarageService.TryHubTravel` will not activate, and a hub whose content does not
+declare the `hubTravel` service (`garages.json services` / `camps.json functions`, now parsed). On
+success it re-bases the pose **and** the safe pose, emits `CampaignNoticeKind.HubTravelled`, charges
+nothing, and commits through `RunCritical` — a failed verified save rolls the whole move back.
+Mid-expedition travel deliberately leaves `Expedition.LastGarageId` alone, so fast travel can never
+move the extraction target (§12.4). `SpawnFor(hubId)` now resolves activated camp sockets as well as
+garage positions; before this it returned the home garage position for any non-slice id, so a
+session parked at a camp would have departed from the wrong place.
+
+**The camp/garage service split (§10.4/§12.1–12.2).** `AtGarage` ("parked at a garage") is now
+separate from `InGarage` ("parked, not on expedition"), and the six garage-only services — mission
+board, research, contracts, loadout moves, crafting, selling — gate on `AtGarage`. A camp therefore
+offers save, deposit, fuel, repair supplies, time of day, map and hub travel, and nothing permanent.
+`AtGarage == InGarage` for every save that predates hub travel (a parked session's `LastGarageId` was
+always a garage), so the change is behaviour-preserving for existing saves and only bites once hub
+travel parks a session at a camp.
+
+**Per-camp storage (§12.2, D-040).** `CampaignSession.CampStorageFor(campId)` replaces the single
+static pooled container: what you leave at camp A is not waiting at camp B. Each store is sized by
+that camp's own `camps.json storageCapacityKg` (service default 500 kg as the fallback for content
+that omits it), configured on load, on `EstablishCamp` and defensively before a deposit; the map's
+camp tooltip now quotes the selected camp's capacity. `SavePayload` gains `campStores`
+(`CampStoreDto` = campId + items) and `SaveService.CurrentSchemaVersion` is **2**.
+`SaveMigrations.Steps[1]` merges the pooled v1 `campStorage` rows by (itemId, missionInstanceId)
+into the store of the first camp in `activatedCampIds` — or into `garageStorage` when the player
+never established a camp — drops rows that carry nothing, empties the pooled field so the step cannot
+double-apply, and recomputes the payload checksum so the migrated envelope stays self-consistent
+(§17.4). The `Migration` delegate is typed on `SavePayload` rather than `JObject`: the first
+implementation was a JObject transform and it *silently lost the migrated store* (re-assigning an
+already-parented `JArray` back onto its own `JObject` detached it), which is exactly the failure mode
+a typed step cannot have. Restore rebuilds each camp's container and also adopts pooled rows from any
+payload that still carries them, so a hand-edited or unmigrated file cannot lose property (§17.5).
+
+**Evidence (executed here).** `python3 Tools/Build/headless_cs.py all` → 7 assemblies, **0 warnings**
+at `-warn:4`, .NET Standard 2.1 profile OK, 30 Unity-dependent files parse, **216/216 EditMode tests**
+(188 → 216: 15 `CampaignHubTravelTests`, 9 `CampaignCampStorageTests`, 4 migration tests in
+`PersistenceTests`). `validate_content.py` and `formula_checks.py` still pass. **27/27 mutation
+checks** on the new behaviour are caught: 15 for hub travel (content gate, water/mud refusal,
+extraction-target re-base, `AtGarage` guards in both files, camp activation, socket radius, notice,
+safe pose, progression gate, open-field refusal ×3, `SpawnFor` camp sockets, verified-save rollback)
+and 12 for per-camp storage (pooled id, content capacity, establish/deposit wiring, both migration
+branches, merge-vs-append, pooled-row clearing, malformed rows, checksum, restore, adoption,
+capture double-write). Two mutant survivors were found and fixed by strengthening the tests rather
+than the code: the open-field refusal originally travelled to the *same* hub it fell back to (so
+"already at that hub" masked the missing hub check), and the merge-vs-append mutant needed a
+one-stack-per-item assertion.
+
+**Not in this batch (still open in KI-028):** §10.2 module *slot equipping* — researched modules are
+still auto-installed (D-023). Also unchanged: hub travel has no UI (the garage/camp screens are
+Unity-side, KI-026), and `DepositAtCamp` still does not require physical proximity to that camp
+(pre-existing; the domain has no camp-visit check to hang it on).
+
+---
 
 ## 2026-10-20 — APK runs on Moto G45; M0 smoke gate reached (KI-006 narrowed)
 
@@ -340,7 +405,7 @@ Two incorrect test expectations were corrected against the blueprint (torque 212
 |---|---|---|---|
 | **M0 Foundation** | Unity project layout, URP/package pins, asmdefs, Bootstrap/Title/PhysicsTestGround/VerticalSlice scene builders, app state flow, input actions, test assemblies, build scripts, docs | **Implemented — domain layer Verified (headless); gate reached on device, blocked on composite binding fix** | A cloud-build APK installs and runs on a Moto G45: greybox scene renders, HUD/controls/pause/minimap/Q01 all function. **2026-10-20 fix applied:** `WayfinderControls.inputactions` `Steer` composite binding added (D-038, KI-045 resolved) — the dev-console `InvalidOperationException` is gone, keyboard steering now works, touch continues to work. After rebuild + re-test, M0 smoke gate closes. Core/World/Progression/Persistence compile + 49/49 EditMode tests pass headlessly; Unity-only files parse-checked. |
 | **M1 Vehicle proving ground** | Scout S1 spec, WheelCollider controller, powertrain, steering/assists, camera, surfaces, suspension, fuel/damage/water/mud, winch, reset, PhysicsTestGround rig | **Math Verified (headless); WheelCollider/camera Implemented (unverified)** | Powertrain/fuel/damage/water/mud/recovery math executed (14 tests). Needs Unity physics demonstration on device (KI-009). |
-| **M2 Forest vertical slice** | Inventory/wallet/transactions, garage/camp, missions Q01–Q04, mapping/discovery, research tiers 1–6, save/atomic banking, recovery, campaign session + slice manifest, touch UI | **Campaign composition Verified (headless) — 109/109; Unity glue Implemented (syntax-checked only)** | Domain loop, interruption-at-every-step, rescue, camp atomicity, autosave and full Q01–Q04 slice ledger executed headlessly (Batch C). Gate still needs the playable 30-minute slice + interruption tests **on device** (KI-001/026/027). |
+| **M2 Forest vertical slice** | Inventory/wallet/transactions, garage/camp, missions Q01–Q04, mapping/discovery, research tiers 1–6, save/atomic banking, recovery, campaign session + slice manifest, touch UI | **Campaign composition Verified (headless) — 216/216; Unity glue Implemented (syntax-checked only)** | Domain loop, interruption-at-every-step, rescue, camp atomicity, autosave, full Q01–Q04 slice ledger, §10.4 hub travel and §12.2 per-camp storage incl. the schema 1→2 migration executed headlessly (Batches C, J). Gate still needs the playable 30-minute slice + interruption tests **on device** (KI-001/026/027). |
 | **M3 World pipeline** | Deterministic hash/PRNG, noise heightfield, 24×24 chunk bake, seam checks, route graph/validator, chunk state machine, scatter placer, streaming planner | **In progress; hash/PRNG/bitset, seam/hash, scatter placer and streaming planner Verified (headless) — 164/164** (Batch G). The `WorldStreamer` MonoBehaviour host, real-terrain scatter and the full-mainland bake are **not yet implemented** (KI-037/038) | Needs the Unity streamer host, socket placement, in-editor bake + full-mainland traversal and route validation on real terrain. |
 | **M4 Full campaign systems** | All 20 missions, 30 contracts + 5 templates, 20 research tiers, 4 vehicles, item/recipe catalog, camps/garages, relic ledger, finale Q20 | **Implemented (amended 2026-10-19):** services Verified (headless) + content Verified. Q05–Q20 were unreachable and no contract could be accepted (DEF-003/DEF-007 in `Docs/AI_BUG_REPORT.md`); both are now wired, and the 23 mission sites no catalog defined are authored in `Content/sites.json`. Research tiers 7/8/12/13/18 had no effects (DEF-004) and are now authored. Needs greybox full-campaign playthrough; contract *sockets* are still unplaced (KI-043). |
 | **M5 Content & assets** | Final art/audio, five visual regions, vehicle art, UI polish, icons, lore, sound | **Not started** (placeholders tracked in ASSET_MANIFEST.csv) | Hero assets must not be placeholders at this gate. |
@@ -411,8 +476,8 @@ FINISH-01 (Implemented definitions; credits flow coded).
 
 1. **Owner, ~10 minutes — verify the fix:** dispatch **Actions → Android APK (free cloud build) → Run workflow** on the current branch. The `WayfinderControls.inputactions` change is data-only (no C#, no asmdef, no package); the build should succeed and produce a new APK. Install on the Moto G45 and confirm: (a) no `InvalidOperationException` in the Development Console, (b) WASD/arrow steering works, (c) touch still works, (d) Q01 can be completed end-to-end. If green, the M2 30-minute playtest can begin. **Read the *Explain the Unity result* job** (D-035) for any file/line/col annotations. Commit `Packages/packages-lock.json` from the `Unity-logs` artifact (KI-002).
    *Local alternative:* install Unity 6.3 LTS + Android module, open the project, `Tools → Wayfinder → Setup Project`, commit generated scenes/meta (KI-004/005).
-2. Fix any remaining UnityEngine API drift in the 24 parse-checked files — first the new campaign glue (KI-026); run EditMode tests **in Unity** (expect 109/109) and the PlayMode tests; play Title → New → VerticalSlice and attach logs/screens to `Docs/evidence/`.
-3. M2 follow-ups that are dependency-ready without Unity: `VehicleController.ApplyEffectiveStats` seam so researched grip/suspension/torque reach physics (KI-025); camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028); expose repair-kit/tire-patch use and selling in the session.
+2. Fix any remaining UnityEngine API drift in the 24 parse-checked files — first the new campaign glue (KI-026); run EditMode tests **in Unity** (expect 216/216) and the PlayMode tests; play Title → New → VerticalSlice and attach logs/screens to `Docs/evidence/`.
+3. M2 follow-ups that are dependency-ready without Unity: ~~camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028)~~ **done 2026-10-21 (Batch J, D-039/D-040)**; ~~expose repair-kit/tire-patch use and selling in the session~~ **done (D-029)**. Remaining: the `VehicleController.ApplyEffectiveStats` seam so researched per-wheel grip/suspension geometry reaches physics (KI-025), and §10.2 module slot equipping (the last open part of KI-028).
 4. M3 batch: `ScatterPlacer` (§7.6) + pure `WorldStreamer` planner with handle-leak tests (KI-017, QA case 12); slice terrain bake so the 1,024 m area has real relief (KI-027).
 5. Device: Moto G45 30-minute slice playtest (interruption/kill tests, 30 FPS budget) to close the M2 gate.
 6. Keep `python3 Tools/Build/headless_cs.py all` green on every batch.
