@@ -111,7 +111,7 @@ namespace Wayfinder.Tests
         public void Economy_SellPriceIsFortyPercentFloored()
         {
             Assert.AreEqual(4, ItemCatalog.SellPrice("scrap_metal"));   // 10 × 0.4
-            Assert.AreEqual(4, ItemCatalog.SellPrice("polymer"));       // 12 × 0.48 → 4
+            Assert.AreEqual(4, ItemCatalog.SellPrice("polymer"));       // 12 × 0.40 = 4.8 → 4
             Assert.AreEqual(24, ItemCatalog.SellPrice("fuel_can"));     // 60 × 0.4
         }
 

@@ -14,7 +14,10 @@ Checks (§16.6, CONTENT-01, UPG-01, QUEST-01, ITEM-01, PROD-01):
   * unique stable IDs everywhere
   * upgrade table: sequential tiers, exact incremental costs, Σ = 32,200, story gates exist
   * mission table: Q01–Q20, rewards match §9.2 exactly, prerequisite chain acyclic
-  * recipe inputs exist; crafting+resale can never create currency (QA case 17)
+  * recipe inputs exist; §10.4's crafted-good rule (sell < input purchase value, fee excluded)
+    and QA case 17 (sell <= inputs + fee), so crafting+resale can never create currency.
+    Note: the runtime tables are hardcoded in C# (ItemCatalog, CraftingService.Recipes) and
+    CampaignContent loads neither file, so EconomyArbitrageTests pins this file to the code.
   * cache payouts inside authored bands; contract rewards follow §9.3 formula
   * surface table matches §4.4 exactly; vehicle table matches §4.2/§10.1
   * Packages/manifest.json contains no ad / IAP / analytics / tracking SDK (PROD-01)
@@ -239,16 +242,22 @@ def check_items_recipes():
         if out["itemId"] not in items:
             err(f"recipe {r['id']}: unknown output item")
             continue
-        input_value = r.get("salvageFee", 0)
+        material_value = 0
         for inp in r["inputs"]:
             if inp["itemId"] not in items:
                 err(f"recipe {r['id']}: unknown input item {inp['itemId']}")
                 continue
-            input_value += items[inp["itemId"]]["purchasePriceSalvage"] * inp["quantity"]
-        # QA case 17: sell (40% floor) must never exceed input purchase value + fee.
+            material_value += items[inp["itemId"]]["purchasePriceSalvage"] * inp["quantity"]
+        fee = r.get("salvageFee", 0)
         sell_value = int(items[out["itemId"]]["purchasePriceSalvage"] * 0.40) * out["quantity"]
-        if sell_value > input_value:
-            err(f"recipe {r['id']}: arbitrage — sell value {sell_value} > inputs {input_value}")
+        # §10.4: "Crafted consumables sell for less than their total input purchase value." The fee is
+        # not part of that sentence, so the strict rule is checked on materials alone...
+        if sell_value >= material_value:
+            err(f"recipe {r['id']}: §10.4 — sell value {sell_value} must be below the input purchase "
+                f"value {material_value} (the crafting fee does not count toward it)")
+        # ...and QA case 17 ("crafting/reselling must never create currency") on materials + fee.
+        if sell_value > material_value + fee:
+            err(f"recipe {r['id']}: arbitrage — sell value {sell_value} > inputs + fee {material_value + fee}")
     for iid, item in items.items():
         if item["unitMassKg"] < 0:
             err(f"item {iid}: negative mass")
