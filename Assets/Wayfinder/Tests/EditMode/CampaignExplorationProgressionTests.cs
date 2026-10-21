@@ -209,6 +209,39 @@ namespace Wayfinder.Tests
         }
 
         [Test]
+        public void TheSection84NumbersAreTheBlueprintsNumbers()
+        {
+            // §8.4 states these literally: 120 Salvage per landmark, 50 Salvage per 50 newly revealed
+            // countable cells, and a 60% finale gate. Every reward and gate test below derives its
+            // expectations from these constants, so pinning them here is what stops a drifted constant
+            // from silently dragging its own assertions along with it.
+            Assert.AreEqual(120, DiscoveryService.LandmarkDiscoveryRewardSalvage, "§8.4: 120 Salvage per landmark");
+            Assert.AreEqual(50, DiscoveryService.MappingRewardThresholdCells, "§8.4: every 50 cells");
+            Assert.AreEqual(50, DiscoveryService.MappingRewardSalvage, "§8.4: grants 50 Salvage");
+            Assert.AreEqual(60f, DiscoveryService.FinaleMapCoveragePercent, 1e-4f, "§8.4: the finale needs 60%");
+        }
+
+        [Test]
+        public void TwoLandmarksPayTwoRewards_UnderTwoDistinctKeys()
+        {
+            var s = NewGame(_saves);
+            s.Depart();
+            var ids = Content.Slice.Landmarks.Where(l => !l.Vista).Take(2).Select(l => l.Id).ToList();
+            Assert.AreEqual(2, ids.Count, "the slice places at least two non-vista landmarks");
+
+            foreach (var id in ids)
+                Assert.IsTrue(s.DiscoverLandmark(id, 5f, 3f).Success, id);
+
+            // A collapsed or constant reward key would pay only the first landmark, so both the keys and
+            // the total have to be asserted: §8.4 pays every NEW landmark once.
+            foreach (var id in ids)
+                Assert.IsTrue(s.Discovery.RewardLedger.IsClaimed($"reward.landmark.{id}"),
+                    $"{id}: its own reward key");
+            Assert.AreEqual(2 * DiscoveryService.LandmarkDiscoveryRewardSalvage, s.Economy.EscrowedSalvage,
+                "two landmarks escrow 240 Salvage between them");
+        }
+
+        [Test]
         public void MappingAndLandmarkRewardsShareOneLedger_WithSeparateKeys()
         {
             var s = NewGame(_saves);
@@ -269,6 +302,9 @@ namespace Wayfinder.Tests
             Assert.IsTrue(added, "there is always one more countable cell to reveal");
             Assert.GreaterOrEqual(s.Discovery.MapCoveragePercent,
                 DiscoveryService.FinaleMapCoveragePercent, "coverage reaches 60%");
+            Assert.AreEqual(needed, s.Discovery.RevealedCountableCells,
+                "60% of 9216 countable cells is 5530 cells — the gate's crossing point, stated " +
+                "absolutely so a drifted constant cannot move the goalposts with it");
             Assert.IsTrue(s.Discovery.MeetsFinaleMapRequirement(), "and the gate opens at exactly 60%");
         }
 
