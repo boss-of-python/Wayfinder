@@ -43,6 +43,10 @@ sysinfo.txt
 crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+# Keep the 10 required text-based 3D streaming meshes (.obj) tracked in Git:
+!/[Aa]ssets/[Ss]treamingAssets/Models/
+!/[Aa]ssets/[Ss]treamingAssets/Models/*.obj
+!/[Aa]ssets/[Ss]treamingAssets/Models/*.meta
 
 # ---- Python tooling (Tools/) ----
 __pycache__/
