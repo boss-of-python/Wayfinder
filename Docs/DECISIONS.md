@@ -891,3 +891,39 @@ mechanism is not the subject.
 (`Docs/evidence/exploration-rewards-finale-gate-2026-10-21/`); `validate_content.py`, `economy_sim.py`
 and `formula_checks.py` clean. KI-048 opened. MAP-03's §8.3 and §8.4 mechanics are now both VER-H;
 what remains open on MAP-03 is KI-047 (relics placed nowhere) and KI-048 (the 60% target).
+
+---
+
+## 2026-10-21 — D-047 Single-source JSON catalog loading replaces duplicated hardcoded C# tables (closes KI-046)
+
+**Context.** `ItemCatalog`, `CraftingService.Recipes`, `VehicleSpec.ScoutS1` and `MissionService.DefaultDefinitions` previously duplicated `items.json`, `recipes.json`, `vehicles.json` and `missions.json` in hardcoded C# arrays. Even with parity tests, mutating content JSON on disk left runtime behavior unchanged unless C# was edited in lockstep (`KI-046`).
+
+**Decision.** Make the JSON files under `Assets/Wayfinder/Content/` the single runtime authority while retaining deterministic defaults strictly as zero-IO fallbacks for isolated micro-tests that construct a service directly without loading `CampaignContent`. `CampaignContent.LoadFromDirectory` parses all four tables (`ItemCatalog.LoadFromJson`, `CraftingService.LoadFromJson`, `Vehicles` catalog with full `VehicleSpec` curves/gears, and `MissionService(missions)`).
+
+**Status.** Executed 2026-10-21 (`1ab6047`). Verified via `SingleSourceJsonLoadingTests`, which mutates temporary copies of all four JSON catalogs on disk and asserts live changes in item mass, crafting salvage fees, vehicle payload limits, and mission payouts.
+
+---
+
+## 2026-10-21 — D-048 Mainland heightfield, hydrology, route graph and world layout satisfy §8.4's 60% finale target genuinely (closes KI-027, KI-029, KI-030, KI-037, KI-048)
+
+**Context.** Batch P (`D-046`) proved that the 1,024 m vertical slice alone revealed only `7.22%` of the map against all `9,216` cells because ocean/cliff cells had not been carved below sea level and regions 2–5 had neither routes nor placed POIs (`KI-048`).
+
+**Decision.** Implement the full `6,144 m × 6,144 m` deterministic mainland (`WorldDefinition`, `WorldHydrology`, `MainlandRouteGraph`, `WorldScatterSurface`, `WorldStreamer`, `MainlandMapTerrain`, `WorldBaker`, `SceneBuilder`, `Tools/Content/author_world_layout.py`):
+- Ocean margin and coastal inlets carve `1,698` boundary cells below sea level, leaving **`7,518 / 9,216`** genuine countable land cells (`DiscoveryService.BakeCountableMask`).
+- Author all `26` mainland route edges (`maxGradeDegrees = 14.20° < 16.0°`), `100` landmarks, `120` caches, `5` garages, `10` camps, `25` relics, `68` contract sockets, and all `Q01–Q20` mission sites on dry countable ground with `>= 40.0 m` clearance from every garage arrival apron (enforced in `formula_checks.py`).
+
+**Status.** Executed 2026-10-21 (`e70b6c4`, refined in `6214eee`). `CampaignExplorationProgressionTests` proves story routes + placed detours reach **`67.05%`** by vehicle driving alone (`70.10%` with vista surveys), clearing the unmodified `60%` finale gate without lowering any blueprint constant.
+
+---
+
+## 2026-10-21 — D-049 Full Q01–Q20 campaign spine, 4-vehicle fleet overflow rules, contract sockets, relic sweeps and independent SettingsFile (closes DEF-026..029, KI-040, KI-043, KI-045, KI-047)
+
+**Context.** Completing M3–M4 required turning the remaining authored definitions (`Q05–Q20`, `Mule M2` / `Lynx L3` / `Atlas A4`, `30` authored + `5` repeatable contracts, `25` world relics, cab cosmetics, calm camp waiting, and global accessibility/UI settings) into executable, save-safe gameplay wired through both pure session/controller assemblies and `VerticalSliceDriver`.
+
+**Decision.**
+1. **Fleet switching never deletes cargo (`§10.1`, `§10.3`)**: switching to a lower-slot or lower-payload chassis (`Scout S1` -> `Lynx L3`) automatically settles trailing cargo stacks into shared `GarageStorage` inside the critical transaction before saving.
+2. **All 68 contract sockets + all 25 relics exist in world coordinates (`KI-043`, `KI-047`)**: `validate_content.py` enforces biome match and `40 m` garage clearance on every authored contract socket and relic; `CampaignSession.SensorScan` pulses uncollected relics alongside sites; `SliceFieldController` surfaces hold/tap prompts for contract targets and relics.
+3. **Settings persist outside career slots (`§17.3`)**: `SettingsFile` saves `AccessibilitySettings` independently so toggling hold-to-interact, UI scale, reduced motion, or left-handed layout never increments or mutates any career save slot.
+
+**Status.** Executed 2026-10-21 (`5ff167d`, `6214eee`, and Batch 5). Verified end-to-end across **`319 / 319`** EditMode NUnit tests (`FullCampaignCompletionTests` plays `Q01` through `Q20`, credits, save/reload, fleet, contracts, relics, settings, and postgame exploration in `1.26 s`), **`12 / 12`** Unity assemblies (`0` errors, `0` warnings), and **`6 / 6`** automated gates in `Tools/Build/run_all_checks.py`.
+

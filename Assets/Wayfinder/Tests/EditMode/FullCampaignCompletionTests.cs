@@ -452,5 +452,51 @@ namespace Wayfinder.Tests
             }
             Assert.Fail($"Vehicle did not extract on arrival at {garageId}");
         }
+
+        [Test]
+        public void KI_043_And_KI_047_ContractSocketsAndRelics_PlacedSweptAndCompletableInField()
+        {
+            var content = CampaignTestKit.Content;
+            var saves = new SaveService(Path.Combine(_saveDir, "ki4347"));
+            var s = CampaignSession.StartNew(saves, content, new SaveSlotId(0), GameMode.Expedition).Session;
+
+            // KI-043: every authored one-time contract target has a placed world site in its matching biome
+            int totalSockets = 0;
+            foreach (var c in content.Contracts.Values)
+            {
+                if (!c.OneTime) continue;
+                Assert.Greater(c.Targets.Count, 0);
+                foreach (var tid in c.Targets)
+                {
+                    Assert.IsTrue(content.Sites.TryGetValue(tid, out var site), $"Missing contract site {tid} for {c.Id}");
+                    Assert.AreEqual(c.Biome, site.Biome, $"Biome mismatch on {tid}");
+                    totalSockets++;
+                }
+            }
+            Assert.GreaterOrEqual(totalSockets, 60);
+
+            // Accept C_F01 (3 triangulate sockets in Forest) and complete it strictly by driving to & interacting at its placed world sockets!
+            Assert.IsTrue(s.AcceptContract("C_F01").Success);
+            Assert.IsTrue(s.Depart().Success);
+            var field = new SliceFieldController(s);
+            field.ResetForExpedition();
+            foreach (var tid in content.Contracts["C_F01"].Targets)
+                HoldInteractWithController(field, s, content.Sites[tid].Position);
+            Assert.Contains("C_F01", s.Contracts.CompletedIds.ToList(), "Interacting at all placed contract sockets must complete C_F01");
+
+            // KI-047: all 25 relics have placed world coordinates, pulse on SensorScan while uncollected, and vanish from scan once collected!
+            Assert.AreEqual(25, content.Relics.Count);
+            var relic = content.Relics["relic.forest.01"];
+            var scanBefore = s.SensorScan(relic.Position.X + 12f, relic.Position.Z);
+            Assert.IsTrue(scanBefore.Any(r => r.Id == relic.Id && r.Directional),
+                "Uncollected relic within 45 m must pulse directionally on SensorScan");
+
+            HoldInteractWithController(field, s, relic.Position);
+            Assert.IsTrue(s.Discovery.HasRelic(relic.Id), "Holding interact at relic world position must collect relic into protected ledger");
+
+            var scanAfter = s.SensorScan(relic.Position.X + 12f, relic.Position.Z);
+            Assert.IsFalse(scanAfter.Any(r => r.Id == relic.Id),
+                "Collected relic must no longer emit an uncollected signal pulse");
+        }
     }
 }

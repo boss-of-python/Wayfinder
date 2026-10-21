@@ -56,6 +56,9 @@ jobs:
       - name: Pin the Unity version for this build only (nothing is committed)
         run: python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"
 
+      - name: Run preflight verification suite (content, formulas, economy, 319+ NUnit tests, 12-assembly type check)
+        run: python3 Tools/Build/run_all_checks.py
+
       - name: Free disk space (the Unity Android image is about 9 GB)
         uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
         with:

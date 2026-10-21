@@ -43,6 +43,11 @@ namespace Wayfinder.Campaign
             var signals = new List<SensorLoop.Signal>();
             foreach (var site in Content.Sites.Values)
                 signals.Add(new SensorLoop.Signal(site.Id, site.Position.X, site.Position.Z));
+            foreach (var relic in Content.Relics.Values)
+            {
+                if (!Discovery.HasRelic(relic.Id))
+                    signals.Add(new SensorLoop.Signal(relic.Id, relic.Position.X, relic.Position.Z));
+            }
             return SensorLoop.Scan(signals, observerX, observerZ, ResolveStats().SignalRadiusM);
         }
 

@@ -276,6 +276,8 @@ def check_caches_contracts():
         if not c.get("oneTime"):
             err(f"cache {c['id']} must be one-time")
 
+    sites = {s["id"]: s for s in load("sites.json")}
+    garages = load("garages.json")
     base = {"Triangulate": 250, "GentleDelivery": 300, "HiddenVista": 300,
             "InfrastructureCheck": 300, "FieldSample": 350, "OldRoute": 400}
     region_index = {"forest": 0, "canyon": 1, "city": 2, "wetlands": 3, "highlands": 4}
@@ -289,6 +291,22 @@ def check_caches_contracts():
             err(f"contract {c['id']}: reward {c['rewardSalvage']} != formula {expected}")
         if c["regionIndex"] != region_index[c["biome"]]:
             err(f"contract {c['id']}: wrong region index")
+        for tid in c.get("targets", []):
+            site = sites.get(tid)
+            if site is None:
+                err(f"contract {c['id']}: target {tid} is not placed in sites.json")
+            elif site.get("biome") != c["biome"]:
+                err(f"contract {c['id']}: target {tid} biome {site.get('biome')} != {c['biome']}")
+
+    for r in load("relics.json"):
+        p = r.get("positionHint")
+        if not p or not (0.0 <= p["x"] < 6144.0 and 0.0 <= p["z"] < 6144.0):
+            err(f"relic {r['id']}: missing or out-of-bounds positionHint")
+            continue
+        for g in garages:
+            gp = g["positionHint"]
+            if math.hypot(p["x"] - gp["x"], p["z"] - gp["z"]) < 40.0:
+                err(f"relic {r['id']}: within 40 m of garage {g['id']}")
 
 
 def check_surfaces_vehicles():

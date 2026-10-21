@@ -288,8 +288,7 @@ namespace Wayfinder.Campaign
         {
             foreach (var s in _session.Content.Sites.Values)
             {
-                if (s.Kind != "visit" || _session.HasVisitedVolume(s.Id)) continue;
-                if (position.DistanceXZ(s.Position) <= s.RadiusMeters)
+                if (s.Kind == "visit" && !_session.HasVisitedVolume(s.Id) && position.DistanceXZ(s.Position) <= s.RadiusMeters)
                     _session.EnterVisitVolume(s.Id);
             }
         }
