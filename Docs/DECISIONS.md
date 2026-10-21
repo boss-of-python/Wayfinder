@@ -571,3 +571,80 @@ cannot be wrong about which container sizes are in force.
 **Status:** Executed 2026-10-21. 22 new `CampaignModuleSlotTests` + `UpgradeTable_MatchesCanonicalSlotsAndEffects_D041`
 in `ContentCatalogTests`; suite 216 → 239 passing, 0 warnings; 27/27 mutation checks caught
 (`Docs/evidence/module-slots-2026-10-21/`); `validate_content.py` and `formula_checks.py` clean.
+
+## 2026-10-21 — D-042 §10.4 community logistics: one transfer command, gated on hub activation
+
+**Context.** §10.4:694 — "Items stored in any camp are part of a shared logistics inventory *only
+after* a safe-hub transfer action, not magically accessible for field repairs. For implementation
+simplicity, version 1 allows free instant transfer among activated hubs while the player is at a hub;
+no field access. Explain this as community logistics." Batch J delivered hub travel and per-camp
+storage, and `GarageService` already carried the at-a-hub half of this rule
+(`TryLogisticsTransfer(currentHubId)`) — but nothing called it. A player could leave 500 kg at
+`camp.forest.a` and recover it only by driving back, so the shared-logistics half of §10.4 was simply
+absent. This was KI-028's last open piece.
+
+**Decision.** Two campaign commands over one shared implementation, reusing the progression gate
+rather than inventing a second vocabulary for "am I at a hub".
+
+1. **`HubStore(hubId)` is the single source of truth for where a hub keeps property.** Every unlocked
+   garage resolves to the ONE unlimited `GarageStorage` container (§10.4: garage material storage is
+   unlimited), every activated camp to its own `CampStorageFor(campId)` (D-039), and anything else to
+   `null`. `TransferToHub` and `TransferFromHub` are one-line wrappers over a single
+   `TransferBetweenHubs(from, to, …)`, so send and pull cannot drift apart — direction is the only
+   difference, and mutation L9 (reversing it) is caught by two tests.
+2. **The gate is hub *activation*, not a content service.** Hub travel requires the destination's
+   content to declare `hubTravel` (D-039) because it moves the *vehicle* through the world. Logistics
+   moves *property*, and §10.4 conditions it on nothing beyond "activated hubs while the player is at
+   a hub". `camps.json` declares no `storage` function for any camp, so a service-flag gate here
+   would have silently disabled camp logistics for all ten camps: the rule would have read as
+   implemented while no camp could take part.
+3. **`GarageService.TryLogisticsTransfer` is called, not reimplemented.** The no-field-access rule
+   lives in the progression service beside `TryHubTravel`; the session asks it and returns its
+   refusal verbatim, so one definition of "at a hub" governs travel, logistics and — through
+   `AtGarage` — the garage-only services.
+4. **Garage-to-garage is refused, not silently accepted.** Both garages resolve to the same store, so
+   a "successful" transfer would move nothing yet still emit a notice and write a verified save: a lie
+   in the UI and in the event log. The refusal explains itself — "every garage shares one unlimited
+   store (§10.4), so there is nothing to move between two garages". A transfer to the hub the player
+   is *already at* is refused earlier with its own detail ("already at that hub"), because that
+   garage wording would be wrong for a camp. Both are `WrongState`, so the tests assert the detail and
+   not only the reason — which is the only thing that makes mutation L4 detectable.
+5. **One activation guard, placed where it is used.** The first draft checked `HubStore(other) ==
+   null` and then re-checked the resolved `from`/`to`. Mutation L5 survived that draft, proving the
+   earlier check unreachable in every case: `other` is always one of the two hub ids, and the at-hub
+   gate has already proven `here` resolves. The duplicate is gone and the surviving guard sits
+   immediately before the `from.Value`/`to.Value` dereference it protects.
+6. **Free, instant, critical.** No fee, no clock advance, no distance or travel time — §10.4's
+   version-1 simplification, phrased in the notice as community logistics rather than implying the
+   property teleports. The move runs inside `RunCritical`, so it is acknowledged only with a verified
+   save and rolls back completely otherwise (§12.4, §17.4); mutation L14 (dropping the rollback) is
+   caught by this batch's test and by two pre-existing ones.
+7. **Refusal order:** unknown item → protected ledger object → non-positive quantity → not at a hub →
+   no hub selected → already at that hub → hub not activated → same store → transaction. Cheap,
+   content-free checks first, then the positional gate, then target validity, then the move.
+8. **The garage panel reads the domain instead of recomputing.** `GarageModel` gains `CurrentHubId`
+   plus one `LogisticsRow` per activated hub carrying used slots, mass, capacity and stacks, with
+   `SharedStore` marking garage rows and `CanExchange` false for the hub you are standing at and for a
+   second garage while parked. §10.4's "show capacity" is a view concern; the numbers already live in
+   `InventoryService.CapacityOf`, so `DisplayNames` gained `Camp`/`Hub` and a row reads "Forest A
+   Camp" instead of `camp.forest.a`.
+9. **The two defensive `ConfigureCampStore` calls are declared untested.** `ConfigureContainers()`
+   already sizes every activated camp's store on load and on establishment, so removing them changes
+   no observable behaviour and no mutant can catch them. They stay as belt-and-braces — a transfer
+   must not depend on which command configured a container last — and are recorded here rather than
+   claimed as covered.
+
+**Rationale.** Reusing `TryLogisticsTransfer` stops §10.4's "no field access" from becoming a second,
+divergent rule: the day a rescue or a hazard changes what counts as being at a hub, travel and
+logistics change together. Gating on activation rather than on a content service is the smaller
+invention — it needs no content edits and cannot be defeated by a camp that forgot a flag. Refusing
+the two no-op transfers instead of reporting success matters because every transfer is a critical
+save, and a command that writes a save, emits a notice and moves nothing teaches the player that the
+log says things that did not happen. The duplicate guard's removal is the point of running mutants at
+all: a survivor is a claim that some code is load-bearing, and here that claim was false.
+
+**Status:** Executed 2026-10-21. 15 new `CampaignLogisticsTransferTests`; suite 239 → 254 passing,
+0 warnings; 18/18 mutation checks caught (`Docs/evidence/hub-logistics-2026-10-21/`);
+`validate_content.py` and `formula_checks.py` clean. §10.4's automated arbitrage test ("crafting and
+reselling must never create currency") is still unwritten — it is a pricing rule rather than a
+logistics one, and stays open on its own.

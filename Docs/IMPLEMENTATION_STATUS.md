@@ -1,10 +1,62 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-21 (Batch K). Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-21 (Batch L). Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## 2026-10-21 — Batch L: §10.4 community logistics — free instant hub-to-hub transfer (KI-028 closed)
+
+§10.4:694's last unwritten rule is implemented, executed and mutation-checked headlessly: "Items
+stored in any camp are part of a shared logistics inventory **only after** a safe-hub transfer action,
+not magically accessible for field repairs… version 1 allows free instant transfer among activated
+hubs while the player is at a hub; no field access. Explain this as community logistics."
+
+**What changed.** `GarageService.TryLogisticsTransfer(currentHubId)` already carried the at-a-hub half
+of that rule; nothing called it. `CampaignSession` now resolves where a hub keeps property —
+`HubStore(hubId)`: every unlocked garage addresses the ONE unlimited `GarageStorage` container, every
+activated camp its own `CampStorageFor(campId)` (D-039), anything else nothing — and `LogisticsHubs()`
+lists activated hubs deterministically (garages then camps, each sorted) so a UI list and a snapshot
+capture agree. `TransferToHub` / `TransferFromHub` are one-line wrappers over a single
+`TransferBetweenHubs`, so send and pull cannot drift apart.
+
+**The gate is hub activation, not a content service (D-042).** Hub travel requires the destination's
+content to declare `hubTravel` because it moves the *vehicle*; logistics moves *property*, and §10.4
+conditions it on nothing beyond "activated hubs while the player is at a hub". `camps.json` declares no
+`storage` function for any camp, so a service-flag gate would have silently disabled camp logistics
+for all ten of them. The no-field-access rule is *asked of* the progression service rather than
+reimplemented, so one definition of "at a hub" governs travel, logistics and the garage-only services.
+
+**Two no-op transfers are refused, not silently accepted.** Garage↔garage resolves to the same store,
+so a "successful" transfer would move nothing yet still emit a notice and write a verified save — a lie
+in the UI and in the event log. A transfer to the hub the player is already at is refused earlier with
+its own detail, because the shared-garage wording would be wrong for a camp. Both are `WrongState`, and
+the tests assert the *detail*, which is what makes the two paths distinguishable.
+
+**Free, instant, critical.** No fee, no clock advance, no travel time; the move runs inside
+`RunCritical`, so it is acknowledged only with a verified save and rolls back completely otherwise
+(§12.4/§17.4). Refusal order: unknown item → protected ledger object → non-positive quantity → not at a
+hub → no hub selected → already at that hub → hub not activated → same store → transaction. The garage
+panel gained `CurrentHubId` plus one `LogisticsRow` per activated hub with used slots, mass, capacity
+(§10.4 "show capacity") and stacks; `DisplayNames` gained `Camp`/`Hub`, so a row reads "Forest A Camp"
+instead of `camp.forest.a`.
+
+**A surviving mutant removed dead code.** The first draft checked `HubStore(other) == null` and then
+re-checked the resolved `from`/`to`. Mutant L5 survived that draft, proving the earlier check
+unreachable in every case; the duplicate is gone and the surviving guard sits immediately before the
+dereference it protects.
+
+**Evidence.** Suite 239 → **254/254** passing, 0 warnings; new `CampaignLogisticsTransferTests` (15);
+**18/18** mutation checks caught (`Docs/evidence/hub-logistics-2026-10-21/`); `validate_content.py`
+and `formula_checks.py` clean; 30 Unity-dependent files still parse. Not proven here: any Unity-side
+behaviour — the driver's logistics panel is syntax-checked only (KI-026), and the M2 gate still needs
+the 30-minute on-device playtest.
+
+**Remaining dependency-ready work without Unity:** §10.4's automated arbitrage test ("crafting and
+reselling must never create currency"); KI-025 `VehicleController.ApplyEffectiveStats` seam for
+per-wheel grip/suspension geometry; KI-037 `WorldStreamer` host; KI-038 baker `IScatterSurface`;
+KI-027 slice terrain bake; KI-029 `IMapTerrainSource`; KI-030 route graph.
 
 ## 2026-10-21 — Batch K: §10.2 equipment slots and swappable tire sets (KI-028 closed)
 
@@ -57,8 +109,8 @@ utility slots and all three tire-set unlocks) and `formula_checks.py` clean; 30 
 still parse. Not proven here: any Unity-side behaviour — the driver changes are syntax-checked only
 (KI-026), and the M2 gate still needs the 30-minute on-device playtest.
 
-**Remaining dependency-ready work without Unity:** §10.4 free instant hub-to-hub *logistics* transfer
-(cargo between hub stores — travel itself is done); KI-025 per-wheel grip/suspension geometry seam;
+**Remaining dependency-ready work without Unity:** ~~§10.4 free instant hub-to-hub *logistics*
+transfer~~ **done 2026-10-21 (Batch L, D-042)**; KI-025 per-wheel grip/suspension geometry seam;
 KI-037 `WorldStreamer` host; KI-038 baker `IScatterSurface`; KI-027 slice terrain bake; KI-029
 `IMapTerrainSource`; KI-030 route graph.
 
@@ -533,7 +585,7 @@ FINISH-01 (Implemented definitions; credits flow coded).
 1. **Owner, ~10 minutes — verify the fix:** dispatch **Actions → Android APK (free cloud build) → Run workflow** on the current branch. The `WayfinderControls.inputactions` change is data-only (no C#, no asmdef, no package); the build should succeed and produce a new APK. Install on the Moto G45 and confirm: (a) no `InvalidOperationException` in the Development Console, (b) WASD/arrow steering works, (c) touch still works, (d) Q01 can be completed end-to-end. If green, the M2 30-minute playtest can begin. **Read the *Explain the Unity result* job** (D-035) for any file/line/col annotations. Commit `Packages/packages-lock.json` from the `Unity-logs` artifact (KI-002).
    *Local alternative:* install Unity 6.3 LTS + Android module, open the project, `Tools → Wayfinder → Setup Project`, commit generated scenes/meta (KI-004/005).
 2. Fix any remaining UnityEngine API drift in the 24 parse-checked files — first the new campaign glue (KI-026); run EditMode tests **in Unity** (expect 216/216) and the PlayMode tests; play Title → New → VerticalSlice and attach logs/screens to `Docs/evidence/`.
-3. M2 follow-ups that are dependency-ready without Unity: ~~camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028)~~ **done 2026-10-21 (Batch J, D-039/D-040)**; ~~expose repair-kit/tire-patch use and selling in the session~~ **done (D-029)**. Remaining: the `VehicleController.ApplyEffectiveStats` seam so researched per-wheel grip/suspension geometry reaches physics (KI-025), and §10.2 module slot equipping (the last open part of KI-028).
+3. M2 follow-ups that are dependency-ready without Unity: ~~camp↔garage hub travel + per-camp storage with a schema bump/migration (KI-028)~~ **done 2026-10-21 (Batch J, D-039/D-040)**; ~~expose repair-kit/tire-patch use and selling in the session~~ **done (D-029)**. ~~§10.2 module slot equipping~~ **done 2026-10-21 (Batch K, D-041)**; ~~§10.4 hub-to-hub community logistics~~ **done 2026-10-21 (Batch L, D-042)** — KI-028 fully closed. Remaining: the `VehicleController.ApplyEffectiveStats` seam so researched per-wheel grip/suspension geometry reaches physics (KI-025), and §10.4's automated arbitrage test.
 4. M3 batch: `ScatterPlacer` (§7.6) + pure `WorldStreamer` planner with handle-leak tests (KI-017, QA case 12); slice terrain bake so the 1,024 m area has real relief (KI-027).
 5. Device: Moto G45 30-minute slice playtest (interruption/kill tests, 30 FPS budget) to close the M2 gate.
 6. Keep `python3 Tools/Build/headless_cs.py all` green on every batch.
