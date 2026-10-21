@@ -820,3 +820,74 @@ passing, 7 assemblies, 0 warnings; **23/23** mutation checks caught on the secon
 `validate_content.py` and the 30-file syntax check clean. KI-047 opened for relic placements. MAP-03's
 remaining work is §8.4's side: no test asserts `MapCoveragePercent` or `MeetsFinaleMapRequirement`, and
 the target-progression test §8.4 mandates is still outstanding.
+
+---
+
+## 2026-10-21 — D-046 Report §8.4's progression target as missed; do not tune the threshold or the mask
+
+**Context.** Batch O closed §8.3. §8.4 was the remainder of MAP-03. Its reward code existed in
+`DiscoveryService` and was partly covered by `CampaignSessionTests`, but three things were missing: no
+test asserted `MapCoveragePercent` or `MeetsFinaleMapRequirement`, the paid-threshold index had never
+been tested across a save/reload, and — most importantly — the target progression test §8.4 *explicitly
+mandates* did not exist:
+
+> "Target progression tests must show that story routes plus reasonable detours can achieve 60%;
+> otherwise adjust route exposure or the threshold."
+
+Writing it produced a result worth more than the tests around it: **the target is not met.** Playing
+Q01–Q04 end to end reveals 1.22% of countable cells (112 of 9216). Adding every detour content places —
+each landmark, cache, site, garage and camp socket, plus each checkpoint route walked at 32 m steps, 332
+reveal stops — reaches 7.22% (665 cells). The finale needs 60%, i.e. 5530 cells.
+
+**Why the gap is so large.** Two causes compound:
+
+1. There are almost no story routes to drive. The slice places **one** checkpoint route
+   (`route.forest.ford`, 2 checkpoints) and 15 positioned points in total, and missions Q05–Q20 have no
+   placed sites at all.
+2. The denominator is the whole map. `BakeCountableMask` keeps every cell whose base height is above
+   `SeaLevelY`, and on the canonical seed **no cell falls below it**, so the mask counts all
+   9216 = 96×96 cells. Its own doc comment says "excluding ocean/decorative cliffs"; nothing is excluded.
+
+**Decision.**
+
+1. **Report the miss; do not tune the number.** §8.4 offers two remedies — adjust route exposure or
+   adjust the threshold. Lowering 60% would falsify a blueprint target written for the *full* game in
+   order to make a *vertical-slice* test pass, and it would hide the real gap. The threshold stays 60.
+2. **Do not shrink the countable mask to the slice either.** Restricting the denominator to the placed
+   content's bounding box would make the metric look healthy by changing what is measured. Whether the
+   canonical seed *should* have cells below sea level is a genuine world-bake question (KI-027/038), and
+   it deserves an answer on its own merits, not as a way to pass a test.
+3. **Record it as KI-048, scoped to the M4 finale gate.** It does not block M2: nothing in the vertical
+   slice asks the player to reach 60%. It blocks the M4 finale, and both real fixes need M3 — the route
+   graph (KI-030) and the bake/sea-level decision.
+4. **Pin the mask's actual behaviour in a test.** `TheCountableMaskCountsEveryCell_...` asserts the mask
+   equals 9216 cells. That converts a silent world-generation property into a stated one, so any future
+   change to the bake is deliberate and shows up as a failing test rather than as a coverage number that
+   quietly moved.
+5. **Pin §8.4's literal numbers absolutely.** Every other reward and gate test derives its expectations
+   from `DiscoveryService`'s constants, so a drifted constant would drag its own assertions along and
+   stay green. 120 / 50 cells / 50 Salvage / 60% are asserted as literals, and the gate's crossing point
+   is stated as 5530 of 9216 cells rather than as a percentage of whatever the mask happens to be.
+6. **Keep the vista interaction, and assert it.** Discovering a vista landmark escrowed 220 Salvage, not
+   120 — §8.1 makes a vista survey a 384 m disc, which crosses mapping thresholds. That is two correct
+   rules composing, not a double payment: the landmark pays `reward.landmark.<id>` and each threshold
+   pays its own `reward.map.N`. It is now a test of its own, and the pure-120 case uses a non-vista
+   landmark so the two are separable.
+7. **Write the save explicitly in persistence tests.** `RevealAround` only marks the autosave dirty, so
+   a reload test that never calls `SaveNow()` reads the pre-mapping snapshot and appears to show a lost
+   paid-threshold index. It does not: `mappingRewardsPaidThroughCount` is captured and restored
+   (`CampaignSnapshot.cs:102`, `:196`; `SaveDtos.cs:117`) and mutants M12/M13 prove the test sees it.
+
+**Alternatives considered.** Lowering `FinaleMapCoveragePercent` to ~8% so the slice passes — rejected,
+it destroys the design target. Scoping the mask to placed content — rejected, it changes the metric
+instead of the game. Skipping the mandated test because the slice "isn't the full game" — rejected: §8.4
+asks for exactly this test, and not writing it is how a 60% gate ships unreachable. Faking coverage by
+setting reveal bits directly in the progression test — rejected; it uses the real `RevealAround` path
+with terrain line-of-sight, and bit-setting is used only in the gate-boundary test where the reveal
+mechanism is not the subject.
+
+**Status.** Executed 2026-10-21. 12 new tests in `CampaignExplorationProgressionTests`; suite
+282 → **294** passing, 7 assemblies, 0 warnings; **13/13** mutation checks caught on the second run (run 1: 10/13; all three survivors were test weaknesses, fixed in the tests)
+(`Docs/evidence/exploration-rewards-finale-gate-2026-10-21/`); `validate_content.py`, `economy_sim.py`
+and `formula_checks.py` clean. KI-048 opened. MAP-03's §8.3 and §8.4 mechanics are now both VER-H;
+what remains open on MAP-03 is KI-047 (relics placed nowhere) and KI-048 (the 60% target).
