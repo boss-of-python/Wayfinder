@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Wayfinder.Core;
+using Wayfinder.World;
 
 namespace Wayfinder.Campaign
 {
@@ -10,13 +12,11 @@ namespace Wayfinder.Campaign
         Water,
         Mud,
         Pad,
-        /// <summary>Outside the authored greybox area: real terrain does not exist there yet (KI-027/KI-029).</summary>
         Unbuilt
     }
 
     public readonly struct MapTerrainSample
     {
-        /// <summary>Ground height in metres; NaN when unknown (never occludes, draws flat).</summary>
         public readonly float HeightMeters;
         public readonly MapSurface Surface;
         public readonly float WaterDepthMeters;
@@ -29,11 +29,6 @@ namespace Wayfinder.Campaign
         }
     }
 
-    /// <summary>
-    /// Terrain data for the exploration map: heights drive both the §8.1 reveal line-of-sight and
-    /// the map's hillshade/contours, so the map can never show relief the reveal ignored.
-    /// Implementations must be deterministic and cheap (sampled ≤ 7 times per drawn pixel).
-    /// </summary>
     public interface IMapTerrainSource
     {
         float HeightAt(float x, float z);
@@ -41,16 +36,13 @@ namespace Wayfinder.Campaign
     }
 
     /// <summary>
-    /// Map terrain for the vertical slice, derived from <c>vertical_slice.json</c> exactly as
-    /// <c>SceneBuilder.BuildVerticalSlice</c> builds the greybox: flat ground at y = 0 inside the
-    /// slice area, the ford water channel, the mud patch, the garage arrival pad and the 8 m hill
-    /// (ramps over 35 % of its length at each end, vertical sides). Outside the area there is no
-    /// ground in the scene, so heights are unknown (NaN) and the surface is <see cref="MapSurface.Unbuilt"/>.
-    /// Replace with baked minimap/heightfield data when the M3 terrain bake lands (KI-029).
+    /// Map terrain for the vertical slice greybox (§21.3). Inside the 1,024 m slice box it matches
+    /// <c>SceneBuilder.BuildVerticalSlice</c> byte-for-byte; outside it defers to <see cref="MapSurface.Unbuilt"/>
+    /// unless wrapped in <see cref="MainlandMapTerrain"/> or replaced by <see cref="HeightFieldTerrainSource"/>.
     /// </summary>
     public sealed class SliceMapTerrain : IMapTerrainSource
     {
-        public const float HillRampFraction = 0.35f; // must match SceneBuilder (run = size.z × 0.35)
+        public const float HillRampFraction = 0.35f;
 
         readonly VerticalSliceManifest _slice;
         readonly List<GreyboxFeature> _water = new List<GreyboxFeature>();
@@ -100,15 +92,108 @@ namespace Wayfinder.Campaign
         static bool Inside(GreyboxFeature f, float x, float z) =>
             Math.Abs(x - f.Center.X) <= f.Size.X * 0.5f && Math.Abs(z - f.Center.Z) <= f.Size.Z * 0.5f;
 
-        /// <summary>Trapezoid profile along z (up-ramp, flat top, down-ramp); vertical sides along x.</summary>
         static float HillHeight(GreyboxFeature hill, float x, float z)
         {
             if (!Inside(hill, x, z)) return 0f;
             float rise = hill.Size.Y;
             float run = hill.Size.Z * HillRampFraction;
             if (run <= 0f) return rise;
-            float fromEdge = hill.Size.Z * 0.5f - Math.Abs(z - hill.Center.Z); // 0 at either end
-            return fromEdge >= run ? rise : rise * (fromEdge / run);
+            float fromEdge = hill.Size.Z * 0.5f - Math.Abs(z - hill.Center.Z);
+            return rise * Math.Max(0f, Math.Min(1f, fromEdge / run));
         }
+    }
+
+    /// <summary>
+    /// Continental map terrain source (§8.1, KI-029) backed directly by <see cref="NoiseField"/> /
+    /// <see cref="HeightField"/>, <see cref="WorldHydrology"/>, and optional road/hub pads so the
+    /// full 6,144 m × 6,144 m world draws real ocean, rivers, marshes, pads, contours, hillshade,
+    /// and 3D ridge line-of-sight everywhere.
+    /// </summary>
+    public sealed class HeightFieldTerrainSource : IMapTerrainSource
+    {
+        readonly NoiseField _noise;
+        readonly HeightField _baked;
+        readonly MainlandRouteGraph _routes;
+        readonly List<(float x, float z, float r2)> _pads = new List<(float, float, float)>();
+        public WetlandWaterState WaterState { get; set; }
+
+        public HeightFieldTerrainSource(
+            CampaignContent content = null,
+            NoiseField noise = null,
+            HeightField baked = null,
+            MainlandRouteGraph routes = null,
+            WetlandWaterState waterState = WetlandWaterState.LowWater)
+        {
+            _noise = noise ?? new NoiseField();
+            _baked = baked;
+            _routes = routes;
+            WaterState = waterState;
+
+            if (content != null)
+            {
+                foreach (var g in content.Garages.Values)
+                    _pads.Add((g.Position.X, g.Position.Z, 24f * 24f));
+                foreach (var c in content.Camps.Values)
+                    _pads.Add((c.Position.X, c.Position.Z, 14f * 14f));
+            }
+        }
+
+        public float HeightAt(float x, float z)
+        {
+            if (!WorldConstants.InBounds(x, z)) return float.NaN;
+            return _baked != null && _baked.IsBaked ? _baked.Sample(x, z) : _noise.BaseHeight(x, z);
+        }
+
+        public MapTerrainSample Sample(float x, float z)
+        {
+            float h = HeightAt(x, z);
+            if (float.IsNaN(h)) return new MapTerrainSample(float.NaN, MapSurface.Unbuilt);
+
+            float water = WorldHydrology.WaterDepthAt(x, z, WaterState, _noise);
+            if (h <= WorldConstants.SeaLevelY || water >= 0.12f)
+                return new MapTerrainSample(Math.Max(h, WorldConstants.SeaLevelY), MapSurface.Water, water);
+
+            for (int i = 0; i < _pads.Count; i++)
+            {
+                float dx = x - _pads[i].x, dz = z - _pads[i].z;
+                if (dx * dx + dz * dz <= _pads[i].r2)
+                    return new MapTerrainSample(h, MapSurface.Pad);
+            }
+
+            if (_routes != null && _routes.DistanceToRoadEdgeMeters(x, z, out _) <= 1.5f)
+                return new MapTerrainSample(h, MapSurface.Pad);
+
+            var surf = WorldHydrology.SurfaceAt(x, z, 20f, WaterState, _noise);
+            if (surf == SurfaceType.DeepMud || surf == SurfaceType.ShallowMud)
+                return new MapTerrainSample(h, MapSurface.Mud);
+
+            return new MapTerrainSample(h, MapSurface.Ground);
+        }
+    }
+
+    /// <summary>
+    /// Composite campaign terrain source: exact slice greybox inside [512..1536]×[1792..2816] and
+    /// full continental <see cref="HeightFieldTerrainSource"/> everywhere else across the 6,144 m world.
+    /// </summary>
+    public sealed class MainlandMapTerrain : IMapTerrainSource
+    {
+        readonly VerticalSliceManifest _slice;
+        readonly SliceMapTerrain _sliceTerrain;
+        readonly HeightFieldTerrainSource _mainland;
+
+        public HeightFieldTerrainSource Mainland => _mainland;
+
+        public MainlandMapTerrain(CampaignContent content, MainlandRouteGraph routes = null)
+        {
+            _slice = content.Slice;
+            _sliceTerrain = new SliceMapTerrain(_slice);
+            _mainland = new HeightFieldTerrainSource(content, routes: routes);
+        }
+
+        public float HeightAt(float x, float z) =>
+            _slice.Contains(new WorldPoint(x, 0f, z)) ? _sliceTerrain.HeightAt(x, z) : _mainland.HeightAt(x, z);
+
+        public MapTerrainSample Sample(float x, float z) =>
+            _slice.Contains(new WorldPoint(x, 0f, z)) ? _sliceTerrain.Sample(x, z) : _mainland.Sample(x, z);
     }
 }

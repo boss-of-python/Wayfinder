@@ -6,7 +6,13 @@
     "nameKey": "relic.forest.01.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.forest.01"
+    "rewardKey": "reward.relic.forest.01",
+    "positionHint": {
+      "x": 1550.9,
+      "y": 114.08,
+      "z": 2031.2
+    },
+    "validated": true
   },
   {
     "id": "relic.forest.02",
@@ -15,7 +21,13 @@
     "nameKey": "relic.forest.02.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.forest.02"
+    "rewardKey": "reward.relic.forest.02",
+    "positionHint": {
+      "x": 2061.7,
+      "y": 91.57,
+      "z": 1993.0
+    },
+    "validated": true
   },
   {
     "id": "relic.forest.03",
@@ -24,7 +36,13 @@
     "nameKey": "relic.forest.03.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.forest.03"
+    "rewardKey": "reward.relic.forest.03",
+    "positionHint": {
+      "x": 853.1,
+      "y": 146.16,
+      "z": 2817.5
+    },
+    "validated": true
   },
   {
     "id": "relic.forest.04",
@@ -33,7 +51,13 @@
     "nameKey": "relic.forest.04.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.forest.04"
+    "rewardKey": "reward.relic.forest.04",
+    "positionHint": {
+      "x": 2532.8,
+      "y": 84.16,
+      "z": 2531.4
+    },
+    "validated": true
   },
   {
     "id": "relic.forest.05",
@@ -42,7 +66,13 @@
     "nameKey": "relic.forest.05.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.forest.05"
+    "rewardKey": "reward.relic.forest.05",
+    "positionHint": {
+      "x": 1349.3,
+      "y": 125.31,
+      "z": 3306.2
+    },
+    "validated": true
   },
   {
     "id": "relic.canyon.01",
@@ -51,7 +81,13 @@
     "nameKey": "relic.canyon.01.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.canyon.01"
+    "rewardKey": "reward.relic.canyon.01",
+    "positionHint": {
+      "x": 4040.1,
+      "y": 164.53,
+      "z": 3831.7
+    },
+    "validated": true
   },
   {
     "id": "relic.canyon.02",
@@ -60,7 +96,13 @@
     "nameKey": "relic.canyon.02.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.canyon.02"
+    "rewardKey": "reward.relic.canyon.02",
+    "positionHint": {
+      "x": 4720.8,
+      "y": 222.15,
+      "z": 3790.4
+    },
+    "validated": true
   },
   {
     "id": "relic.canyon.03",
@@ -69,7 +111,13 @@
     "nameKey": "relic.canyon.03.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.canyon.03"
+    "rewardKey": "reward.relic.canyon.03",
+    "positionHint": {
+      "x": 3456.6,
+      "y": 251.96,
+      "z": 4577.2
+    },
+    "validated": true
   },
   {
     "id": "relic.canyon.04",
@@ -78,7 +126,13 @@
     "nameKey": "relic.canyon.04.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.canyon.04"
+    "rewardKey": "reward.relic.canyon.04",
+    "positionHint": {
+      "x": 5213.6,
+      "y": 189.35,
+      "z": 4371.9
+    },
+    "validated": true
   },
   {
     "id": "relic.canyon.05",
@@ -87,7 +141,13 @@
     "nameKey": "relic.canyon.05.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.canyon.05"
+    "rewardKey": "reward.relic.canyon.05",
+    "positionHint": {
+      "x": 3975.7,
+      "y": 208.86,
+      "z": 5208.7
+    },
+    "validated": true
   },
   {
     "id": "relic.city.01",
@@ -96,7 +156,13 @@
     "nameKey": "relic.city.01.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.city.01"
+    "rewardKey": "reward.relic.city.01",
+    "positionHint": {
+      "x": 3628.2,
+      "y": 33.82,
+      "z": 1695.8
+    },
+    "validated": true
   },
   {
     "id": "relic.city.02",
@@ -105,7 +171,13 @@
     "nameKey": "relic.city.02.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.city.02"
+    "rewardKey": "reward.relic.city.02",
+    "positionHint": {
+      "x": 5347.5,
+      "y": 75.7,
+      "z": 1657.2
+    },
+    "validated": true
   },
   {
     "id": "relic.city.03",
@@ -114,7 +186,13 @@
     "nameKey": "relic.city.03.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.city.03"
+    "rewardKey": "reward.relic.city.03",
+    "positionHint": {
+      "x": 3901.1,
+      "y": 72.85,
+      "z": 2520.8
+    },
+    "validated": true
   },
   {
     "id": "relic.city.04",
@@ -123,7 +201,13 @@
     "nameKey": "relic.city.04.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.city.04"
+    "rewardKey": "reward.relic.city.04",
+    "positionHint": {
+      "x": 5095.5,
+      "y": 85.56,
+      "z": 2247.7
+    },
+    "validated": true
   },
   {
     "id": "relic.city.05",
@@ -132,7 +216,13 @@
     "nameKey": "relic.city.05.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.city.05"
+    "rewardKey": "reward.relic.city.05",
+    "positionHint": {
+      "x": 3815.7,
+      "y": 96.05,
+      "z": 3104.5
+    },
+    "validated": true
   },
   {
     "id": "relic.wetlands.01",
@@ -141,7 +231,13 @@
     "nameKey": "relic.wetlands.01.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.wetlands.01"
+    "rewardKey": "reward.relic.wetlands.01",
+    "positionHint": {
+      "x": 1093.6,
+      "y": 46.39,
+      "z": 831.2
+    },
+    "validated": true
   },
   {
     "id": "relic.wetlands.02",
@@ -150,7 +246,13 @@
     "nameKey": "relic.wetlands.02.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.wetlands.02"
+    "rewardKey": "reward.relic.wetlands.02",
+    "positionHint": {
+      "x": 2154.7,
+      "y": 30.23,
+      "z": 852.9
+    },
+    "validated": true
   },
   {
     "id": "relic.wetlands.03",
@@ -159,7 +261,13 @@
     "nameKey": "relic.wetlands.03.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.wetlands.03"
+    "rewardKey": "reward.relic.wetlands.03",
+    "positionHint": {
+      "x": 3149.1,
+      "y": 29.98,
+      "z": 811.5
+    },
+    "validated": true
   },
   {
     "id": "relic.wetlands.04",
@@ -168,7 +276,13 @@
     "nameKey": "relic.wetlands.04.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.wetlands.04"
+    "rewardKey": "reward.relic.wetlands.04",
+    "positionHint": {
+      "x": 3757.0,
+      "y": 12.21,
+      "z": 801.7
+    },
+    "validated": true
   },
   {
     "id": "relic.wetlands.05",
@@ -177,7 +291,13 @@
     "nameKey": "relic.wetlands.05.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.wetlands.05"
+    "rewardKey": "reward.relic.wetlands.05",
+    "positionHint": {
+      "x": 1370.7,
+      "y": 72.29,
+      "z": 1261.4
+    },
+    "validated": true
   },
   {
     "id": "relic.highlands.01",
@@ -186,7 +306,13 @@
     "nameKey": "relic.highlands.01.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.highlands.01"
+    "rewardKey": "reward.relic.highlands.01",
+    "positionHint": {
+      "x": 1113.8,
+      "y": 176.79,
+      "z": 3930.0
+    },
+    "validated": true
   },
   {
     "id": "relic.highlands.02",
@@ -195,7 +321,13 @@
     "nameKey": "relic.highlands.02.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.highlands.02"
+    "rewardKey": "reward.relic.highlands.02",
+    "positionHint": {
+      "x": 2045.2,
+      "y": 225.44,
+      "z": 4049.8
+    },
+    "validated": true
   },
   {
     "id": "relic.highlands.03",
@@ -204,7 +336,13 @@
     "nameKey": "relic.highlands.03.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.highlands.03"
+    "rewardKey": "reward.relic.highlands.03",
+    "positionHint": {
+      "x": 2651.1,
+      "y": 195.04,
+      "z": 3973.0
+    },
+    "validated": true
   },
   {
     "id": "relic.highlands.04",
@@ -213,7 +351,13 @@
     "nameKey": "relic.highlands.04.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.highlands.04"
+    "rewardKey": "reward.relic.highlands.04",
+    "positionHint": {
+      "x": 1245.9,
+      "y": 366.01,
+      "z": 5375.3
+    },
+    "validated": true
   },
   {
     "id": "relic.highlands.05",
@@ -222,6 +366,12 @@
     "nameKey": "relic.highlands.05.name",
     "protectedLedger": true,
     "sellable": false,
-    "rewardKey": "reward.relic.highlands.05"
+    "rewardKey": "reward.relic.highlands.05",
+    "positionHint": {
+      "x": 1726.4,
+      "y": 358.63,
+      "z": 5025.9
+    },
+    "validated": true
   }
 ]

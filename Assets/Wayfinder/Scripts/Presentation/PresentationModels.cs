@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using Wayfinder.Core;
 
 namespace Wayfinder.Presentation
@@ -111,6 +110,7 @@ namespace Wayfinder.Presentation
         }
 
         readonly Stack<Screen> _stack = new Stack<Screen>();
+        readonly Stack<IDisposable> _pauseTokensHeld = new Stack<IDisposable>();
         readonly PauseTokenRegistry _pauseTokens;
 
         public ScreenFlowController(PauseTokenRegistry pauseTokens) =>
@@ -118,14 +118,11 @@ namespace Wayfinder.Presentation
 
         public Screen Current => _stack.Count > 0 ? _stack.Peek() : Screen.Title;
 
-        IDisposable _currentPauseToken;
-
-        /// <summary>Opening a modal overlay acquires a pause token; closing releases only its own (§2.5).</summary>
+        /// <summary>Opening a modal overlay acquires a pause token; closing releases only its own (§2.5, DEF-029).</summary>
         public void PushModal(Screen screen, bool pauseSimulation)
         {
             _stack.Push(screen);
-            if (pauseSimulation)
-                _currentPauseToken = _pauseTokens.Acquire();
+            _pauseTokensHeld.Push(pauseSimulation ? _pauseTokens.Acquire() : null);
         }
 
         /// <summary>Android system back / controller back / visible cancel all route here.</summary>
@@ -133,17 +130,18 @@ namespace Wayfinder.Presentation
         {
             if (_stack.Count <= 1) return false; // root: no-op (title); system back must not exit app mid-game silently
             _stack.Pop();
-            _currentPauseToken?.Dispose();
-            _currentPauseToken = null;
+            if (_pauseTokensHeld.Count > 0)
+                _pauseTokensHeld.Pop()?.Dispose();
             return true;
         }
 
         public void Replace(Screen screen)
         {
             _stack.Clear();
-            _currentPauseToken?.Dispose();
-            _currentPauseToken = null;
+            while (_pauseTokensHeld.Count > 0)
+                _pauseTokensHeld.Pop()?.Dispose();
             _stack.Push(screen);
+            _pauseTokensHeld.Push(null);
         }
     }
 

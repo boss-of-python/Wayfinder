@@ -1,0 +1,47 @@
+# Automated verification gate on every push and pull request (zero secrets required).
+# Executes the full 6-gate offline suite: content validation, physics/world formula checks,
+# economy progression & arbitrage sim, headless C# compile + full NUnit EditMode test suite
+# + .NET Standard 2.1 profile check, 12-assembly Unity 6 API type check, and CI pipeline tests.
+name: Verify Wayfinder Gates (Headless C# + Content + Unity Type Check)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-headless-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Full Headless & Static Verification (All 6 Gates)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache Roslyn / .NET Standard 2.1 / NUnit headless toolchain
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/wayfinder-headless-cs
+          key: wayfinder-headless-toolchain-v1-${{ hashFiles('Tools/Build/headless_cs.py', 'Tools/Build/unity_type_check.py') }}
+          restore-keys: |
+            wayfinder-headless-toolchain-v1-
+
+      - name: Run all 6 verification gates
+        run: python3 Tools/Build/run_all_checks.py
+
+      - name: Upload NUnit XML, compile report & Unity type-check artifacts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wayfinder-headless-verification-evidence
+          path: Logs/headless/
+          retention-days: 30

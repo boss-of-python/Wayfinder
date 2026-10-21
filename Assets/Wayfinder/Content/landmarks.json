@@ -7,16 +7,17 @@
     "hook": "first safe vista and tutorial discovery",
     "heroSite": true,
     "positionHint": {
-      "x": 861,
-      "y": 0,
-      "z": 2157
+      "x": 861.0,
+      "y": 124.8,
+      "z": 2157.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.01",
     "clueKey": "landmark.forest.01.clue",
     "loreKey": "landmark.forest.01.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.forest.02",
@@ -26,16 +27,17 @@
     "hook": "giant hollow tree beside a shallow alternate track",
     "heroSite": true,
     "positionHint": {
-      "x": 898,
-      "y": 0,
-      "z": 2210
+      "x": 898.0,
+      "y": 126.31,
+      "z": 2210.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.02",
     "clueKey": "landmark.forest.02.clue",
     "loreKey": "landmark.forest.02.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.03",
@@ -45,16 +47,17 @@
     "hook": "intact viewing approach, bridge silhouette clue",
     "heroSite": true,
     "positionHint": {
-      "x": 935,
-      "y": 0,
-      "z": 2263
+      "x": 935.0,
+      "y": 127.27,
+      "z": 2263.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.03",
     "clueKey": "landmark.forest.03.clue",
     "loreKey": "landmark.forest.03.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.04",
@@ -64,16 +67,17 @@
     "hook": "tutorial depth poles; story inspection",
     "heroSite": true,
     "positionHint": {
-      "x": 972,
-      "y": 0,
-      "z": 2316
+      "x": 972.0,
+      "y": 129.94,
+      "z": 2316.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.04",
     "clueKey": "landmark.forest.04.clue",
     "loreKey": "landmark.forest.04.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.05",
@@ -83,16 +87,17 @@
     "hook": "waterwheel landmark and easy cache",
     "heroSite": true,
     "positionHint": {
-      "x": 1009,
-      "y": 0,
-      "z": 2369
+      "x": 1009.0,
+      "y": 132.09,
+      "z": 2369.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.05",
     "clueKey": "landmark.forest.05.clue",
     "loreKey": "landmark.forest.05.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.06",
@@ -102,16 +107,17 @@
     "hook": "switchback climb and survey reveal",
     "heroSite": false,
     "positionHint": {
-      "x": 1046,
-      "y": 0,
-      "z": 2422
+      "x": 1046.0,
+      "y": 129.26,
+      "z": 2422.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.06",
     "clueKey": "landmark.forest.06.clue",
     "loreKey": "landmark.forest.06.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.forest.07",
@@ -121,16 +127,17 @@
     "hook": "short mesh tunnel through a rocky spur",
     "heroSite": false,
     "positionHint": {
-      "x": 1083,
-      "y": 0,
-      "z": 2475
+      "x": 957.3,
+      "y": 106.19,
+      "z": 1790.3
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.07",
     "clueKey": "landmark.forest.07.clue",
     "loreKey": "landmark.forest.07.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.forest.08",
@@ -140,16 +147,17 @@
     "hook": "safe ford with dry detour",
     "heroSite": false,
     "positionHint": {
-      "x": 1120,
-      "y": 0,
-      "z": 2128
+      "x": 1543.8,
+      "y": 103.96,
+      "z": 1775.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.08",
     "clueKey": "landmark.forest.08.clue",
     "loreKey": "landmark.forest.08.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.09",
@@ -159,16 +167,17 @@
     "hook": "abandoned forestry equipment and salvage",
     "heroSite": false,
     "positionHint": {
-      "x": 1157,
-      "y": 0,
-      "z": 2181
+      "x": 1956.7,
+      "y": 88.64,
+      "z": 1992.3
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.09",
     "clueKey": "landmark.forest.09.clue",
     "loreKey": "landmark.forest.09.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.10",
@@ -178,16 +187,17 @@
     "hook": "reflective clearing, no deep-water requirement",
     "heroSite": false,
     "positionHint": {
-      "x": 1194,
-      "y": 0,
-      "z": 2234
+      "x": 2685.9,
+      "y": 87.5,
+      "z": 1954.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.10",
     "clueKey": "landmark.forest.10.clue",
     "loreKey": "landmark.forest.10.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.11",
@@ -197,16 +207,17 @@
     "hook": "clue to forest relay",
     "heroSite": false,
     "positionHint": {
-      "x": 831,
-      "y": 0,
-      "z": 2287
+      "x": 501.2,
+      "y": 83.7,
+      "z": 2304.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.11",
     "clueKey": "landmark.forest.11.clue",
     "loreKey": "landmark.forest.11.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.12",
@@ -216,16 +227,17 @@
     "hook": "visual root arch over trail",
     "heroSite": false,
     "positionHint": {
-      "x": 868,
-      "y": 0,
-      "z": 2340
+      "x": 1565.4,
+      "y": 122.48,
+      "z": 2523.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.12",
     "clueKey": "landmark.forest.12.clue",
     "loreKey": "landmark.forest.12.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.13",
@@ -235,16 +247,17 @@
     "hook": "camp-adjacent historical remains",
     "heroSite": false,
     "positionHint": {
-      "x": 905,
-      "y": 0,
-      "z": 2393
+      "x": 1964.1,
+      "y": 100.25,
+      "z": 2477.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.13",
     "clueKey": "landmark.forest.13.clue",
     "loreKey": "landmark.forest.13.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.forest.14",
@@ -254,16 +267,17 @@
     "hook": "narrow optional shortcut",
     "heroSite": false,
     "positionHint": {
-      "x": 942,
-      "y": 0,
-      "z": 2446
+      "x": 2732.5,
+      "y": 78.93,
+      "z": 2368.8
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.14",
     "clueKey": "landmark.forest.14.clue",
     "loreKey": "landmark.forest.14.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.15",
@@ -273,16 +287,17 @@
     "hook": "visible refuge and weather tutorial cue",
     "heroSite": false,
     "positionHint": {
-      "x": 979,
-      "y": 0,
-      "z": 2499
+      "x": 706.5,
+      "y": 135.02,
+      "z": 2874.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.15",
     "clueKey": "landmark.forest.15.clue",
     "loreKey": "landmark.forest.15.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.16",
@@ -292,16 +307,17 @@
     "hook": "old trail marker and relic clue",
     "heroSite": false,
     "positionHint": {
-      "x": 1016,
-      "y": 0,
-      "z": 2152
+      "x": 1443.5,
+      "y": 129.75,
+      "z": 2960.8
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.16",
     "clueKey": "landmark.forest.16.clue",
     "loreKey": "landmark.forest.16.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.17",
@@ -311,16 +327,17 @@
     "hook": "water control structure",
     "heroSite": false,
     "positionHint": {
-      "x": 1053,
-      "y": 0,
-      "z": 2205
+      "x": 2010.4,
+      "y": 110.18,
+      "z": 2960.3
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.17",
     "clueKey": "landmark.forest.17.clue",
     "loreKey": "landmark.forest.17.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.18",
@@ -330,16 +347,17 @@
     "hook": "kiln/chimney silhouette above trees",
     "heroSite": false,
     "positionHint": {
-      "x": 1090,
-      "y": 0,
-      "z": 2258
+      "x": 2637.0,
+      "y": 87.56,
+      "z": 2940.9
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.18",
     "clueKey": "landmark.forest.18.clue",
     "loreKey": "landmark.forest.18.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.19",
@@ -349,16 +367,17 @@
     "hook": "remote cache and story fragment",
     "heroSite": false,
     "positionHint": {
-      "x": 1127,
-      "y": 0,
-      "z": 2311
+      "x": 768.0,
+      "y": 126.61,
+      "z": 3524.9
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.19",
     "clueKey": "landmark.forest.19.clue",
     "loreKey": "landmark.forest.19.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.forest.20",
@@ -368,16 +387,17 @@
     "hook": "regional mission culmination",
     "heroSite": false,
     "positionHint": {
-      "x": 1164,
-      "y": 0,
-      "z": 2364
+      "x": 1544.8,
+      "y": 134.68,
+      "z": 3473.7
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.forest.20",
     "clueKey": "landmark.forest.20.clue",
     "loreKey": "landmark.forest.20.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.canyon.01",
@@ -387,16 +407,17 @@
     "hook": "entry panorama",
     "heroSite": true,
     "positionHint": {
-      "x": 4437,
-      "y": 0,
-      "z": 4253
+      "x": 3482.5,
+      "y": 161.35,
+      "z": 3675.2
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.01",
     "clueKey": "landmark.canyon.01.clue",
     "loreKey": "landmark.canyon.01.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.canyon.02",
@@ -406,16 +427,17 @@
     "hook": "natural arch with route choice",
     "heroSite": true,
     "positionHint": {
-      "x": 4474,
-      "y": 0,
-      "z": 4306
+      "x": 3973.3,
+      "y": 151.98,
+      "z": 3555.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.02",
     "clueKey": "landmark.canyon.02.clue",
     "loreKey": "landmark.canyon.02.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.03",
@@ -425,16 +447,17 @@
     "hook": "terraced old mine approach",
     "heroSite": true,
     "positionHint": {
-      "x": 4511,
-      "y": 0,
-      "z": 4359
+      "x": 4318.8,
+      "y": 219.02,
+      "z": 3789.7
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.03",
     "clueKey": "landmark.canyon.03.clue",
     "loreKey": "landmark.canyon.03.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.04",
@@ -444,16 +467,17 @@
     "hook": "optional relic socket",
     "heroSite": true,
     "positionHint": {
-      "x": 4548,
-      "y": 0,
-      "z": 4412
+      "x": 4929.0,
+      "y": 198.7,
+      "z": 3748.8
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.04",
     "clueKey": "landmark.canyon.04.clue",
     "loreKey": "landmark.canyon.04.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.05",
@@ -463,16 +487,17 @@
     "hook": "narrow visible service shelf with safe detour",
     "heroSite": true,
     "positionHint": {
-      "x": 4585,
-      "y": 0,
-      "z": 4465
+      "x": 5451.1,
+      "y": 135.86,
+      "z": 3568.9
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.05",
     "clueKey": "landmark.canyon.05.clue",
     "loreKey": "landmark.canyon.05.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.06",
@@ -482,16 +507,17 @@
     "hook": "refueling-era ruins, not free field fuel",
     "heroSite": false,
     "positionHint": {
-      "x": 4622,
-      "y": 0,
-      "z": 4518
+      "x": 3368.6,
+      "y": 218.48,
+      "z": 4126.9
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.06",
     "clueKey": "landmark.canyon.06.clue",
     "loreKey": "landmark.canyon.06.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.canyon.07",
@@ -501,16 +527,17 @@
     "hook": "rock pillars visible at long range",
     "heroSite": false,
     "positionHint": {
-      "x": 4659,
-      "y": 0,
-      "z": 4571
+      "x": 3991.3,
+      "y": 210.73,
+      "z": 4363.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.07",
     "clueKey": "landmark.canyon.07.clue",
     "loreKey": "landmark.canyon.07.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.08",
@@ -520,16 +547,17 @@
     "hook": "grade-reading challenge",
     "heroSite": false,
     "positionHint": {
-      "x": 4696,
-      "y": 0,
-      "z": 4224
+      "x": 4324.9,
+      "y": 190.45,
+      "z": 4313.2
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.08",
     "clueKey": "landmark.canyon.08.clue",
     "loreKey": "landmark.canyon.08.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.09",
@@ -539,16 +567,17 @@
     "hook": "descent planning and return route",
     "heroSite": false,
     "positionHint": {
-      "x": 4733,
-      "y": 0,
-      "z": 4277
+      "x": 4968.0,
+      "y": 212.94,
+      "z": 4196.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.09",
     "clueKey": "landmark.canyon.09.clue",
     "loreKey": "landmark.canyon.09.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.10",
@@ -558,16 +587,17 @@
     "hook": "salvage-rich industrial silhouette",
     "heroSite": false,
     "positionHint": {
-      "x": 4770,
-      "y": 0,
-      "z": 4330
+      "x": 5527.9,
+      "y": 165.41,
+      "z": 4125.7
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.10",
     "clueKey": "landmark.canyon.10.clue",
     "loreKey": "landmark.canyon.10.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.11",
@@ -577,16 +607,17 @@
     "hook": "firm white track through soft sand",
     "heroSite": false,
     "positionHint": {
-      "x": 4407,
-      "y": 0,
-      "z": 4383
+      "x": 3272.6,
+      "y": 273.82,
+      "z": 4742.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.11",
     "clueKey": "landmark.canyon.11.clue",
     "loreKey": "landmark.canyon.11.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.canyon.12",
@@ -596,16 +627,17 @@
     "hook": "distant navigational reference",
     "heroSite": false,
     "positionHint": {
-      "x": 4444,
-      "y": 0,
-      "z": 4436
+      "x": 3889.4,
+      "y": 230.68,
+      "z": 4835.7
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.12",
     "clueKey": "landmark.canyon.12.clue",
     "loreKey": "landmark.canyon.12.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.13",
@@ -615,16 +647,17 @@
     "hook": "geological strata and photo socket",
     "heroSite": false,
     "positionHint": {
-      "x": 4481,
-      "y": 0,
-      "z": 4489
+      "x": 4363.7,
+      "y": 197.22,
+      "z": 4835.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.13",
     "clueKey": "landmark.canyon.13.clue",
     "loreKey": "landmark.canyon.13.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.14",
@@ -634,16 +667,17 @@
     "hook": "winch practice on optional route",
     "heroSite": false,
     "positionHint": {
-      "x": 4518,
-      "y": 0,
-      "z": 4542
+      "x": 4888.1,
+      "y": 219.63,
+      "z": 4814.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.14",
     "clueKey": "landmark.canyon.14.clue",
     "loreKey": "landmark.canyon.14.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.15",
@@ -653,16 +687,17 @@
     "hook": "protected campsite neighborhood",
     "heroSite": false,
     "positionHint": {
-      "x": 4555,
-      "y": 0,
-      "z": 4595
+      "x": 5520.6,
+      "y": 185.85,
+      "z": 4909.7
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.15",
     "clueKey": "landmark.canyon.15.clue",
     "loreKey": "landmark.canyon.15.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.canyon.16",
@@ -672,16 +707,17 @@
     "hook": "story delivery/inspection",
     "heroSite": false,
     "positionHint": {
-      "x": 4592,
-      "y": 0,
-      "z": 4248
+      "x": 3324.0,
+      "y": 237.67,
+      "z": 5444.9
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.16",
     "clueKey": "landmark.canyon.16.clue",
     "loreKey": "landmark.canyon.16.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.17",
@@ -691,16 +727,17 @@
     "hook": "rock corridor with width warning",
     "heroSite": false,
     "positionHint": {
-      "x": 4629,
-      "y": 0,
-      "z": 4301
+      "x": 3974.1,
+      "y": 195.5,
+      "z": 5389.6
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.17",
     "clueKey": "landmark.canyon.17.clue",
     "loreKey": "landmark.canyon.17.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.18",
@@ -710,16 +747,17 @@
     "hook": "utility landmark and electronics cache",
     "heroSite": false,
     "positionHint": {
-      "x": 4666,
-      "y": 0,
-      "z": 4354
+      "x": 4433.1,
+      "y": 185.27,
+      "z": 5306.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.18",
     "clueKey": "landmark.canyon.18.clue",
     "loreKey": "landmark.canyon.18.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.19",
@@ -729,16 +767,17 @@
     "hook": "long but nontechnical viewpoint route",
     "heroSite": false,
     "positionHint": {
-      "x": 4703,
-      "y": 0,
-      "z": 4407
+      "x": 4764.6,
+      "y": 163.12,
+      "z": 5164.3
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.19",
     "clueKey": "landmark.canyon.19.clue",
     "loreKey": "landmark.canyon.19.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.canyon.20",
@@ -748,16 +787,17 @@
     "hook": "regional relay and city connection",
     "heroSite": false,
     "positionHint": {
-      "x": 4740,
-      "y": 0,
-      "z": 4460
+      "x": 5499.9,
+      "y": 174.08,
+      "z": 5229.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.canyon.20",
     "clueKey": "landmark.canyon.20.clue",
     "loreKey": "landmark.canyon.20.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.city.01",
@@ -767,16 +807,17 @@
     "hook": "city entry marker",
     "heroSite": true,
     "positionHint": {
-      "x": 4437,
-      "y": 0,
-      "z": 2153
+      "x": 3437.0,
+      "y": 44.01,
+      "z": 1779.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.01",
     "clueKey": "landmark.city.01.clue",
     "loreKey": "landmark.city.01.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.city.02",
@@ -786,16 +827,17 @@
     "hook": "open turning/tutorial area for urban navigation",
     "heroSite": true,
     "positionHint": {
-      "x": 4474,
-      "y": 0,
-      "z": 2206
+      "x": 3917.2,
+      "y": 36.78,
+      "z": 1578.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.02",
     "clueKey": "landmark.city.02.clue",
     "loreKey": "landmark.city.02.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.03",
@@ -805,16 +847,17 @@
     "hook": "main-story protected case",
     "heroSite": true,
     "positionHint": {
-      "x": 4511,
-      "y": 0,
-      "z": 2259
+      "x": 4513.2,
+      "y": 69.52,
+      "z": 1732.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.03",
     "clueKey": "landmark.city.03.clue",
     "loreKey": "landmark.city.03.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.04",
@@ -824,16 +867,17 @@
     "hook": "overgrown train platform viewed from service lane",
     "heroSite": true,
     "positionHint": {
-      "x": 4548,
-      "y": 0,
-      "z": 2312
+      "x": 4978.4,
+      "y": 69.02,
+      "z": 1660.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.04",
     "clueKey": "landmark.city.04.clue",
     "loreKey": "landmark.city.04.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.05",
@@ -843,16 +887,17 @@
     "hook": "authored parking-ramp viewpoint",
     "heroSite": true,
     "positionHint": {
-      "x": 4585,
-      "y": 0,
-      "z": 2365
+      "x": 5306.0,
+      "y": 78.76,
+      "z": 1565.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.05",
     "clueKey": "landmark.city.05.clue",
     "loreKey": "landmark.city.05.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.06",
@@ -862,16 +907,17 @@
     "hook": "depth warning and marked detour",
     "heroSite": false,
     "positionHint": {
-      "x": 4622,
-      "y": 0,
-      "z": 2418
+      "x": 3582.5,
+      "y": 45.96,
+      "z": 2072.8
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.06",
     "clueKey": "landmark.city.06.clue",
     "loreKey": "landmark.city.06.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.city.07",
@@ -881,16 +927,17 @@
     "hook": "skyline orientation cue",
     "heroSite": false,
     "positionHint": {
-      "x": 4659,
-      "y": 0,
-      "z": 2471
+      "x": 3899.0,
+      "y": 49.07,
+      "z": 2066.9
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.07",
     "clueKey": "landmark.city.07.clue",
     "loreKey": "landmark.city.07.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.08",
@@ -900,16 +947,17 @@
     "hook": "cargo contract hub",
     "heroSite": false,
     "positionHint": {
-      "x": 4696,
-      "y": 0,
-      "z": 2124
+      "x": 4405.2,
+      "y": 70.06,
+      "z": 2185.6
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.08",
     "clueKey": "landmark.city.08.clue",
     "loreKey": "landmark.city.08.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.09",
@@ -919,16 +967,17 @@
     "hook": "compact-vehicle optional route",
     "heroSite": false,
     "positionHint": {
-      "x": 4733,
-      "y": 0,
-      "z": 2177
+      "x": 4995.6,
+      "y": 86.87,
+      "z": 2114.6
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.09",
     "clueKey": "landmark.city.09.clue",
     "loreKey": "landmark.city.09.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.10",
@@ -938,16 +987,17 @@
     "hook": "facade lore and relic clue",
     "heroSite": false,
     "positionHint": {
-      "x": 4770,
-      "y": 0,
-      "z": 2230
+      "x": 5311.8,
+      "y": 91.55,
+      "z": 2208.6
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.10",
     "clueKey": "landmark.city.10.clue",
     "loreKey": "landmark.city.10.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.11",
@@ -957,16 +1007,17 @@
     "hook": "story cable delivery",
     "heroSite": false,
     "positionHint": {
-      "x": 4407,
-      "y": 0,
-      "z": 2283
+      "x": 3477.1,
+      "y": 60.83,
+      "z": 2643.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.11",
     "clueKey": "landmark.city.11.clue",
     "loreKey": "landmark.city.11.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.city.12",
@@ -976,16 +1027,17 @@
     "hook": "infrastructure unlock",
     "heroSite": false,
     "positionHint": {
-      "x": 4444,
-      "y": 0,
-      "z": 2336
+      "x": 3863.9,
+      "y": 73.19,
+      "z": 2536.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.12",
     "clueKey": "landmark.city.12.clue",
     "loreKey": "landmark.city.12.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.13",
@@ -995,16 +1047,17 @@
     "hook": "reclaimed machine sculptures",
     "heroSite": false,
     "positionHint": {
-      "x": 4481,
-      "y": 0,
-      "z": 2389
+      "x": 4314.2,
+      "y": 87.12,
+      "z": 2745.3
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.13",
     "clueKey": "landmark.city.13.clue",
     "loreKey": "landmark.city.13.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.14",
@@ -1014,16 +1067,17 @@
     "hook": "hint toward final biome",
     "heroSite": false,
     "positionHint": {
-      "x": 4518,
-      "y": 0,
-      "z": 2442
+      "x": 4898.9,
+      "y": 111.11,
+      "z": 2708.8
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.14",
     "clueKey": "landmark.city.14.clue",
     "loreKey": "landmark.city.14.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.15",
@@ -1033,16 +1087,17 @@
     "hook": "circular rail turnaround",
     "heroSite": false,
     "positionHint": {
-      "x": 4555,
-      "y": 0,
-      "z": 2495
+      "x": 5348.6,
+      "y": 114.29,
+      "z": 2548.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.15",
     "clueKey": "landmark.city.15.clue",
     "loreKey": "landmark.city.15.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.city.16",
@@ -1052,16 +1107,17 @@
     "hook": "road-level viewpoint",
     "heroSite": false,
     "positionHint": {
-      "x": 4592,
-      "y": 0,
-      "z": 2148
+      "x": 3406.6,
+      "y": 88.14,
+      "z": 3046.6
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.16",
     "clueKey": "landmark.city.16.clue",
     "loreKey": "landmark.city.16.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.17",
@@ -1071,16 +1127,17 @@
     "hook": "driveable covered lane, no interior simulation",
     "heroSite": false,
     "positionHint": {
-      "x": 4629,
-      "y": 0,
-      "z": 2201
+      "x": 4054.2,
+      "y": 126.44,
+      "z": 3258.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.17",
     "clueKey": "landmark.city.17.clue",
     "loreKey": "landmark.city.17.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.18",
@@ -1090,16 +1147,17 @@
     "hook": "regional garage neighborhood",
     "heroSite": false,
     "positionHint": {
-      "x": 4666,
-      "y": 0,
-      "z": 2254
+      "x": 4363.0,
+      "y": 133.02,
+      "z": 3213.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.18",
     "clueKey": "landmark.city.18.clue",
     "loreKey": "landmark.city.18.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.19",
@@ -1109,16 +1167,17 @@
     "hook": "observation from adjacent ramp",
     "heroSite": false,
     "positionHint": {
-      "x": 4703,
-      "y": 0,
-      "z": 2307
+      "x": 4979.3,
+      "y": 130.69,
+      "z": 3108.7
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.19",
     "clueKey": "landmark.city.19.clue",
     "loreKey": "landmark.city.19.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.city.20",
@@ -1128,16 +1187,17 @@
     "hook": "city broadcast restoration",
     "heroSite": false,
     "positionHint": {
-      "x": 4740,
-      "y": 0,
-      "z": 2360
+      "x": 5414.3,
+      "y": 119.57,
+      "z": 3045.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.city.20",
     "clueKey": "landmark.city.20.clue",
     "loreKey": "landmark.city.20.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.wetlands.01",
@@ -1147,16 +1207,17 @@
     "hook": "safe biome introduction",
     "heroSite": true,
     "positionHint": {
-      "x": 3137,
-      "y": 0,
-      "z": 653
+      "x": 969.0,
+      "y": 38.72,
+      "z": 727.6
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.01",
     "clueKey": "landmark.wetlands.01.clue",
     "loreKey": "landmark.wetlands.01.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.wetlands.02",
@@ -1166,16 +1227,17 @@
     "hook": "main-story water reading",
     "heroSite": true,
     "positionHint": {
-      "x": 3174,
-      "y": 0,
-      "z": 706
+      "x": 1507.5,
+      "y": 33.43,
+      "z": 792.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.02",
     "clueKey": "landmark.wetlands.02.clue",
     "loreKey": "landmark.wetlands.02.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.03",
@@ -1185,16 +1247,17 @@
     "hook": "diagram recovery",
     "heroSite": true,
     "positionHint": {
-      "x": 3211,
-      "y": 0,
-      "z": 759
+      "x": 1968.2,
+      "y": 28.89,
+      "z": 791.7
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.03",
     "clueKey": "landmark.wetlands.03.clue",
     "loreKey": "landmark.wetlands.03.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.04",
@@ -1204,16 +1267,17 @@
     "hook": "shoreline observation socket",
     "heroSite": true,
     "positionHint": {
-      "x": 3248,
-      "y": 0,
-      "z": 812
+      "x": 2245.7,
+      "y": 24.95,
+      "z": 777.2
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.04",
     "clueKey": "landmark.wetlands.04.clue",
     "loreKey": "landmark.wetlands.04.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.05",
@@ -1223,16 +1287,17 @@
     "hook": "reflection/photo site",
     "heroSite": true,
     "positionHint": {
-      "x": 3285,
-      "y": 0,
-      "z": 865
+      "x": 2788.6,
+      "y": 48.74,
+      "z": 843.2
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.05",
     "clueKey": "landmark.wetlands.05.clue",
     "loreKey": "landmark.wetlands.05.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.06",
@@ -1242,16 +1307,17 @@
     "hook": "viewed safely from bank",
     "heroSite": false,
     "positionHint": {
-      "x": 3322,
-      "y": 0,
-      "z": 918
+      "x": 3356.3,
+      "y": 13.53,
+      "z": 775.2
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.06",
     "clueKey": "landmark.wetlands.06.clue",
     "loreKey": "landmark.wetlands.06.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.wetlands.07",
@@ -1261,16 +1327,17 @@
     "hook": "machinery and alloy cache",
     "heroSite": false,
     "positionHint": {
-      "x": 3359,
-      "y": 0,
-      "z": 971
+      "x": 3595.8,
+      "y": 13.51,
+      "z": 749.3
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.07",
     "clueKey": "landmark.wetlands.07.clue",
     "loreKey": "landmark.wetlands.07.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.08",
@@ -1280,16 +1347,17 @@
     "hook": "noninteractive wildlife viewpoint",
     "heroSite": false,
     "positionHint": {
-      "x": 3396,
-      "y": 0,
-      "z": 624
+      "x": 4123.6,
+      "y": 24.38,
+      "z": 722.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.08",
     "clueKey": "landmark.wetlands.08.clue",
     "loreKey": "landmark.wetlands.08.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.09",
@@ -1299,16 +1367,17 @@
     "hook": "firm trail through dense vegetation",
     "heroSite": false,
     "positionHint": {
-      "x": 3433,
-      "y": 0,
-      "z": 677
+      "x": 974.4,
+      "y": 65.66,
+      "z": 1213.2
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.09",
     "clueKey": "landmark.wetlands.09.clue",
     "loreKey": "landmark.wetlands.09.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.10",
@@ -1318,16 +1387,17 @@
     "hook": "current demonstration from safe ground",
     "heroSite": false,
     "positionHint": {
-      "x": 3470,
-      "y": 0,
-      "z": 730
+      "x": 1541.9,
+      "y": 55.05,
+      "z": 1175.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.10",
     "clueKey": "landmark.wetlands.10.clue",
     "loreKey": "landmark.wetlands.10.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.11",
@@ -1337,16 +1407,17 @@
     "hook": "relic clue, boat is static scenery",
     "heroSite": false,
     "positionHint": {
-      "x": 3107,
-      "y": 0,
-      "z": 783
+      "x": 2036.0,
+      "y": 39.0,
+      "z": 1117.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.11",
     "clueKey": "landmark.wetlands.11.clue",
     "loreKey": "landmark.wetlands.11.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.wetlands.12",
@@ -1356,16 +1427,17 @@
     "hook": "reachable by validated shallow causeway",
     "heroSite": false,
     "positionHint": {
-      "x": 3144,
-      "y": 0,
-      "z": 836
+      "x": 2291.5,
+      "y": 38.01,
+      "z": 1019.2
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.12",
     "clueKey": "landmark.wetlands.12.clue",
     "loreKey": "landmark.wetlands.12.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.13",
@@ -1375,16 +1447,17 @@
     "hook": "dual water-state inspection",
     "heroSite": false,
     "positionHint": {
-      "x": 3181,
-      "y": 0,
-      "z": 889
+      "x": 2750.9,
+      "y": 52.57,
+      "z": 1064.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.13",
     "clueKey": "landmark.wetlands.13.clue",
     "loreKey": "landmark.wetlands.13.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.14",
@@ -1394,16 +1467,17 @@
     "hook": "narrow but safe authored bridge",
     "heroSite": false,
     "positionHint": {
-      "x": 3218,
-      "y": 0,
-      "z": 942
+      "x": 3366.2,
+      "y": 13.61,
+      "z": 1084.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.14",
     "clueKey": "landmark.wetlands.14.clue",
     "loreKey": "landmark.wetlands.14.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.15",
@@ -1413,16 +1487,17 @@
     "hook": "forward camp neighborhood",
     "heroSite": false,
     "positionHint": {
-      "x": 3255,
-      "y": 0,
-      "z": 995
+      "x": 3728.1,
+      "y": 14.56,
+      "z": 1032.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.15",
     "clueKey": "landmark.wetlands.15.clue",
     "loreKey": "landmark.wetlands.15.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.wetlands.16",
@@ -1432,16 +1507,17 @@
     "hook": "avoidable bog and raised route",
     "heroSite": false,
     "positionHint": {
-      "x": 3292,
-      "y": 0,
-      "z": 648
+      "x": 4112.5,
+      "y": 31.04,
+      "z": 1140.6
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.16",
     "clueKey": "landmark.wetlands.16.clue",
     "loreKey": "landmark.wetlands.16.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.17",
@@ -1451,16 +1527,17 @@
     "hook": "broad panorama",
     "heroSite": false,
     "positionHint": {
-      "x": 3329,
-      "y": 0,
-      "z": 701
+      "x": 1008.6,
+      "y": 84.0,
+      "z": 1501.3
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.17",
     "clueKey": "landmark.wetlands.17.clue",
     "loreKey": "landmark.wetlands.17.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.18",
@@ -1470,16 +1547,17 @@
     "hook": "exterior narrative site",
     "heroSite": false,
     "positionHint": {
-      "x": 3366,
-      "y": 0,
-      "z": 754
+      "x": 1471.4,
+      "y": 83.2,
+      "z": 1428.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.18",
     "clueKey": "landmark.wetlands.18.clue",
     "loreKey": "landmark.wetlands.18.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.19",
@@ -1489,16 +1567,17 @@
     "hook": "main-story route markers",
     "heroSite": false,
     "positionHint": {
-      "x": 3403,
-      "y": 0,
-      "z": 807
+      "x": 2029.5,
+      "y": 53.02,
+      "z": 1519.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.19",
     "clueKey": "landmark.wetlands.19.clue",
     "loreKey": "landmark.wetlands.19.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.wetlands.20",
@@ -1508,16 +1587,17 @@
     "hook": "raised regional mast",
     "heroSite": false,
     "positionHint": {
-      "x": 3440,
-      "y": 0,
-      "z": 860
+      "x": 2259.8,
+      "y": 68.66,
+      "z": 1525.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.wetlands.20",
     "clueKey": "landmark.wetlands.20.clue",
     "loreKey": "landmark.wetlands.20.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.highlands.01",
@@ -1527,16 +1607,17 @@
     "hook": "mountain entry view",
     "heroSite": true,
     "positionHint": {
-      "x": 1637,
-      "y": 0,
-      "z": 4953
+      "x": 963.5,
+      "y": 189.58,
+      "z": 4051.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.01",
     "clueKey": "landmark.highlands.01.clue",
     "loreKey": "landmark.highlands.01.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.highlands.02",
@@ -1546,16 +1627,17 @@
     "hook": "first gentle snow patch",
     "heroSite": true,
     "positionHint": {
-      "x": 1674,
-      "y": 0,
-      "z": 5006
+      "x": 1493.9,
+      "y": 207.4,
+      "z": 4000.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.02",
     "clueKey": "landmark.highlands.02.clue",
     "loreKey": "landmark.highlands.02.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.03",
@@ -1565,16 +1647,17 @@
     "hook": "gravel-to-rock handling contrast",
     "heroSite": true,
     "positionHint": {
-      "x": 1711,
-      "y": 0,
-      "z": 5059
+      "x": 1813.4,
+      "y": 204.04,
+      "z": 3924.2
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.03",
     "clueKey": "landmark.highlands.03.clue",
     "loreKey": "landmark.highlands.03.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.04",
@@ -1584,16 +1667,17 @@
     "hook": "visible ridge marker",
     "heroSite": true,
     "positionHint": {
-      "x": 1748,
-      "y": 0,
-      "z": 5112
+      "x": 2438.4,
+      "y": 170.42,
+      "z": 3793.9
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.04",
     "clueKey": "landmark.highlands.04.clue",
     "loreKey": "landmark.highlands.04.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.05",
@@ -1603,16 +1687,17 @@
     "hook": "story sensor inspection",
     "heroSite": true,
     "positionHint": {
-      "x": 1785,
-      "y": 0,
-      "z": 5165
+      "x": 3091.9,
+      "y": 179.82,
+      "z": 3853.8
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.05",
     "clueKey": "landmark.highlands.05.clue",
     "loreKey": "landmark.highlands.05.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.06",
@@ -1622,16 +1707,17 @@
     "hook": "alternate approach comparison",
     "heroSite": false,
     "positionHint": {
-      "x": 1822,
-      "y": 0,
-      "z": 5218
+      "x": 1003.1,
+      "y": 230.72,
+      "z": 4433.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.06",
     "clueKey": "landmark.highlands.06.clue",
     "loreKey": "landmark.highlands.06.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.highlands.07",
@@ -1641,16 +1727,17 @@
     "hook": "static rail slope, drive alongside only",
     "heroSite": false,
     "positionHint": {
-      "x": 1859,
-      "y": 0,
-      "z": 5271
+      "x": 1571.9,
+      "y": 263.96,
+      "z": 4335.8
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.07",
     "clueKey": "landmark.highlands.07.clue",
     "loreKey": "landmark.highlands.07.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.08",
@@ -1660,16 +1747,17 @@
     "hook": "safe view and camp neighborhood",
     "heroSite": false,
     "positionHint": {
-      "x": 1896,
-      "y": 0,
-      "z": 4924
+      "x": 1866.1,
+      "y": 296.88,
+      "z": 4456.6
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.08",
     "clueKey": "landmark.highlands.08.clue",
     "loreKey": "landmark.highlands.08.lore",
     "capabilityBand": "Gentle",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.09",
@@ -1679,16 +1767,17 @@
     "hook": "ice edge observed from stable road",
     "heroSite": false,
     "positionHint": {
-      "x": 1933,
-      "y": 0,
-      "z": 4977
+      "x": 2395.0,
+      "y": 286.1,
+      "z": 4464.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.09",
     "clueKey": "landmark.highlands.09.clue",
     "loreKey": "landmark.highlands.09.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.10",
@@ -1698,16 +1787,17 @@
     "hook": "technical optional shortcut",
     "heroSite": false,
     "positionHint": {
-      "x": 1970,
-      "y": 0,
-      "z": 5030
+      "x": 3103.4,
+      "y": 257.2,
+      "z": 4475.5
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.10",
     "clueKey": "landmark.highlands.10.clue",
     "loreKey": "landmark.highlands.10.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.11",
@@ -1717,16 +1807,17 @@
     "hook": "cargo turnaround and salvage",
     "heroSite": false,
     "positionHint": {
-      "x": 1607,
-      "y": 0,
-      "z": 5083
+      "x": 921.9,
+      "y": 304.41,
+      "z": 5023.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.11",
     "clueKey": "landmark.highlands.11.clue",
     "loreKey": "landmark.highlands.11.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.highlands.12",
@@ -1736,16 +1827,17 @@
     "hook": "observatory silhouette clue",
     "heroSite": false,
     "positionHint": {
-      "x": 1644,
-      "y": 0,
-      "z": 5136
+      "x": 1564.5,
+      "y": 354.3,
+      "z": 4967.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.12",
     "clueKey": "landmark.highlands.12.clue",
     "loreKey": "landmark.highlands.12.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.13",
@@ -1755,16 +1847,17 @@
     "hook": "seasonal-looking but validated crossing",
     "heroSite": false,
     "positionHint": {
-      "x": 1681,
-      "y": 0,
-      "z": 5189
+      "x": 1829.6,
+      "y": 364.38,
+      "z": 5033.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.13",
     "clueKey": "landmark.highlands.13.clue",
     "loreKey": "landmark.highlands.13.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.14",
@@ -1774,16 +1867,17 @@
     "hook": "highland infrastructure landmark",
     "heroSite": false,
     "positionHint": {
-      "x": 1718,
-      "y": 0,
-      "z": 5242
+      "x": 2444.1,
+      "y": 337.69,
+      "z": 4920.3
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.14",
     "clueKey": "landmark.highlands.14.clue",
     "loreKey": "landmark.highlands.14.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.15",
@@ -1793,16 +1887,17 @@
     "hook": "quiet contrast after snowy climb",
     "heroSite": false,
     "positionHint": {
-      "x": 1755,
-      "y": 0,
-      "z": 5295
+      "x": 3070.9,
+      "y": 296.92,
+      "z": 4917.8
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.15",
     "clueKey": "landmark.highlands.15.clue",
     "loreKey": "landmark.highlands.15.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": true
   },
   {
     "id": "landmark.highlands.16",
@@ -1812,16 +1907,17 @@
     "hook": "relic set finale",
     "heroSite": false,
     "positionHint": {
-      "x": 1792,
-      "y": 0,
-      "z": 4948
+      "x": 796.4,
+      "y": 310.29,
+      "z": 5340.3
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.16",
     "clueKey": "landmark.highlands.16.clue",
     "loreKey": "landmark.highlands.16.lore",
     "capabilityBand": "Demanding",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.17",
@@ -1831,16 +1927,17 @@
     "hook": "protected story core site",
     "heroSite": false,
     "positionHint": {
-      "x": 1829,
-      "y": 0,
-      "z": 5001
+      "x": 1543.5,
+      "y": 387.35,
+      "z": 5404.0
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.17",
     "clueKey": "landmark.highlands.17.clue",
     "loreKey": "landmark.highlands.17.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.18",
@@ -1850,16 +1947,17 @@
     "hook": "fifth relay",
     "heroSite": false,
     "positionHint": {
-      "x": 1866,
-      "y": 0,
-      "z": 5054
+      "x": 1852.3,
+      "y": 374.98,
+      "z": 5383.8
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.18",
     "clueKey": "landmark.highlands.18.clue",
     "loreKey": "landmark.highlands.18.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.19",
@@ -1869,16 +1967,17 @@
     "hook": "final climb with loaded-return-safe route",
     "heroSite": false,
     "positionHint": {
-      "x": 1903,
-      "y": 0,
-      "z": 5107
+      "x": 2569.1,
+      "y": 337.82,
+      "z": 5342.4
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.19",
     "clueKey": "landmark.highlands.19.clue",
     "loreKey": "landmark.highlands.19.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": false
   },
   {
     "id": "landmark.highlands.20",
@@ -1888,15 +1987,16 @@
     "hook": "final transmission and credits",
     "heroSite": false,
     "positionHint": {
-      "x": 1940,
-      "y": 0,
-      "z": 5160
+      "x": 2851.3,
+      "y": 311.27,
+      "z": 5280.1
     },
     "discoveryRewardSalvage": 120,
     "rewardKey": "reward.landmark.landmark.highlands.20",
     "clueKey": "landmark.highlands.20.clue",
     "loreKey": "landmark.highlands.20.lore",
     "capabilityBand": "Technical",
-    "validated": false
+    "validated": true,
+    "vista": true
   }
 ]

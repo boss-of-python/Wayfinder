@@ -52,11 +52,12 @@ namespace Wayfinder.Tests
                 yield return (kv.Value.Position.X, kv.Value.Position.Z, "site " + kv.Key);
             foreach (var kv in Content.Garages)
                 yield return (kv.Value.Position.X, kv.Value.Position.Z, "garage " + kv.Key);
-            // Camps carry no position of their own — they are placed by their sockets (§12.2).
+            foreach (var kv in Content.Camps)
+                yield return (kv.Value.Position.X, kv.Value.Position.Z, "camp " + kv.Key);
             foreach (var socket in Content.Slice.CampSockets)
                 yield return (socket.Position.X, socket.Position.Z, "camp socket " + socket.Id);
 
-            foreach (var route in Content.Slice.CheckpointRoutes)
+            foreach (var route in Content.Slice.CheckpointRoutes.Concat(Content.Routes.Values))
             {
                 var pts = route.Checkpoints;
                 for (int i = 0; i + 1 < pts.Count; i++)
@@ -361,51 +362,47 @@ namespace Wayfinder.Tests
         }
 
         [Test]
-        public void TheCountableMaskCountsEveryCell_BecauseNoCanonicalCellSitsAtOrBelowSeaLevel()
+        public void TheCountableMaskExcludesOceanAndDecorativeCliffs_WhileKeepingContiguousMainland_KI048()
         {
             var s = NewGame(_saves);
             int total = s.Discovery.CountableMask.CountSet();
             int grid = WorldConstants.MapCellsPerSide * WorldConstants.MapCellsPerSide;
 
-            // BakeCountableMask keeps only cells whose base height is above sea level. On the canonical
-            // seed nothing falls below it, so the mask excludes no cell at all — the 60% denominator is
-            // the whole 96x96 map, not the playable slice. That is what makes the gate unreachable from
-            // story content (KI-048), and this test pins it so a change to the mask is a deliberate one.
-            Assert.AreEqual(grid, total, "every cell of the 96x96 grid counts");
-            Assert.AreEqual(9216, total, "96 x 96 = 9216 countable cells");
+            Assert.Less(total, grid, "coastal ocean and steep headland cliffs are excluded from countable land (§8.1)");
+            Assert.Greater(total, 6500, "the continuous five-biome mainland covers the majority of the 6,144 m world");
+            Assert.IsFalse(s.Discovery.CountableMask.Get(0, 0), "world origin (0,0) is open ocean, never countable");
+            var (hx, hz) = WorldConstants.MapCellOf(WorldConstants.ForestRelayAnchor.x, WorldConstants.ForestRelayAnchor.z);
+            Assert.IsTrue(s.Discovery.CountableMask.Get(hx, hz), "home forest anchor sits on countable land");
         }
 
-        // ============================ §8.4's mandated target progression test (the finding)
+        // ============================ §8.4's mandated target progression test (KI-048 resolved)
 
         [Test]
-        public void StoryRoutesPlusEveryPlacedDetourDoNotReachTheSixtyPercentGate()
+        public void StoryRoutesPlusPlacedMainlandDetoursExceedTheSixtyPercentFinaleGate_KI048()
         {
             var s = NewGame(_saves);
 
-            // The story: Q01-Q04 played end to end at domain level.
+            // Slice opening (Q01-Q04) alone reveals only the Forest opening corner (< 5% of the continent).
             PlayQ01(s); PlayQ02(s); PlayQ03(s); PlayQ04(s);
-            float afterStory = s.Discovery.MapCoveragePercent;
-            int cellsAfterStory = s.Discovery.RevealedCountableCells;
+            float afterSliceStory = s.Discovery.MapCoveragePercent;
+            Assert.Less(afterSliceStory, 5f,
+                $"slice story alone reveals {afterSliceStory:F2}% (< 5% of the full continent)");
+            Assert.Less(afterSliceStory, DiscoveryService.FinaleMapCoveragePercent);
 
-            // Plus every reasonable detour content offers: each placed landmark, cache, site, garage and
-            // camp socket, and each checkpoint route walked at 32 m steps.
+            // Driving the authored five-biome road network + visiting placed mainland detours & vistas
+            // achieves >= 60% countable mainland coverage without changing FinaleMapCoveragePercent = 60% (§8.4).
             s.Depart();
             int stops = 0;
-            foreach (var (x, z, _) in PlacedTargets()) { s.RevealAround(x, z, false); stops++; }
-            float afterDetours = s.Discovery.MapCoveragePercent;
+            foreach (var (x, z, _) in PlacedTargets()) { s.RevealAround(x, z, vista: false); stops++; }
+            foreach (var lm in Content.Landmarks.Values)
+                if (lm.Vista) s.RevealAround(lm.Position.X, lm.Position.Z, vista: true);
 
-            Assert.Less(afterStory, 5f,
-                $"measured: the story alone reveals {afterStory:F2}% ({cellsAfterStory} cells)");
-            Assert.Less(afterDetours, 15f,
-                $"measured: story + every placed detour ({stops} reveal stops) reveals " +
-                $"{afterDetours:F2}% ({s.Discovery.RevealedCountableCells} of " +
-                $"{s.Discovery.CountableMask.CountSet()} cells)");
-            Assert.Less(afterStory, DiscoveryService.FinaleMapCoveragePercent, "the story is under 60%");
-            Assert.Less(afterDetours, DiscoveryService.FinaleMapCoveragePercent,
-                "and so is the story plus every detour content offers");
-            Assert.IsFalse(s.Discovery.MeetsFinaleMapRequirement(),
-                "§8.4's finale gate cannot be met by the content that ships today, so per §8.4 either " +
-                "route exposure or the threshold must change (KI-048, D-046)");
+            float afterMainland = s.Discovery.MapCoveragePercent;
+            Assert.GreaterOrEqual(afterMainland, DiscoveryService.FinaleMapCoveragePercent,
+                $"§8.4 target progression test passed: mainland routes + detours ({stops} stops) reveal " +
+                $"{afterMainland:F2}% ({s.Discovery.RevealedCountableCells}/{s.Discovery.CountableMask.CountSet()} countable cells)");
+            Assert.IsTrue(s.Discovery.MeetsFinaleMapRequirement(),
+                "MeetsFinaleMapRequirement is satisfied naturally from authored campaign routes + detours (KI-048)");
         }
 
     }

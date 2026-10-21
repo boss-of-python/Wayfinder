@@ -177,6 +177,22 @@ namespace Wayfinder.Progression
             RefreshAvailability();
         }
 
+        /// <summary>Constructs a mission service directly from parsed Content/missions.json definitions (KI-046).</summary>
+        public MissionService(IEnumerable<MissionDefinition> definitions)
+        {
+            if (definitions == null) throw new ArgumentNullException(nameof(definitions));
+            foreach (var def in definitions)
+            {
+                if (def == null || string.IsNullOrEmpty(def.DisplayCode))
+                    throw new ArgumentException("mission definition requires displayCode");
+                _definitions[def.DisplayCode] = def;
+                _states[def.DisplayCode] = MissionState.Locked;
+            }
+            if (_definitions.Count == 0)
+                throw new ArgumentException("mission catalog cannot be empty");
+            RefreshAvailability();
+        }
+
         static MissionObjective Obj(MissionConditionType type, string target, int count) =>
             new MissionObjective { Type = type, TargetId = new ContentId(target), Count = count };
 

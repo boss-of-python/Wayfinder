@@ -26,13 +26,15 @@ namespace Wayfinder.Editor
             BuildTitle();
             BuildPhysicsTestGround();
             BuildVerticalSlice();
+            BuildWorldShell();
             EditorSceneManager.OpenScene($"{ScenesDir}/Bootstrap.unity");
             EditorBuildSettings.scenes = new[]
             {
                 new EditorBuildSettingsScene($"{ScenesDir}/Bootstrap.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/Title.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/PhysicsTestGround.unity", true),
-                new EditorBuildSettingsScene($"{ScenesDir}/VerticalSlice.unity", true)
+                new EditorBuildSettingsScene($"{ScenesDir}/VerticalSlice.unity", true),
+                new EditorBuildSettingsScene($"{ScenesDir}/WorldShell.unity", true)
             };
             Debug.Log("[Wayfinder] Scenes built and registered in EditorBuildSettings.");
         }
@@ -246,6 +248,23 @@ namespace Wayfinder.Editor
                 }
             }
 
+            // Authoritative road-shoulder winch anchors around the ford, mud trench, and hill climb (§4.5, KI-028).
+            var anchorPoints = new[]
+            {
+                new Vector3(985f, 1.25f, 2322f),
+                new Vector3(985f, 1.25f, 2378f),
+                new Vector3(1110f, 1.25f, 2060f),
+                new Vector3(1110f, 1.25f, 2120f),
+                new Vector3(792f, 1.25f, 2410f),
+                new Vector3(828f, 1.25f, 2500f)
+            };
+            for (int i = 0; i < anchorPoints.Length; i++)
+            {
+                var post = Box(root, $"Winch Anchor {i + 1}", new Vector3(.55f, 2.5f, .55f), anchorPoints[i],
+                    new Color(.42f, .28f, .16f));
+                post.AddComponent<WinchAnchor>();
+            }
+
             var spawn = slice.GarageSpawn;
             var vehicle = CreateScoutRig(root, new Vector3(spawn.Position.X, spawn.Position.Y + .4f, spawn.Position.Z));
             vehicle.transform.rotation = Quaternion.Euler(0f, spawn.YawDegrees, 0f);
@@ -258,6 +277,43 @@ namespace Wayfinder.Editor
             driver.input = router;
             driver.chaseCamera = camera;
             Save("VerticalSlice");
+        }
+
+        /// <summary>
+        /// Streaming mainland world shell (§6.4, KI-037): initializes <see cref="WorldStreamer"/>
+        /// over the baked continental heightfield, five-biome route network, scatter surface, and
+        /// active campaign vehicle rig.
+        /// </summary>
+        static void BuildWorldShell()
+        {
+            NewScene("WorldShell");
+            var content = CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir);
+            var routes = Wayfinder.World.MainlandRouteGraph.FromFile(
+                Path.Combine(ProjectSetup.CanonicalContentDir, "routes.json"));
+            var noise = new Wayfinder.World.NoiseField();
+
+            var root = new GameObject("WorldShell").transform;
+            var streamer = root.gameObject.AddComponent<WorldStreamer>();
+            streamer.TerrainMaterial = Material(new Color(.33f, .40f, .28f));
+            streamer.PropMaterial = Material(new Color(.24f, .33f, .21f));
+            streamer.WinchAnchorMaterial = Material(new Color(.44f, .29f, .16f));
+            streamer.Initialize(routes);
+
+            var home = content.Garages["garage.home"].Position;
+            float groundY = noise.BaseHeight(home.X, home.Z);
+            streamer.StepAt(home.X, home.Z);
+
+            var vehicle = CreateScoutRig(root, new Vector3(home.X, groundY + 0.85f, home.Z));
+            streamer.FollowTarget = vehicle.transform;
+            var router = vehicle.gameObject.AddComponent<InputRouter>();
+            Camera.main.farClipPlane = 2200f;
+            var camera = Camera.main.gameObject.AddComponent<ChaseCameraBehaviour>();
+            camera.target = vehicle.transform;
+            var driver = new GameObject("Mainland Driver").AddComponent<VerticalSliceDriver>();
+            driver.vehicle = vehicle;
+            driver.input = router;
+            driver.chaseCamera = camera;
+            Save("WorldShell");
         }
 
         /// <summary>Visual-only marker (no collider) standing on the ground at <paramref name="p"/>.</summary>

@@ -61,23 +61,61 @@ namespace Wayfinder.Progression
         public void BakeCountableMask(NoiseField noise = null, int worldSeed = WorldConstants.CanonicalWorldSeed,
             int generatorVersion = WorldConstants.GeneratorVersion)
         {
-            if (TryCachedMask(worldSeed, generatorVersion, out var cached))
+            if (noise == null && TryCachedMask(worldSeed, generatorVersion, out var cached))
             {
                 CountableMask = cached.Clone();
                 return;
             }
-            noise = noise ?? new NoiseField(worldSeed, generatorVersion);
-            var mask = new BitGrid(WorldConstants.MapCellsPerSide, WorldConstants.MapCellsPerSide);
+            var nf = noise ?? new NoiseField(worldSeed, generatorVersion);
+            var mask = nf.BuildCountableMask();
+            CountableMask = mask;
+            if (noise == null)
+                Cache(mask, worldSeed, generatorVersion);
+        }
+
+        /// <summary>Bakes the countable mask directly from baked chunk height tiles (WorldBaker).</summary>
+        public void BakeCountableMask(HeightField field)
+        {
+            if (field == null) throw new ArgumentNullException(nameof(field));
+            if (!field.IsBaked) field.Bake();
+            int n = WorldConstants.MapCellsPerSide;
             float half = WorldConstants.MapCellSizeMeters * 0.5f;
-            for (int z = 0; z < WorldConstants.MapCellsPerSide; z++)
-            for (int x = 0; x < WorldConstants.MapCellsPerSide; x++)
+            var passable = new bool[n, n];
+            for (int z = 0; z < n; z++)
+            for (int x = 0; x < n; x++)
             {
                 float wx = x * WorldConstants.MapCellSizeMeters + half;
                 float wz = z * WorldConstants.MapCellSizeMeters + half;
-                if (noise.BaseHeight(wx, wz) > WorldConstants.SeaLevelY) mask.Set(x, z, true);
+                float h = field.Sample(wx, wz);
+                float step = 8f;
+                float x0 = Math.Max(0f, wx - step), x1 = Math.Min(WorldConstants.WorldSizeMeters, wx + step);
+                float z0 = Math.Max(0f, wz - step), z1 = Math.Min(WorldConstants.WorldSizeMeters, wz + step);
+                float dhdx = (field.Sample(x1, wz) - field.Sample(x0, wz)) / Math.Max(1e-3f, x1 - x0);
+                float dhdz = (field.Sample(wx, z1) - field.Sample(wx, z0)) / Math.Max(1e-3f, z1 - z0);
+                float slope = (float)(Math.Atan(Math.Sqrt(dhdx * dhdx + dhdz * dhdz)) * (180.0 / Math.PI));
+                passable[x, z] = h > WorldConstants.SeaLevelY && slope < WorldConstants.DecorativeCliffSlopeDegrees;
+            }
+
+            var mask = new BitGrid(n, n);
+            var (sx, sz) = WorldConstants.MapCellOf(WorldConstants.ForestRelayAnchor.x, WorldConstants.ForestRelayAnchor.z);
+            if (passable[sx, sz])
+            {
+                var q = new Queue<(int x, int z)>();
+                mask.Set(sx, sz, true);
+                q.Enqueue((sx, sz));
+                while (q.Count > 0)
+                {
+                    var (cx, cz) = q.Dequeue();
+                    foreach (var (nx, nz) in new[] { (cx - 1, cz), (cx + 1, cz), (cx, cz - 1), (cx, cz + 1) })
+                    {
+                        if (nx < 0 || nx >= n || nz < 0 || nz >= n) continue;
+                        if (!passable[nx, nz] || mask.Get(nx, nz)) continue;
+                        mask.Set(nx, nz, true);
+                        q.Enqueue((nx, nz));
+                    }
+                }
             }
             CountableMask = mask;
-            Cache(mask, worldSeed, generatorVersion);
         }
 
         /// <summary>

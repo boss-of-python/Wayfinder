@@ -6,7 +6,7 @@ namespace Wayfinder.Simulation
 {
     /// <summary>
     /// Immutable vehicle definition values (§10.1). Serialized source of truth is
-    /// Content/vehicles.json; this type is the runtime mirror used by the stat resolver.
+    /// Content/vehicles.json; every field of all four chassis matches the JSON table verbatim.
     /// </summary>
     public sealed class VehicleSpec
     {
@@ -46,98 +46,161 @@ namespace Wayfinder.Simulation
         public float LimiterRpm;
         public float CdA;
 
-        /// <summary>Scout S1 baseline exactly per §4.2.</summary>
-        public static VehicleSpec ScoutS1()
+        /// <summary>Scout S1 baseline exactly per §4.2 and Content/vehicles.json.</summary>
+        public static VehicleSpec ScoutS1() => new VehicleSpec
         {
-            return new VehicleSpec
+            Id = new ContentId("vehicle.scout.s1"),
+            DisplayNameKey = "vehicle.scout.s1.name",
+            DryMassKg = 1350f,
+            PayloadKg = 120f,
+            FuelCapacityLiters = 24f,
+            PeakTorqueNm = 240f,
+            GovernedSpeedKph = 70f,
+            CargoSlots = 12,
+            WheelbaseM = 2.65f,
+            TrackM = 1.58f,
+            WheelRadiusM = 0.36f,
+            GroundClearanceM = 0.24f,
+            ComHeightM = 0.62f,
+            FrontAxleLoadFraction = 0.55f,
+            ForwardGears = new[] { 3.60f, 2.10f, 1.35f, 1.00f },
+            ReverseGear = -3.30f,
+            FinalDrive = 4.10f,
+            DrivetrainEfficiency = 0.85f,
+            BrakeTorqueFrontNmPerWheel = 1600f,
+            BrakeTorqueRearNmPerWheel = 1300f,
+            SuspensionTravelM = 0.28f,
+            SpringRateFrontNm = 32000f,
+            SpringRateRearNm = 29000f,
+            DamperFrontNsm = 3400f,
+            DamperRearNsm = 3100f,
+            AntiRollCouplingNm = 4000f,
+            TorqueCurve = new[]
             {
-                Id = new ContentId("vehicle.scout.s1"),
-                DisplayNameKey = "vehicle.scout.s1.name",
-                DryMassKg = 1350f,
-                PayloadKg = 120f,
-                FuelCapacityLiters = 24f,
-                PeakTorqueNm = 240f,
-                GovernedSpeedKph = 70f,
-                CargoSlots = 12,
-                WheelbaseM = 2.65f,
-                TrackM = 1.58f,
-                WheelRadiusM = 0.36f,
-                GroundClearanceM = 0.24f,
-                ComHeightM = 0.62f,
-                FrontAxleLoadFraction = 0.55f,
-                ForwardGears = new[] { 3.60f, 2.10f, 1.35f, 1.00f },
-                ReverseGear = -3.30f,
-                FinalDrive = 4.10f,
-                DrivetrainEfficiency = 0.85f,
-                BrakeTorqueFrontNmPerWheel = 1600f,
-                BrakeTorqueRearNmPerWheel = 1300f,
-                SuspensionTravelM = 0.28f,
-                SpringRateFrontNm = 32000f,
-                SpringRateRearNm = 29000f,
-                DamperFrontNsm = 3400f,
-                DamperRearNsm = 3100f,
-                AntiRollCouplingNm = 4000f,
-                TorqueCurve = new[]
-                {
-                    new[] { 800f, 110f }, new[] { 1500f, 190f }, new[] { 2500f, 240f },
-                    new[] { 3500f, 225f }, new[] { 4500f, 185f }, new[] { 5200f, 140f }
-                },
-                IdleRpm = 800f,
-                LimiterRpm = 5200f,
-                CdA = 1.1f
-            };
-        }
+                new[] { 800f, 110f }, new[] { 1500f, 190f }, new[] { 2500f, 240f },
+                new[] { 3500f, 225f }, new[] { 4500f, 185f }, new[] { 5200f, 140f }
+            },
+            IdleRpm = 800f,
+            LimiterRpm = 5200f,
+            CdA = 1.1f
+        };
 
-        public static VehicleSpec MuleM2()
+        /// <summary>Mule M2 wide hauler per §10.1 and Content/vehicles.json (DEF-028).</summary>
+        public static VehicleSpec MuleM2() => new VehicleSpec
         {
-            var v = ScoutS1();
-            v.Id = new ContentId("vehicle.mule.m2");
-            v.DisplayNameKey = "vehicle.mule.m2.name";
-            v.DryMassKg = 1800f;
-            v.PayloadKg = 260f;
-            v.FuelCapacityLiters = 34f;
-            v.PeakTorqueNm = 290f;
-            v.GovernedSpeedKph = 55f;
-            v.CargoSlots = 16;
-            v.WheelbaseM = 3.10f;
-            v.TrackM = 1.72f;
-            v.ComHeightM = 0.72f;
-            return v;
-        }
+            Id = new ContentId("vehicle.mule.m2"),
+            DisplayNameKey = "vehicle.mule.m2.name",
+            DryMassKg = 1800f,
+            PayloadKg = 260f,
+            FuelCapacityLiters = 34f,
+            PeakTorqueNm = 290f,
+            GovernedSpeedKph = 55f,
+            CargoSlots = 16,
+            WheelbaseM = 3.10f,
+            TrackM = 1.72f,
+            WheelRadiusM = 0.38f,
+            GroundClearanceM = 0.26f,
+            ComHeightM = 0.72f,
+            FrontAxleLoadFraction = 0.52f,
+            ForwardGears = new[] { 3.80f, 2.20f, 1.40f, 1.00f },
+            ReverseGear = -3.30f,
+            FinalDrive = 4.30f,
+            DrivetrainEfficiency = 0.85f,
+            BrakeTorqueFrontNmPerWheel = 1800f,
+            BrakeTorqueRearNmPerWheel = 1500f,
+            SuspensionTravelM = 0.30f,
+            SpringRateFrontNm = 38000f,
+            SpringRateRearNm = 35000f,
+            DamperFrontNsm = 3900f,
+            DamperRearNsm = 3600f,
+            AntiRollCouplingNm = 4500f,
+            TorqueCurve = new[]
+            {
+                new[] { 800f, 130f }, new[] { 1500f, 220f }, new[] { 2500f, 290f },
+                new[] { 3500f, 270f }, new[] { 4500f, 215f }, new[] { 5200f, 165f }
+            },
+            IdleRpm = 800f,
+            LimiterRpm = 5200f,
+            CdA = 1.3f
+        };
 
-        public static VehicleSpec LynxL3()
+        /// <summary>Lynx L3 short-wheelbase trail rig per §10.1 and Content/vehicles.json (DEF-028).</summary>
+        public static VehicleSpec LynxL3() => new VehicleSpec
         {
-            var v = ScoutS1();
-            v.Id = new ContentId("vehicle.lynx.l3");
-            v.DisplayNameKey = "vehicle.lynx.l3.name";
-            v.DryMassKg = 1100f;
-            v.PayloadKg = 90f;
-            v.FuelCapacityLiters = 22f;
-            v.PeakTorqueNm = 225f;
-            v.GovernedSpeedKph = 75f;
-            v.CargoSlots = 10;
-            v.WheelbaseM = 2.30f;
-            v.TrackM = 1.55f;
-            v.ComHeightM = 0.58f;
-            return v;
-        }
+            Id = new ContentId("vehicle.lynx.l3"),
+            DisplayNameKey = "vehicle.lynx.l3.name",
+            DryMassKg = 1100f,
+            PayloadKg = 90f,
+            FuelCapacityLiters = 22f,
+            PeakTorqueNm = 225f,
+            GovernedSpeedKph = 75f,
+            CargoSlots = 10,
+            WheelbaseM = 2.30f,
+            TrackM = 1.55f,
+            WheelRadiusM = 0.35f,
+            GroundClearanceM = 0.25f,
+            ComHeightM = 0.58f,
+            FrontAxleLoadFraction = 0.56f,
+            ForwardGears = new[] { 3.50f, 2.05f, 1.30f, 0.95f },
+            ReverseGear = -3.20f,
+            FinalDrive = 4.05f,
+            DrivetrainEfficiency = 0.85f,
+            BrakeTorqueFrontNmPerWheel = 1500f,
+            BrakeTorqueRearNmPerWheel = 1250f,
+            SuspensionTravelM = 0.32f,
+            SpringRateFrontNm = 28000f,
+            SpringRateRearNm = 26000f,
+            DamperFrontNsm = 3100f,
+            DamperRearNsm = 2800f,
+            AntiRollCouplingNm = 3600f,
+            TorqueCurve = new[]
+            {
+                new[] { 800f, 105f }, new[] { 1500f, 180f }, new[] { 2500f, 225f },
+                new[] { 3500f, 210f }, new[] { 4500f, 175f }, new[] { 5200f, 135f }
+            },
+            IdleRpm = 800f,
+            LimiterRpm = 5200f,
+            CdA = 1.0f
+        };
 
-        public static VehicleSpec AtlasA4()
+        /// <summary>Atlas A4 expedition utility per §10.1 and Content/vehicles.json (DEF-028).</summary>
+        public static VehicleSpec AtlasA4() => new VehicleSpec
         {
-            var v = ScoutS1();
-            v.Id = new ContentId("vehicle.atlas.a4");
-            v.DisplayNameKey = "vehicle.atlas.a4.name";
-            v.DryMassKg = 1650f;
-            v.PayloadKg = 180f;
-            v.FuelCapacityLiters = 38f;
-            v.PeakTorqueNm = 320f;
-            v.GovernedSpeedKph = 65f;
-            v.CargoSlots = 14;
-            v.WheelbaseM = 2.85f;
-            v.TrackM = 1.68f;
-            v.ComHeightM = 0.66f;
-            return v;
-        }
+            Id = new ContentId("vehicle.atlas.a4"),
+            DisplayNameKey = "vehicle.atlas.a4.name",
+            DryMassKg = 1650f,
+            PayloadKg = 180f,
+            FuelCapacityLiters = 38f,
+            PeakTorqueNm = 320f,
+            GovernedSpeedKph = 65f,
+            CargoSlots = 14,
+            WheelbaseM = 2.85f,
+            TrackM = 1.68f,
+            WheelRadiusM = 0.38f,
+            GroundClearanceM = 0.28f,
+            ComHeightM = 0.66f,
+            FrontAxleLoadFraction = 0.54f,
+            ForwardGears = new[] { 3.70f, 2.15f, 1.38f, 1.00f },
+            ReverseGear = -3.30f,
+            FinalDrive = 4.15f,
+            DrivetrainEfficiency = 0.85f,
+            BrakeTorqueFrontNmPerWheel = 1750f,
+            BrakeTorqueRearNmPerWheel = 1450f,
+            SuspensionTravelM = 0.31f,
+            SpringRateFrontNm = 35000f,
+            SpringRateRearNm = 32000f,
+            DamperFrontNsm = 3700f,
+            DamperRearNsm = 3400f,
+            AntiRollCouplingNm = 4300f,
+            TorqueCurve = new[]
+            {
+                new[] { 800f, 140f }, new[] { 1500f, 245f }, new[] { 2500f, 320f },
+                new[] { 3500f, 300f }, new[] { 4500f, 235f }, new[] { 5200f, 180f }
+            },
+            IdleRpm = 800f,
+            LimiterRpm = 5200f,
+            CdA = 1.2f
+        };
 
         public static VehicleSpec ById(string id)
         {

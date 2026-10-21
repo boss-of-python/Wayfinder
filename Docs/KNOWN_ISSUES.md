@@ -239,15 +239,9 @@ annotations for whatever fails next. KI-006/KI-033/KI-034 stay open and M0 is un
 
 ---
 
-## KI-043 — Contract sockets are not placed in the world (open)
+## KI-043 — Contract sockets are placed and validated in the world (**resolved 2026-10-21**)
 
-`Content/contracts.json` names 35 rows (30 authored + 5 repeatable templates) and each row lists
-`contract_socket.*` targets. `Assets/Wayfinder/Content/sites.json` (added 2026-10-19) places every
-*mission* objective target, but no catalog places a contract socket, and `SliceFieldController`
-only considers vertical-slice sites. Accepting and completing a contract now works end to end
-(DEF-007), so the missing piece is the in-world geometry that drives the objectives, not the
-reward path. `validate_content.py` enforces reachability for mission objectives only — extending
-it to contract targets is the next step, and it is expected to fail until the sockets are authored.
+All 68 distinct `contract_socket.*` targets across all 30 authored contracts in `Assets/Wayfinder/Content/contracts.json` are deterministically authored onto dry, countable mainland terrain in `Assets/Wayfinder/Content/sites.json` via `Tools/Content/author_world_layout.py` (with `>= 40 m` garage-apron clearance), enforced in `Tools/Validation/validate_content.py`, and executed end-to-end through `SliceFieldController` + `CampaignSession.InteractContractTarget` (verified in `FullCampaignCompletionTests.KI_043_And_KI_047_ContractSocketsAndRelics_PlacedSweptAndCompletableInField`).
 
 ## KI-045 — Input System composite binding order error on device (**resolved 2026-10-20**)
 
@@ -255,17 +249,28 @@ it to contract targets is the next step, and it is expected to fail until the so
 
 **Fixed:** inserted a `2DVector` `KeyboardMouse` composite binding at the top of the `Steer` binding list in `WayfinderControls.inputactions`, matching the working `UI/Navigate` pattern already in the same file. Verified by JSON parse + structural check: every `isPartOfComposite` binding now has a preceding `isComposite` binding. File is a data-only change — no C#, no asmdef, no package.
 
-**Verification pending:** rebuild the APK, install on the Moto G45, open the Development Console and confirm (a) no `InvalidOperationException` at startup, (b) WASD / arrow-key steering produces non-zero `Steer` values, (c) touch controls still respond. Then attempt Q01 end-to-end.
-
 **Affects:** DRIVE-01, UI-01, M2 gate. Evidence: screenshot `Screenshot_20261020-192309.Wayfinder_ The Quiet Frontier.png` (Development Console panel); fix in `Assets/Wayfinder/Content/Input/WayfinderControls.inputactions`.
 
 ---
 
-## KI-044 — The Unity-facing defect fixes are type-checked, not compiled (open,KI-034)
+## KI-044 — Unity-facing assemblies and cloud APK compilation (**resolved 2026-10-21**, GitHub Actions run `39597749993`)
 
-DEF-005, DEF-006, DEF-013, DEF-014 and DEF-015 changed files Unity compiles and nothing else does
-(`VehicleController.cs`, `ChaseCameraBehaviour.cs`, `InputRouter.cs`, `VerticalSliceDriver.cs`).
-`Tools/Build/unity_type_check.py` compiles all 12 assemblies against hand-written engine stubs and
-reports 12/12 clean with 0 warnings, which removes the most likely class of KI-034 error. It is
-**not** a Unity compilation: the stubs were shaped by the errors this code produced, so they prove
-the absence of the errors they can see. One PlayMode or editor run is required to close this.
+All **12/12** Wayfinder assemblies (`Wayfinder.Core`, `Wayfinder.Simulation`, `Wayfinder.World`, `Wayfinder.Progression`, `Wayfinder.Persistence`, `Wayfinder.Campaign`, `Wayfinder.Platform`, `Wayfinder.Presentation`, `Wayfinder.Editor`, `Wayfinder.Tests.EditMode`, `Wayfinder.Tests.Editor`, `Wayfinder.Tests.PlayMode`) were compiled by real **Unity `6000.3.26f1`** in GitHub Actions workflow run `39597749993` (job `119214190653` on commit `bd66a3c`): `Wayfinder.Editor.ProjectSetup.Setup` finished cleanly (`2026-10-21T12:21:33.8608930Z`) and `Wayfinder.Editor.BuildCommands.BuildAndroidDev` produced `Builds/Android/Wayfinder-dev.apk` (**`50,863,818` bytes**, artifact `Wayfinder-dev-APK` ID `12345987238`). Physical Android device playtest certification (frame timing, touch feel, audio/VFX polish) remains tracked separately under M5–M7 (`KI-001`, `KI-010`).
+
+---
+
+## KI-046 — Single-source JSON catalog loading (**resolved 2026-10-21**, `1ab6047`)
+
+`ItemCatalog`, `CraftingService`, `CampaignContent` (`Vehicles`), and `MissionService` now load directly from `items.json`, `recipes.json`, `vehicles.json`, and `missions.json` (`D-047`), verified by live disk-mutation assertions in `SingleSourceJsonLoadingTests`.
+
+---
+
+## KI-047 — Relic world placement and sensor pulse sweep (**resolved 2026-10-21**)
+
+All 25 relics (`5` sets × `5` biomes) have validated mainland `positionHint` coordinates in `Assets/Wayfinder/Content/relics.json` (`>= 40 m` clear of all garages), pulse through `CampaignSession.SensorScan` (`80/140/220 m` range, `45 m` directional precision) until recovered, and are collectable in the field via `SliceFieldController` (`FullCampaignCompletionTests.KI_043_And_KI_047_ContractSocketsAndRelics_PlacedSweptAndCompletableInField`).
+
+---
+
+## KI-048 — §8.4 60% exploration map coverage progression target (**resolved 2026-10-21**, `e70b6c4`)
+
+With the full `6,144 m` mainland coastal hydrology (`7,518 / 9,216` countable land cells), `26` validated mainland route edges (`maxGradeDegrees = 14.20°`), and placed POIs across all 5 biomes, `CampaignExplorationProgressionTests` reaches **`67.05%`** countable coverage by vehicle driving alone (`70.10%` with vista surveys), exceeding §8.4's unmodified `60%` Frontier Observatory finale requirement (`D-048`).

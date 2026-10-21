@@ -15,11 +15,11 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 1240.0,
+      "y": 133.17,
+      "z": 2520.0
     },
-    "validated": false
+    "validated": true
   },
   {
     "id": "camp.forest.b",
@@ -37,11 +37,11 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 700.0,
+      "y": 79.48,
+      "z": 1960.0
     },
-    "validated": false
+    "validated": true
   },
   {
     "id": "camp.canyon.a",
@@ -59,11 +59,11 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 3720.0,
+      "y": 230.83,
+      "z": 4120.0
     },
-    "validated": false
+    "validated": true
   },
   {
     "id": "camp.canyon.b",
@@ -81,11 +81,11 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 5320.0,
+      "y": 189.29,
+      "z": 4980.0
     },
-    "validated": false
+    "validated": true
   },
   {
     "id": "camp.city.a",
@@ -103,11 +103,11 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 3880.0,
+      "y": 70.88,
+      "z": 2720.0
     },
-    "validated": false
+    "validated": true
   },
   {
     "id": "camp.city.b",
@@ -125,11 +125,11 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 5180.0,
+      "y": 93.23,
+      "z": 1860.0
     },
-    "validated": false
+    "validated": true
   },
   {
     "id": "camp.wetlands.a",
@@ -147,11 +147,11 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 2420.0,
+      "y": 52.47,
+      "z": 1180.0
     },
-    "validated": false
+    "validated": true
   },
   {
     "id": "camp.wetlands.b",
@@ -169,11 +169,11 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 4120.0,
+      "y": 31.08,
+      "z": 1120.0
     },
-    "validated": false
+    "validated": true
   },
   {
     "id": "camp.highlands.a",
@@ -191,11 +191,11 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 1260.0,
+      "y": 230.54,
+      "z": 4220.0
     },
-    "validated": false
+    "validated": true
   },
   {
     "id": "camp.highlands.b",
@@ -213,10 +213,10 @@
       "hubTravel"
     ],
     "positionHint": {
-      "x": 0,
-      "y": 0,
-      "z": 0
+      "x": 2560.0,
+      "y": 342.65,
+      "z": 5260.0
     },
-    "validated": false
+    "validated": true
   }
 ]

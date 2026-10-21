@@ -85,9 +85,10 @@ namespace Wayfinder.Campaign
                 $"Discovered {landmark.Name} (+{DiscoveryService.LandmarkDiscoveryRewardSalvage} Salvage pending)",
                 DiscoveryService.LandmarkDiscoveryRewardSalvage, landmarkId);
             ReportMission(MissionConditionType.DiscoverLandmark, landmarkId);
+            bool vista = landmark.Vista;
             foreach (var sliceLandmark in Content.Slice.Landmarks)
-                if (sliceLandmark.Id == landmarkId && sliceLandmark.Vista)
-                    RevealAround(landmark.Position.X, landmark.Position.Z, vista: true);
+                if (sliceLandmark.Id == landmarkId && sliceLandmark.Vista) vista = true;
+            if (vista) RevealAround(landmark.Position.X, landmark.Position.Z, vista: true);
             _autosave.MarkDirty();
             return CommandResult.Ok();
         }
@@ -115,7 +116,9 @@ namespace Wayfinder.Campaign
         public CommandResult InspectObject(string targetId)
         {
             if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
-            if (Content.FindSite(Content.Slice.InspectTargets, targetId) == null)
+            bool known = Content.FindSite(Content.Slice.InspectTargets, targetId) != null ||
+                         (!string.IsNullOrEmpty(targetId) && Content.Sites.TryGetValue(targetId, out var ws) && ws.Kind == "inspect");
+            if (!known)
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"'{targetId}' is not an inspect target");
             if (ReportMission(MissionConditionType.InspectObject, targetId) == 0)
                 return CommandResult.Fail(FailureReason.PrerequisiteNotMet, "no active objective for this target");
@@ -182,11 +185,14 @@ namespace Wayfinder.Campaign
             return CommandResult.Ok();
         }
 
-        /// <summary>One-time mission pickup (e.g. the Q04 relay fuse). Only while its mission is active.</summary>
+        /// <summary>One-time mission pickup (e.g. the Q04 relay fuse or mainland quest items). Only while its mission is active.</summary>
         public CommandResult CollectQuestItem(string siteId)
         {
             if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
             var site = Content.FindSite(Content.Slice.QuestItemSites, siteId);
+            if (site == null && !string.IsNullOrEmpty(siteId) &&
+                Content.Sites.TryGetValue(siteId, out var ws) && ws.Kind == "questItem")
+                site = ws;
             if (site == null) return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown quest site '{siteId}'");
             if (Missions.StateOf(site.MissionCode) != MissionState.Active)
                 return CommandResult.Fail(FailureReason.MissionNotAccepted, $"{site.MissionCode} is not active");
@@ -264,22 +270,32 @@ namespace Wayfinder.Campaign
             return done;
         }
 
-        /// <summary>Relay activation (Q04): consumes the protected fuse and sets the infrastructure flag.</summary>
+        /// <summary>Relay activation (Q04, Q08, Q12, Q16, Q19): consumes the protected fuse and sets the infrastructure flag.</summary>
         public CommandResult ActivateRelay(string relayId)
         {
             if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
             var site = Content.FindSite(Content.Slice.Relays, relayId);
+            if (site == null && !string.IsNullOrEmpty(relayId) &&
+                Content.Sites.TryGetValue(relayId, out var rs) && rs.Kind == "relay")
+                site = rs;
             if (site == null) return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown relay '{relayId}'");
             if (Garage.HasInfrastructure(relayId)) return CommandResult.Fail(FailureReason.AlreadyApplied, "relay already active");
-            if (!Inventory.ProtectedLedgerContains(site.ItemId))
+            if (string.Equals(relayId, "relay.highlands", StringComparison.Ordinal) &&
+                !_deliveredSites.Contains("delivery.highlands.sensor_core"))
+                return CommandResult.Fail(FailureReason.PrerequisiteNotMet, "sensor_core must be installed before activating relay.highlands");
+            if (!string.IsNullOrEmpty(site.ItemId) && !Inventory.ProtectedLedgerContains(site.ItemId))
                 return CommandResult.Fail(FailureReason.ItemNotFound, $"{site.ItemId} required");
             return RunCritical(() =>
             {
-                var remove = Inventory.RemoveProtected(site.ItemId);
-                if (!remove.Success) return remove;
+                if (!string.IsNullOrEmpty(site.ItemId))
+                {
+                    var remove = Inventory.RemoveProtected(site.ItemId);
+                    if (!remove.Success) return remove;
+                }
                 Garage.UnlockInfrastructure(relayId);
                 Notice(CampaignNoticeKind.RelayActivated, "Relay restored — signal online", 0, relayId);
                 ReportMission(MissionConditionType.ActivateRelay, relayId);
+                RevealAround(site.Position.X, site.Position.Z, vista: true);
                 return CommandResult.Ok();
             });
         }
@@ -288,7 +304,8 @@ namespace Wayfinder.Campaign
         public CommandResult EstablishCamp(string campId)
         {
             if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
-            if (Content.FindSite(Content.Slice.CampSockets, campId) == null)
+            if (Content.FindSite(Content.Slice.CampSockets, campId) == null &&
+                (string.IsNullOrEmpty(campId) || !Content.Camps.ContainsKey(campId)))
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"no camp socket '{campId}' in this area");
             return RunCritical(() =>
             {

@@ -4,13 +4,19 @@ name: Android APK (free cloud build)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'arena/**'
+    paths-ignore:
+      - 'Docs/**'
 
 permissions:
   contents: read
 
 concurrency:
-  group: android-cloud-build
-  cancel-in-progress: false
+  group: android-cloud-build-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   # Unity 6.3 LTS release verified against this project by a real editor run
@@ -50,6 +56,9 @@ jobs:
 
       - name: Pin the Unity version for this build only (nothing is committed)
         run: python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"
+
+      - name: Run preflight verification suite (content, formulas, economy, 319+ NUnit tests, 12-assembly type check)
+        run: python3 Tools/Build/run_all_checks.py
 
       # IMPORTANT: do not remove Android packages here.
       # The earlier failure was caused by SDK cleanup removing required Android packages.
