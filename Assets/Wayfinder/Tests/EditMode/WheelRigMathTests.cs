@@ -148,6 +148,10 @@ namespace Wayfinder.Tests
             Assert.IsTrue(WheelRigMath.RequiresGeometryUpdate(a,
                 WheelRigMath.FromStats(spec, Stats(0.34f, 0.27f))), "fitting suspension1 moves travel + centers");
             Assert.IsTrue(WheelRigMath.RequiresGeometryUpdate(a,
+                WheelRigMath.FromStats(spec, Stats(0.34f, 0.24f))), "travel alone (same clearance) still trips it");
+            Assert.IsTrue(WheelRigMath.RequiresGeometryUpdate(a,
+                WheelRigMath.FromStats(spec, Stats(0.28f, 0.27f))), "clearance alone (same travel) still trips it");
+            Assert.IsTrue(WheelRigMath.RequiresGeometryUpdate(a,
                 WheelRigMath.FromStats(spec, Stats(damping: 0.7f))), "suspension damage rewrites dampers");
             Assert.IsTrue(WheelRigMath.RequiresGeometryUpdate(a,
                 WheelRigMath.FromStats(spec, Stats(winchReach: 12f, winchForce: 8000f))), "fitting the winch registers");
