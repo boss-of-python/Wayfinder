@@ -159,16 +159,22 @@ namespace Wayfinder.Simulation
 
         public void SetCargoMass(float kg) => _cargoMassKg = Math.Max(0f, kg);
         public VehicleStatsResolver StatsResolver => _resolver;
+        /// <summary>Rig settings currently live on the WheelColliders (KI-025, D-044).</summary>
         public WheelRigSettings RigSettings => _rigSettings;
+        /// <summary>True once a winch module is fitted and applied (tiers 3/15).</summary>
         public bool HasWinch => _rigSettings.HasWinch;
+        /// <summary>Fitted winch anchor reach (m); 0 means no winch.</summary>
         public float WinchReachMeters => _rigSettings.WinchReachM;
+        /// <summary>Fitted winch pull cap (N); 0 means no winch.</summary>
         public float WinchForceCapNewtons => _rigSettings.WinchForceCapN;
+        /// <summary>True when the fitted winch can anchor at the given distance.</summary>
         public bool WinchCanReach(float distanceMeters) => _rigSettings.WinchCanReach(distanceMeters);
 
         /// <summary>
-        /// The seam researched stats enter the physics rig through (KI-025, D-044). Writes suspension
-        /// travel, spring/damper rates, wheel radius, clearance wheel-center offset, and winch
-        /// capability whenever <see cref="WheelRigMath.RequiresGeometryUpdate"/> trips.
+        /// The seam researched stats enter the physics rig through (KI-025, D-044). Translates the
+        /// stats with the engine-free <see cref="WheelRigMath"/> and writes suspension travel,
+        /// spring/damper rates, wheel radius, clearance wheel-center offset, and winch capability to each
+        /// WheelCollider whenever <see cref="WheelRigMath.RequiresGeometryUpdate"/> trips (§18.2).
         /// </summary>
         public void ApplyEffectiveStats(EffectiveVehicleStats stats)
         {
@@ -368,11 +374,15 @@ namespace Wayfinder.Simulation
 
             int index = WheelIndex(wheel);
             float surfaceGrip = SurfaceTable.Get(_surfaces[index]).EffectiveGrip(SurfaceWet);
-            float brakeScale = WheelRigMath.BrakeScale(surfaceGrip);
+            float brakeScale = WheelRigMath.BrakeScale(surfaceGrip); // ABS-ish assist envelope
             wheel.brakeTorque = brakeCmd * (wheel == wheelFrontLeft || wheel == wheelFrontRight
                 ? spec.BrakeTorqueFrontNmPerWheel
                 : spec.BrakeTorqueRearNmPerWheel) * brakeScale;
 
+            // WheelCollider friction shaped toward the composed effective grip (§4.4 calibration note:
+            // setting μ does NOT create an exact physical coefficient — M1 calibration required).
+            // Per-wheel: each wheel resolves grip for the surface it is actually standing on, so ice,
+            // deep mud and asphalt no longer share one packed-dirt coefficient (DEF-005).
             float grip = _resolver.GripFor(tireSet, _surfaces[index], SurfaceWet, stats.TireGripFactor, out float lateral);
             var fwd = wheel.forwardFriction;
             fwd.stiffness = WheelRigMath.ForwardFrictionStiffness(grip, _mud.SinkFraction, _mud.TractionMultiplier);

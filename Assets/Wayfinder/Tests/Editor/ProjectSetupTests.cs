@@ -79,6 +79,12 @@ namespace Wayfinder.Tests
         }
 
         [Test]
+        public void Required3DStreamingAssetsArePresentAndVerified()
+        {
+            Assert.DoesNotThrow(() => ProjectSetup.VerifyStreamingAssets());
+        }
+
+        [Test]
         public void GeneratedVerticalSliceHasDriverAtTheGarageSpawn()
         {
             var previous = EditorSceneManager.GetSceneManagerSetup();

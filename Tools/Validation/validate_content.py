@@ -27,6 +27,7 @@ Checks (§16.6, CONTENT-01, UPG-01, QUEST-01, ITEM-01, PROD-01):
     crafted second camp kit without mapping income (mirrors CampaignFieldTests/CampaignSessionTests)
 """
 
+import hashlib
 import math
 
 import json
@@ -112,6 +113,7 @@ def check_counts():
     recipes = load("recipes.json")
     surfaces = load("surfaces.json")
     biomes = load("biomes.json")
+    streaming_assets = load("streaming_assets.json")
 
     def count(label, actual, expected):
         if actual != expected:
@@ -130,6 +132,7 @@ def check_counts():
     count("recipes", len(recipes), 4)
     count("surfaces", len(surfaces), 11)
     count("biomes", len(biomes), 5)
+    count("streaming_assets", len(streaming_assets), 20)
 
     for biome in ("forest", "canyon", "city", "wetlands", "highlands"):
         count(f"landmarks.{biome}", len([l for l in landmarks if l["biome"] == biome]), 20)
@@ -149,7 +152,8 @@ def check_counts():
     for collection, key in [(landmarks, "id"), (caches, "id"), (missions, "id"),
                             (contracts, "id"), (upgrades, "id"), (vehicles, "id"),
                             (items, "id"), (camps, "id"), (garages, "id"),
-                            (relics, "id"), (recipes, "id"), (surfaces, "id"), (biomes, "id")]:
+                            (relics, "id"), (recipes, "id"), (surfaces, "id"),
+                            (biomes, "id"), (streaming_assets, "id")]:
         for entry in collection:
             all_ids.append(entry[key])
     seen = set()
@@ -542,6 +546,109 @@ def check_objective_reachability():
             err(f"site {site['id']}: unknown kind '{site.get('kind')}'")
 
 
+REQUIRED_STREAMING_ASSET_IDS = [
+    "veh.scout.s1.chassis",
+    "veh.scout.s1.wheel",
+    "env.hub.home_garage",
+    "env.hub.field_camp",
+    "env.landmark.watchtower",
+    "env.prop.relay_tower",
+    "env.prop.salvage_cache",
+    "env.prop.creek_gauge",
+    "env.tree.forest_pine",
+    "env.rock.granite_outcrop",
+    "veh.mule.m2.chassis",
+    "veh.lynx.l3.chassis",
+    "veh.atlas.a4.chassis",
+    "env.landmark.bridge_span",
+    "env.landmark.city_overpass",
+    "env.prop.fuel_depot_tank",
+    "env.prop.winch_anchor_bollard",
+    "env.prop.trail_cairn_marker",
+    "env.tree.wetland_cypress",
+    "env.rock.canyon_hoodoo",
+]
+
+
+def check_streaming_assets():
+    streaming_assets = load("streaming_assets.json")
+    by_id = {entry["id"]: entry for entry in streaming_assets}
+    for req_id in REQUIRED_STREAMING_ASSET_IDS:
+        if req_id not in by_id:
+            err(f"streaming_assets: missing required 3D streaming asset '{req_id}'")
+
+    streaming_root = os.path.join(ROOT, "Assets", "StreamingAssets")
+    for entry in streaming_assets:
+        aid = entry["id"]
+        if not entry.get("required"):
+            err(f"streaming_asset {aid}: must have required=true")
+        if entry.get("format") != "obj":
+            err(f"streaming_asset {aid}: unsupported format '{entry.get('format')}' (expected 'obj')")
+        if entry.get("license") != "Project-owned generated":
+            err(f"streaming_asset {aid}: invalid license '{entry.get('license')}'")
+        rel_path = entry.get("relativePath", "")
+        if not rel_path or ".." in rel_path or rel_path.startswith("/"):
+            err(f"streaming_asset {aid}: unsafe relativePath '{rel_path}'")
+            continue
+        full_path = os.path.join(streaming_root, rel_path)
+        if not os.path.isfile(full_path):
+            err(f"streaming_asset {aid}: missing file on disk at '{rel_path}'")
+            continue
+        with open(full_path, "rb") as f:
+            raw_bytes = f.read()
+        if b"\r\n" in raw_bytes:
+            err(f"streaming_asset {aid}: file '{rel_path}' contains CRLF line endings; LF required for deterministic SHA-256")
+        actual_sha = hashlib.sha256(raw_bytes).hexdigest()
+        if actual_sha != entry.get("sha256"):
+            err(f"streaming_asset {aid}: sha256 mismatch (expected {entry.get('sha256')}, got {actual_sha})")
+
+        text = raw_bytes.decode("utf-8")
+        verts, uvs, norms, tris = [], [], [], []
+        for line in text.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split()
+            tag = parts[0]
+            if tag == "v":
+                verts.append((float(parts[1]), float(parts[2]), float(parts[3])))
+            elif tag == "vt":
+                uvs.append((float(parts[1]), float(parts[2])))
+            elif tag == "vn":
+                norms.append((float(parts[1]), float(parts[2]), float(parts[3])))
+            elif tag == "f":
+                corners = []
+                for tok in parts[1:]:
+                    sub = tok.split("/")
+                    vi = int(sub[0])
+                    ti = int(sub[1]) if len(sub) > 1 and sub[1] else 0
+                    ni = int(sub[2]) if len(sub) > 2 and sub[2] else 0
+                    corners.append((vi, ti, ni))
+                for i in range(1, len(corners) - 1):
+                    tris.append((corners[0], corners[i], corners[i + 1]))
+
+        if len(verts) != entry.get("vertexCount"):
+            err(f"streaming_asset {aid}: vertexCount mismatch ({len(verts)} != {entry.get('vertexCount')})")
+        if len(uvs) != entry.get("uvCount"):
+            err(f"streaming_asset {aid}: uvCount mismatch ({len(uvs)} != {entry.get('uvCount')})")
+        if len(norms) != entry.get("normalCount"):
+            err(f"streaming_asset {aid}: normalCount mismatch ({len(norms)} != {entry.get('normalCount')})")
+        if len(tris) != entry.get("triangleCount"):
+            err(f"streaming_asset {aid}: triangleCount mismatch ({len(tris)} != {entry.get('triangleCount')})")
+        max_lod0 = entry.get("maxTrianglesLod0", 0)
+        if max_lod0 <= 0 or len(tris) > max_lod0:
+            err(f"streaming_asset {aid}: triangleCount {len(tris)} exceeds §14.2 LOD0 cap {max_lod0}")
+
+        if verts:
+            min_y = min(v[1] for v in verts)
+            max_y = max(v[1] for v in verts)
+            pivot = entry.get("pivotConvention")
+            if pivot == "ground_datum_y0" and abs(min_y) > 0.05:
+                err(f"streaming_asset {aid}: ground_datum_y0 requires min_y near 0, got {min_y}")
+            elif pivot == "axle_center" and abs(min_y + max_y) > 0.05:
+                err(f"streaming_asset {aid}: axle_center requires symmetric Y bounds, got [{min_y}, {max_y}]")
+
+
 def main():
     check_counts()
     check_objective_reachability()
@@ -551,6 +658,7 @@ def main():
     check_caches_contracts()
     check_surfaces_vehicles()
     check_vertical_slice()
+    check_streaming_assets()
     check_dependency_scan()
 
     print(f"validate_content: {len(errors)} error(s), {len(warnings)} warning(s)")

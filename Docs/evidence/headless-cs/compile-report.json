@@ -50,6 +50,7 @@
       "Assets/Wayfinder/Scripts/World/MainlandRouteGraph.cs",
       "Assets/Wayfinder/Scripts/World/RouteGraph.cs",
       "Assets/Wayfinder/Scripts/World/ScatterPlacer.cs",
+      "Assets/Wayfinder/Scripts/World/StreamingAssetCatalog.cs",
       "Assets/Wayfinder/Scripts/World/TerrainLineOfSight.cs",
       "Assets/Wayfinder/Scripts/World/WorldDefinition.cs",
       "Assets/Wayfinder/Scripts/World/WorldHydrology.cs",
@@ -164,6 +165,7 @@
       "Assets/Wayfinder/Tests/EditMode/ProgressionTests.cs",
       "Assets/Wayfinder/Tests/EditMode/SimulationTests.cs",
       "Assets/Wayfinder/Tests/EditMode/SingleSourceCatalogTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/StreamingAssetTests.cs",
       "Assets/Wayfinder/Tests/EditMode/WheelRigMathTests.cs",
       "Assets/Wayfinder/Tests/EditMode/WinchAndFleetSimulationTests.cs",
       "Assets/Wayfinder/Tests/EditMode/WorldStreamingTests.cs"

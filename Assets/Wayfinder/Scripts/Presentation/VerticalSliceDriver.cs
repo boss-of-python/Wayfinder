@@ -206,7 +206,8 @@ namespace Wayfinder.Presentation
             vehicle.ZeroInputsAndHold();
         }
 
-        /// <summary>Session → vehicle after load/extraction/chassis swap (closes KI-025, KI-038, KI-040).</summary>
+        /// <summary>Session → vehicle after load/extraction/chassis swap: active vehicle spec, resolver,
+        /// tire set, resolved rig geometry (ApplyEffectiveStats, KI-025/D-044), fuel, condition and cargo mass.</summary>
         void ApplySessionToVehicle()
         {
             vehicle.SwitchVehicleSpec(_session.Vehicle);
