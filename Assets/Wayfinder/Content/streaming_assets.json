@@ -268,5 +268,275 @@
     "sha256": "f0412b4ed2c84830b74d6386d4c960e4894d145b3aa32826b603c2135b9af1e7",
     "license": "Project-owned generated",
     "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "veh.mule.m2.chassis",
+    "name": "Mule M2 Cargo Hauler Chassis",
+    "category": "vehicle",
+    "relativePath": "Models/mule_m2_chassis.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 288,
+    "uvCount": 288,
+    "normalCount": 96,
+    "triangleCount": 96,
+    "maxTrianglesLod0": 45000,
+    "boundsMin": [
+      -0.98,
+      0.0,
+      -2.3
+    ],
+    "boundsMax": [
+      0.98,
+      1.56,
+      2.35
+    ],
+    "sha256": "e3a3029f11eb7794195277c7e81ccc61b7294f38a19ce096bc2f965ff37e3fa7",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "veh.lynx.l3.chassis",
+    "name": "Lynx L3 Crawler Chassis & Roll Cage",
+    "category": "vehicle",
+    "relativePath": "Models/lynx_l3_chassis.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 288,
+    "uvCount": 288,
+    "normalCount": 96,
+    "triangleCount": 96,
+    "maxTrianglesLod0": 45000,
+    "boundsMin": [
+      -0.92,
+      0.0,
+      -1.8
+    ],
+    "boundsMax": [
+      0.92,
+      1.4,
+      1.86
+    ],
+    "sha256": "d4d974829a8699b22ceebfc6303a23d7cb31e9f74853a0439aea9b0b888879d8",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "veh.atlas.a4.chassis",
+    "name": "Atlas A4 Expedition Rig Chassis",
+    "category": "vehicle",
+    "relativePath": "Models/atlas_a4_chassis.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 276,
+    "uvCount": 276,
+    "normalCount": 92,
+    "triangleCount": 92,
+    "maxTrianglesLod0": 45000,
+    "boundsMin": [
+      -1.14,
+      0.0,
+      -2.6
+    ],
+    "boundsMax": [
+      1.14,
+      2.04,
+      2.68
+    ],
+    "sha256": "0933789b6993d23143f25c6351b2d6fc386c576538211f8d13d1c99168b920a6",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.landmark.bridge_span",
+    "name": "Timber Creek Bridge Span",
+    "category": "landmark",
+    "relativePath": "Models/timber_bridge_span.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 264,
+    "uvCount": 264,
+    "normalCount": 88,
+    "triangleCount": 88,
+    "maxTrianglesLod0": 25000,
+    "boundsMin": [
+      -2.4,
+      0.0,
+      -5.8
+    ],
+    "boundsMax": [
+      2.4,
+      1.62,
+      5.8
+    ],
+    "sha256": "83316d1720c7bc82c16b3f74fabcf32146e730546e7d5e1674cc0a9140cb3d40",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.landmark.city_overpass",
+    "name": "Ruined City Concrete Overpass",
+    "category": "landmark",
+    "relativePath": "Models/ruined_city_overpass.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 372,
+    "uvCount": 372,
+    "normalCount": 124,
+    "triangleCount": 124,
+    "maxTrianglesLod0": 25000,
+    "boundsMin": [
+      -4.4,
+      0.0,
+      -4.5
+    ],
+    "boundsMax": [
+      4.4,
+      7.35,
+      4.5
+    ],
+    "sha256": "a5ed2781e93ac0896618fae3551af524d4943b2c3396d3349dfca50629871b67",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.prop.fuel_depot_tank",
+    "name": "Garage Fuel Reserve Tank",
+    "category": "prop",
+    "relativePath": "Models/fuel_depot_tank.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 252,
+    "uvCount": 252,
+    "normalCount": 84,
+    "triangleCount": 84,
+    "maxTrianglesLod0": 1500,
+    "boundsMin": [
+      -1.35,
+      0.0,
+      -2.1
+    ],
+    "boundsMax": [
+      1.35,
+      2.25,
+      2.1
+    ],
+    "sha256": "eaedf0c1d1c1b66a6746c3d2a0e5fe8c1f230eac8d9accf49cbed00056d0d4b7",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.prop.winch_anchor_bollard",
+    "name": "Steel Winch Recovery Bollard",
+    "category": "prop",
+    "relativePath": "Models/winch_anchor_bollard.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 264,
+    "uvCount": 264,
+    "normalCount": 88,
+    "triangleCount": 88,
+    "maxTrianglesLod0": 1500,
+    "boundsMin": [
+      -0.38,
+      0.0,
+      -0.38
+    ],
+    "boundsMax": [
+      0.38,
+      1.1,
+      0.38
+    ],
+    "sha256": "d5abd9a3f9c07f287ab388e739bbdf04deb9b6d877ffb83cab85ebe23c8bc44d",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.prop.trail_cairn_marker",
+    "name": "Frontier Stacked Stone Cairn",
+    "category": "prop",
+    "relativePath": "Models/trail_cairn_marker.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 312,
+    "uvCount": 312,
+    "normalCount": 104,
+    "triangleCount": 104,
+    "maxTrianglesLod0": 1500,
+    "boundsMin": [
+      -0.5586,
+      0.0,
+      -0.5655
+    ],
+    "boundsMax": [
+      0.62,
+      1.95,
+      0.5655
+    ],
+    "sha256": "b18a2c67de60ebdeacfceaee373f286b1604cb146d6e2027c27a33a5eaf5a64d",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.tree.wetland_cypress",
+    "name": "Wetlands Buttressed Cypress Tree",
+    "category": "tree",
+    "relativePath": "Models/wetland_cypress_tree.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 384,
+    "uvCount": 384,
+    "normalCount": 128,
+    "triangleCount": 128,
+    "maxTrianglesLod0": 4000,
+    "boundsMin": [
+      -2.1,
+      0.0,
+      -2.1
+    ],
+    "boundsMax": [
+      2.1,
+      6.7,
+      2.1
+    ],
+    "sha256": "c73d39553cbf8c031fc66e68d45853cec7c1335a033beb1c5548ae5c3f6b28d2",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.rock.canyon_hoodoo",
+    "name": "Red Canyon Sandstone Hoodoo Spire",
+    "category": "rock",
+    "relativePath": "Models/canyon_sandstone_hoodoo.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 336,
+    "uvCount": 336,
+    "normalCount": 112,
+    "triangleCount": 112,
+    "maxTrianglesLod0": 2000,
+    "boundsMin": [
+      -1.2163,
+      0.0,
+      -1.1699
+    ],
+    "boundsMax": [
+      1.35,
+      3.65,
+      1.1699
+    ],
+    "sha256": "74993f9eeec61b9a68ec495053fe43debb4a65c77c4d4d78ce72d9431ed559f0",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
   }
 ]

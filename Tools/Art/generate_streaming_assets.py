@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Deterministic generator for Wayfinder's 10 required 3D streaming assets (§14.2, §14.3, LEGAL-01).
+"""Deterministic generator for Wayfinder's 20 required 3D streaming assets (§14.2, §14.3, LEGAL-01).
 
 Emits:
-  * 10 pure-ASCII Wavefront .obj meshes under `Assets/StreamingAssets/Models/` (LF line endings,
+  * 20 pure-ASCII Wavefront .obj meshes under `Assets/StreamingAssets/Models/` (LF line endings,
     1 unit = 1 meter, +Z forward, +Y up, consistent placement datum, valid v/vt/vn/f indices,
     non-degenerate triangles, zero third-party geometry).
   * `Assets/Wayfinder/Content/streaming_assets.json` (canonical manifest required by
@@ -337,6 +337,158 @@ def build_granite_outcrop() -> MeshBuilder:
     return m
 
 
+def build_mule_chassis() -> MeshBuilder:
+    m = MeshBuilder("veh.mule.m2.chassis", "Mule M2 4x4 heavy cargo utility truck chassis and staked flatbed (§4.2, §10.1)")
+    # Heavy ladder frame + side steps (datum Y=0 at lower frame rail, 1.96m wide x 4.60m long)
+    m.add_box(-0.98, 0.00, -2.30, 0.98, 0.52, 2.30)
+    # Forward engine nose & radiator grille
+    m.add_box(-0.92, 0.52, 1.05, 0.92, 1.02, 2.22)
+    # Heavy steel front bumper
+    m.add_box(-0.98, 0.14, 2.20, 0.98, 0.46, 2.35)
+    # Forward crew cab
+    m.add_box(-0.94, 0.52, -0.15, 0.94, 1.52, 1.05)
+    # Headache rack behind cab
+    m.add_box(-0.96, 0.52, -0.28, 0.96, 1.56, -0.15)
+    # Long cargo flatbed deck + left/right stake sideboards + tailgate
+    m.add_box(-0.98, 0.52, -2.30, -0.84, 0.96, -0.28)
+    m.add_box(0.84, 0.52, -2.30, 0.98, 0.96, -0.28)
+    m.add_box(-0.84, 0.52, -2.30, 0.84, 0.88, -2.16)
+    return m
+
+
+def build_lynx_chassis() -> MeshBuilder:
+    m = MeshBuilder("veh.lynx.l3.chassis", "Lynx L3 agile technical rock crawler with tubular roll cage (§4.2, §10.1)")
+    # High-clearance boat-sided tub (datum Y=0 at skidplate bottom, 1.84m wide x 3.60m long)
+    m.add_box(-0.92, 0.00, -1.80, 0.92, 0.46, 1.80)
+    # Tapered front hood
+    m.add_box(-0.76, 0.46, 0.55, 0.76, 0.84, 1.72)
+    # Stubby rock-crawler winch bumper + stinger bar
+    m.add_box(-0.68, 0.18, 1.72, 0.68, 0.48, 1.86)
+    # Cockpit lower tub
+    m.add_box(-0.86, 0.46, -0.65, 0.86, 0.92, 0.55)
+    # Left & right roll-cage side rails + overhead canopy bar
+    m.add_box(-0.86, 0.92, -0.65, -0.72, 1.38, 0.45)
+    m.add_box(0.72, 0.92, -0.65, 0.86, 1.38, 0.45)
+    m.add_box(-0.86, 1.28, -0.65, 0.86, 1.40, 0.45)
+    # Rear spare-tire carrier deck
+    m.add_box(-0.78, 0.46, -1.80, 0.78, 0.78, -0.65)
+    return m
+
+
+def build_atlas_chassis() -> MeshBuilder:
+    m = MeshBuilder("veh.atlas.a4.chassis", "Atlas A4 long-range expedition rig with cab-over nose and service canopy (§4.2, §10.1)")
+    # Deep reinforced expedition chassis frame (datum Y=0, 2.20m wide x 5.20m long)
+    m.add_box(-1.10, 0.00, -2.60, 1.10, 0.58, 2.60)
+    # Cab-over forward control cabin
+    m.add_box(-1.06, 0.58, 0.85, 1.06, 1.88, 2.52)
+    # Heavy expedition bullbar + winch housing
+    m.add_box(-1.10, 0.16, 2.52, 1.10, 0.62, 2.68)
+    # Twin side saddle fuel tanks
+    m.add_box(-1.14, 0.18, -0.35, -0.92, 0.54, 0.75)
+    m.add_box(0.92, 0.18, -0.35, 1.14, 0.54, 0.75)
+    # Rear enclosed expedition module / service canopy with bevelled roof
+    m.add_box(-1.08, 0.58, -2.55, 1.08, 1.76, 0.70)
+    m.add_prism_roof_z(-1.08, 1.08, 1.76, 2.02, -2.55, 0.70)
+    # Roof beacon & sensor bar above cab
+    m.add_box(-0.85, 1.88, 1.15, 0.85, 2.04, 2.15)
+    return m
+
+
+def build_timber_bridge_span() -> MeshBuilder:
+    m = MeshBuilder("env.landmark.bridge_span", "Timber creek crossing bridge with stone abutments, stringers and wheel curbs (§6.2, §8.2)")
+    # Near and far stone abutments (-Z and +Z ends, 10m total span)
+    m.add_box(-2.40, 0.00, -5.00, 2.40, 1.10, -3.80)
+    m.add_box(-2.40, 0.00, 3.80, 2.40, 1.10, 5.00)
+    # Center creek pier
+    m.add_box(-2.10, 0.00, -0.45, 2.10, 1.10, 0.45)
+    # Timber plank deck
+    m.add_box(-2.30, 1.10, -4.80, 2.30, 1.32, 4.80)
+    # Left & right heavy timber wheel guard curbs
+    m.add_box(-2.30, 1.32, -4.80, -1.95, 1.62, 4.80)
+    m.add_box(1.95, 1.32, -4.80, 2.30, 1.62, 4.80)
+    # Approach ramps at -Z and +Z ends
+    m.add_prism_roof_z(-2.30, 2.30, 0.00, 1.10, -5.80, -4.80)
+    m.add_prism_roof_z(-2.30, 2.30, 0.00, 1.10, 4.80, 5.80)
+    return m
+
+
+def build_city_overpass() -> MeshBuilder:
+    m = MeshBuilder("env.landmark.city_overpass", "Ruined city concrete highway overpass pier, crosshead and broken deck (§6.2, §8.2)")
+    # Wide reinforced concrete footing pad
+    m.add_box(-3.20, 0.00, -2.20, 3.20, 0.55, 2.20)
+    # Twin octagonal concrete support columns
+    m.add_frustum_y(-1.85, 0.0, 0.55, 5.40, 0.65, 0.65, 0.58, 0.58, segments=8)
+    m.add_frustum_y(1.85, 0.0, 0.55, 5.40, 0.65, 0.65, 0.58, 0.58, segments=8)
+    # Hammerhead pier cap / crossbeam
+    m.add_box(-4.20, 5.40, -1.25, 4.20, 6.20, 1.25)
+    # Cantilevered broken highway deck slab + jersey barriers
+    m.add_box(-4.40, 6.20, -4.50, 4.40, 6.65, 4.50)
+    m.add_box(-4.40, 6.65, -4.50, -3.95, 7.35, 4.50)
+    m.add_box(3.95, 6.65, -4.50, 4.40, 7.35, 4.50)
+    return m
+
+
+def build_fuel_depot_tank() -> MeshBuilder:
+    m = MeshBuilder("env.prop.fuel_depot_tank", "Garage fuel reserve tank on concrete containment pad and cradles (§10.3, §12.1)")
+    # Bunded concrete containment base pad
+    m.add_box(-1.35, 0.00, -2.10, 1.35, 0.22, 2.10)
+    # Front and rear saddle cradles
+    m.add_box(-0.95, 0.22, -1.35, 0.95, 0.72, -0.95)
+    m.add_box(-0.95, 0.22, 0.95, 0.95, 0.72, 1.35)
+    # Elevated tank body (octagonal horizontal-style tank block + top fill turret + pump cabinet)
+    m.add_box(-0.90, 0.65, -1.75, 0.90, 1.95, 1.75)
+    m.add_frustum_y(0.0, 0.0, 1.95, 2.25, 0.32, 0.32, 0.28, 0.28, segments=6)
+    m.add_box(-0.45, 0.22, 1.75, 0.45, 1.35, 2.05)
+    return m
+
+
+def build_winch_anchor_bollard() -> MeshBuilder:
+    m = MeshBuilder("env.prop.winch_anchor_bollard", "Anchored steel winch recovery bollard with base flange and top cap (§5.2, §14.2)")
+    # Heavy bolted steel base plate on ground datum Y=0
+    m.add_box(-0.38, 0.00, -0.38, 0.38, 0.12, 0.38)
+    # Main cylindrical steel bollard post
+    m.add_frustum_y(0.0, 0.0, 0.12, 0.92, 0.18, 0.18, 0.16, 0.16, segments=8)
+    # Flared cable-retaining crown cap + cross pin
+    m.add_frustum_y(0.0, 0.0, 0.92, 1.10, 0.23, 0.23, 0.19, 0.19, segments=8)
+    m.add_box(-0.28, 0.68, -0.05, 0.28, 0.78, 0.05)
+    return m
+
+
+def build_trail_cairn_marker() -> MeshBuilder:
+    m = MeshBuilder("env.prop.trail_cairn_marker", "Stacked stone frontier route cairn with survey flag pole (§8.2, §14.2)")
+    # 3 stacked tapered stone tiers from Y=0
+    m.add_frustum_y(0.0, 0.0, 0.00, 0.42, 0.62, 0.58, 0.48, 0.45, segments=7)
+    m.add_frustum_y(0.02, -0.01, 0.42, 0.78, 0.44, 0.42, 0.31, 0.29, segments=7)
+    m.add_frustum_y(-0.01, 0.02, 0.78, 1.06, 0.27, 0.25, 0.14, 0.13, segments=6)
+    # Timber survey stake & high-visibility pennant board
+    m.add_box(-0.04, 1.00, -0.04, 0.04, 1.95, 0.04)
+    m.add_box(0.04, 1.62, -0.02, 0.38, 1.90, 0.02)
+    return m
+
+
+def build_wetland_cypress() -> MeshBuilder:
+    m = MeshBuilder("env.tree.wetland_cypress", "Wetlands bald cypress with fluted buttress base and wide canopy (§6.2, §7.6)")
+    # Fluted swollen buttress base (Y=0) + tapered trunk
+    m.add_frustum_y(0.0, 0.0, 0.00, 1.40, 0.68, 0.68, 0.32, 0.32, segments=8)
+    m.add_frustum_y(0.0, 0.0, 1.40, 4.20, 0.32, 0.32, 0.20, 0.20, segments=8)
+    # Broad flat-topped wetland canopy tiers
+    m.add_frustum_y(0.0, 0.0, 3.60, 5.40, 2.10, 2.10, 1.55, 1.55, segments=8)
+    m.add_frustum_y(0.15, -0.10, 5.10, 6.70, 1.45, 1.45, 0.65, 0.65, segments=8)
+    return m
+
+
+def build_canyon_hoodoo() -> MeshBuilder:
+    m = MeshBuilder("env.rock.canyon_hoodoo", "Stratified red canyon sandstone hoodoo spire with overhang caprock (§6.2, §7.6)")
+    # Pedestal talus base (Y=0)
+    m.add_frustum_y(0.0, 0.0, 0.00, 1.10, 1.35, 1.20, 0.82, 0.75, segments=7)
+    # Eroded narrow neck
+    m.add_frustum_y(0.03, -0.02, 1.10, 2.35, 0.82, 0.75, 0.52, 0.48, segments=7)
+    # Wider stratified caprock overhang + crown
+    m.add_frustum_y(0.0, 0.02, 2.35, 3.15, 0.96, 0.88, 0.74, 0.68, segments=7)
+    m.add_frustum_y(-0.02, 0.0, 3.15, 3.65, 0.74, 0.68, 0.28, 0.24, segments=7)
+    return m
+
+
 ASSET_SPECS = [
     {
         "id": "veh.scout.s1.chassis",
@@ -427,6 +579,96 @@ ASSET_SPECS = [
         "maxTrianglesLod0": 2000,
         "pivotConvention": "ground_datum_y0",
         "builder": build_granite_outcrop,
+    },
+    {
+        "id": "veh.mule.m2.chassis",
+        "name": "Mule M2 Cargo Hauler Chassis",
+        "category": "vehicle",
+        "filename": "mule_m2_chassis.obj",
+        "maxTrianglesLod0": 45000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_mule_chassis,
+    },
+    {
+        "id": "veh.lynx.l3.chassis",
+        "name": "Lynx L3 Crawler Chassis & Roll Cage",
+        "category": "vehicle",
+        "filename": "lynx_l3_chassis.obj",
+        "maxTrianglesLod0": 45000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_lynx_chassis,
+    },
+    {
+        "id": "veh.atlas.a4.chassis",
+        "name": "Atlas A4 Expedition Rig Chassis",
+        "category": "vehicle",
+        "filename": "atlas_a4_chassis.obj",
+        "maxTrianglesLod0": 45000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_atlas_chassis,
+    },
+    {
+        "id": "env.landmark.bridge_span",
+        "name": "Timber Creek Bridge Span",
+        "category": "landmark",
+        "filename": "timber_bridge_span.obj",
+        "maxTrianglesLod0": 25000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_timber_bridge_span,
+    },
+    {
+        "id": "env.landmark.city_overpass",
+        "name": "Ruined City Concrete Overpass",
+        "category": "landmark",
+        "filename": "ruined_city_overpass.obj",
+        "maxTrianglesLod0": 25000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_city_overpass,
+    },
+    {
+        "id": "env.prop.fuel_depot_tank",
+        "name": "Garage Fuel Reserve Tank",
+        "category": "prop",
+        "filename": "fuel_depot_tank.obj",
+        "maxTrianglesLod0": 1500,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_fuel_depot_tank,
+    },
+    {
+        "id": "env.prop.winch_anchor_bollard",
+        "name": "Steel Winch Recovery Bollard",
+        "category": "prop",
+        "filename": "winch_anchor_bollard.obj",
+        "maxTrianglesLod0": 1500,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_winch_anchor_bollard,
+    },
+    {
+        "id": "env.prop.trail_cairn_marker",
+        "name": "Frontier Stacked Stone Cairn",
+        "category": "prop",
+        "filename": "trail_cairn_marker.obj",
+        "maxTrianglesLod0": 1500,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_trail_cairn_marker,
+    },
+    {
+        "id": "env.tree.wetland_cypress",
+        "name": "Wetlands Buttressed Cypress Tree",
+        "category": "tree",
+        "filename": "wetland_cypress_tree.obj",
+        "maxTrianglesLod0": 4000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_wetland_cypress,
+    },
+    {
+        "id": "env.rock.canyon_hoodoo",
+        "name": "Red Canyon Sandstone Hoodoo Spire",
+        "category": "rock",
+        "filename": "canyon_sandstone_hoodoo.obj",
+        "maxTrianglesLod0": 2000,
+        "pivotConvention": "ground_datum_y0",
+        "builder": build_canyon_hoodoo,
     },
 ]
 

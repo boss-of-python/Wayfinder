@@ -20,9 +20,10 @@ namespace Wayfinder.Tests
         public void TearDown() => DeleteRoot(_tempRoot);
 
         [Test]
-        public void CanonicalCatalogHasExactlyTenRequired3DStreamingAssets()
+        public void CanonicalCatalogHasExactlyTwentyRequired3DStreamingAssets()
         {
             Assert.IsTrue(CampaignContent.RequiredFiles.Contains("streaming_assets.json"));
+            Assert.AreEqual(20, StreamingAssetCatalog.RequiredAssetCount);
             Assert.AreEqual(StreamingAssetCatalog.RequiredAssetCount, Content.StreamingAssets.Count);
             foreach (string requiredId in StreamingAssetCatalog.RequiredAssetIds)
             {
@@ -38,7 +39,7 @@ namespace Wayfinder.Tests
         }
 
         [Test]
-        public void AllTenStreamingAssetsExistOnDiskAndMatchSha256AndGeometry()
+        public void AllTwentyStreamingAssetsExistOnDiskAndMatchSha256AndGeometry()
         {
             StreamingAssetCatalog.VerifyAllOnDisk(Content.StreamingAssets, StreamingAssetsDir);
 
@@ -105,8 +106,8 @@ namespace Wayfinder.Tests
             foreach (string name in CampaignContent.RequiredFiles)
                 files[name] = File.ReadAllText(Path.Combine(ContentDir, name));
 
-            // Provide only 9 assets in streaming_assets.json
-            var subset = Content.StreamingAssets.Values.Take(9).ToList();
+            // Provide one fewer than RequiredAssetCount in streaming_assets.json
+            var subset = Content.StreamingAssets.Values.Take(StreamingAssetCatalog.RequiredAssetCount - 1).ToList();
             files["streaming_assets.json"] = Newtonsoft.Json.JsonConvert.SerializeObject(subset);
 
             var ex = Assert.Throws<InvalidDataException>(() => CampaignContent.FromJson(files));
