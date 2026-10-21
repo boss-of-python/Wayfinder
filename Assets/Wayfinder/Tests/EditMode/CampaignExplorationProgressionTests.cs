@@ -200,6 +200,20 @@ namespace Wayfinder.Tests
 
             int mappingPaid = s.Discovery.MappingRewardsPaidThroughCount;
             Assert.Greater(mappingPaid, 0, "a 384 m vista reveal crosses at least one 50-cell threshold");
+
+            // The whole crossing happens inside ONE reveal, so every threshold it crossed must be paid by
+            // that same action. Deriving the expectation from `mappingPaid` itself would be tautological
+            // — a loop that paid only one threshold per call would agree with itself. Derive it from the
+            // cells actually revealed instead.
+            int cells = s.Discovery.RevealedCountableCells;
+            int expectedThrough = cells / DiscoveryService.MappingRewardThresholdCells
+                                  * DiscoveryService.MappingRewardThresholdCells;
+            Assert.GreaterOrEqual(expectedThrough, 2 * DiscoveryService.MappingRewardThresholdCells,
+                $"a 384 m vista disc really does cross several thresholds at once ({cells} cells revealed), " +
+                "which is what makes the next assertion bite");
+            Assert.AreEqual(expectedThrough, mappingPaid,
+                "every threshold this single reveal crossed is paid in the same action, not one per call");
+
             Assert.AreEqual(DiscoveryService.LandmarkDiscoveryRewardSalvage + mappingPaid,
                 s.Economy.EscrowedSalvage,
                 "120 for the landmark plus 50 per mapping threshold (the count and the Salvage agree " +
@@ -260,6 +274,44 @@ namespace Wayfinder.Tests
             Assert.IsFalse(s.Discovery.RewardLedger.TryClaim("reward.map.50"),
                 "a claimed key refuses a second claim");
             Assert.IsFalse(s.Discovery.RewardLedger.TryClaim($"reward.landmark.{id}"));
+        }
+
+        [Test]
+        public void ARestoreThatLostProgressCannotRepayWhatTheRewardLedgerAlreadyClaimed()
+        {
+            var s = NewGame(_saves);
+            s.Depart();
+            RevealAtLeast(s, DiscoveryService.MappingRewardThresholdCells);
+            string id = Content.Slice.Landmarks.First(l => !l.Vista).Id;
+            Assert.IsTrue(s.DiscoverLandmark(id, 5f, 3f).Success);
+
+            int escrow = s.Economy.EscrowedSalvage;
+            Assert.Greater(escrow, 0, "a mapping threshold and a landmark have both been paid");
+            Assert.IsTrue(s.Discovery.RewardLedger.IsClaimed("reward.map.50"));
+            Assert.IsTrue(s.Discovery.RewardLedger.IsClaimed($"reward.landmark.{id}"));
+
+            // The failure mode the ledger exists for: progress restored from a payload that lost it (a
+            // legacy or partially migrated save) while the claimed-key ledger survived. The counters now
+            // say "nothing discovered yet"; the ledger says "already paid". §8.4's "prevent duplicate
+            // claims" has to hold on the ledger's answer, not the counters' — the paid-threshold index
+            // and the discovered-landmark set alone would both allow a second payment here.
+            s.Discovery.Restore(
+                s.Discovery.RevealedCells.ToBase64(),
+                s.Discovery.SurveyedCells.ToBase64(),
+                s.Discovery.CountableMask.ToBase64(),
+                Enumerable.Empty<string>(), Enumerable.Empty<string>(), Enumerable.Empty<string>(),
+                mappingRewardsPaidThroughCount: 0);
+
+            Assert.IsFalse(s.Discovery.IsLandmarkDiscovered(id), "the landmark counter was reset");
+            Assert.AreEqual(0, s.Discovery.MappingRewardsPaidThroughCount, "and so was the paid index");
+            Assert.IsTrue(s.Discovery.RewardLedger.IsClaimed($"reward.landmark.{id}"),
+                "but the reward ledger still remembers both claims");
+
+            // Re-reveal the same ground and re-discover the same landmark: neither may pay again.
+            s.RevealAround(1100f, 1520f, false);
+            s.DiscoverLandmark(id, 5f, 3f);
+            Assert.AreEqual(escrow, s.Economy.EscrowedSalvage,
+                "no Salvage is escrowed twice for the same threshold or the same landmark (§8.4)");
         }
 
         // ============================================================ §8.4 the finale's 60% gate
