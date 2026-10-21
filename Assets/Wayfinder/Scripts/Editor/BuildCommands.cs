@@ -23,6 +23,7 @@ namespace Wayfinder.Editor
                 throw new BuildFailedException("Bootstrap must be the first enabled build scene.");
             if (!File.Exists(ProjectSetup.ControlsOutputPath))
                 throw new BuildFailedException("Generated input resource missing. Run Setup Project.");
+            ProjectSetup.VerifyStreamingAssets();
             return scenes;
         }
 

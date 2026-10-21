@@ -198,7 +198,7 @@ namespace Wayfinder.Campaign
         public static readonly string[] RequiredFiles =
         {
             "caches.json", "landmarks.json", "garages.json", "camps.json", "missions.json", "upgrades.json",
-            "vertical_slice.json", "sites.json", "contracts.json", "relics.json"
+            "vertical_slice.json", "sites.json", "contracts.json", "relics.json", "streaming_assets.json"
         };
 
         readonly Dictionary<string, CacheDefinition> _caches = new Dictionary<string, CacheDefinition>(StringComparer.Ordinal);
@@ -215,6 +215,8 @@ namespace Wayfinder.Campaign
             new Dictionary<string, SliceCheckpointRoute>(StringComparer.Ordinal);
         readonly Dictionary<string, ContractDefinition> _contracts =
             new Dictionary<string, ContractDefinition>(StringComparer.Ordinal);
+        readonly Dictionary<string, StreamingAssetDefinition> _streamingAssets =
+            new Dictionary<string, StreamingAssetDefinition>(StringComparer.Ordinal);
 
         public VerticalSliceManifest Slice { get; private set; }
         public IReadOnlyDictionary<string, CacheDefinition> Caches => _caches;
@@ -234,6 +236,8 @@ namespace Wayfinder.Campaign
         public IReadOnlyDictionary<string, SliceCheckpointRoute> Routes => _routes;
         /// <summary>Optional contracts (§9.3) — the board's catalogue. 35 rows (DEF-007).</summary>
         public IReadOnlyDictionary<string, ContractDefinition> Contracts => _contracts;
+        /// <summary>Required 3D streaming mesh assets (§14.2, §14.3, LEGAL-01) — 10 assets in Assets/StreamingAssets/Models/.</summary>
+        public IReadOnlyDictionary<string, StreamingAssetDefinition> StreamingAssets => _streamingAssets;
 
         CampaignContent() { }
 
@@ -360,6 +364,49 @@ namespace Wayfinder.Campaign
                 if (string.IsNullOrEmpty(def.RewardKey)) def.RewardKey = $"reward.contract.{def.Id}";
                 content._contracts[def.Id] = def;
             }
+
+            foreach (JObject sa in JArray.Parse(files["streaming_assets.json"]))
+            {
+                var bmin = sa["boundsMin"] as JArray;
+                var bmax = sa["boundsMax"] as JArray;
+                var def = new StreamingAssetDefinition
+                {
+                    Id = Str(sa, "id"),
+                    Name = Str(sa, "name"),
+                    Category = Str(sa, "category"),
+                    RelativePath = Str(sa, "relativePath"),
+                    Format = Str(sa, "format"),
+                    Required = sa.Value<bool?>("required") ?? false,
+                    PivotConvention = Str(sa, "pivotConvention"),
+                    VertexCount = sa.Value<int?>("vertexCount") ?? 0,
+                    UvCount = sa.Value<int?>("uvCount") ?? 0,
+                    NormalCount = sa.Value<int?>("normalCount") ?? 0,
+                    TriangleCount = sa.Value<int?>("triangleCount") ?? 0,
+                    MaxTrianglesLod0 = sa.Value<int?>("maxTrianglesLod0") ?? 0,
+                    BoundsMin = bmin != null && bmin.Count == 3
+                        ? ((float)bmin[0], (float)bmin[1], (float)bmin[2])
+                        : (0f, 0f, 0f),
+                    BoundsMax = bmax != null && bmax.Count == 3
+                        ? ((float)bmax[0], (float)bmax[1], (float)bmax[2])
+                        : (0f, 0f, 0f),
+                    Sha256 = Str(sa, "sha256"),
+                    License = Str(sa, "license"),
+                    Generator = Str(sa, "generator")
+                };
+                if (string.IsNullOrEmpty(def.Id))
+                    throw new InvalidDataException("streaming_assets.json: entry missing id");
+                if (!def.Required)
+                    throw new InvalidDataException($"streaming_assets.json: {def.Id} must be marked required=true");
+                if (content._streamingAssets.ContainsKey(def.Id))
+                    throw new InvalidDataException($"streaming_assets.json: duplicate id '{def.Id}'");
+                content._streamingAssets[def.Id] = def;
+            }
+            if (content._streamingAssets.Count != StreamingAssetCatalog.RequiredAssetCount)
+                throw new InvalidDataException(
+                    $"streaming_assets.json: expected {StreamingAssetCatalog.RequiredAssetCount} required 3D streaming assets, found {content._streamingAssets.Count}");
+            foreach (var reqId in StreamingAssetCatalog.RequiredAssetIds)
+                if (!content._streamingAssets.ContainsKey(reqId))
+                    throw new InvalidDataException($"streaming_assets.json: missing required 3D streaming asset '{reqId}'");
 
             content.Slice = ParseSlice(JObject.Parse(files["vertical_slice.json"]));
             content.ParseWorldSites(JArray.Parse(files["sites.json"]));

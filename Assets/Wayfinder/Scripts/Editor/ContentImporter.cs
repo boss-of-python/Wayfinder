@@ -124,6 +124,7 @@ namespace Wayfinder.Editor
             ValidateMissionTable(report, contentDir, ids, CheckUnique);
             ValidateObjectiveReachability(report, contentDir);
             ValidateCounts(report, contentDir);
+            ValidateStreamingAssets(report, contentDir, CheckUnique);
             return report;
         }
 
@@ -290,6 +291,23 @@ namespace Wayfinder.Editor
             Count("caches.json", "biome", "city", 40, "caches.city");
             Count("caches.json", "biome", "wetlands", 40, "caches.wetlands");
             Count("caches.json", "biome", "highlands", 40, "caches.highlands");
+            Count("streaming_assets.json", null, null, Wayfinder.World.StreamingAssetCatalog.RequiredAssetCount, "streaming_assets");
+        }
+
+        static void ValidateStreamingAssets(ValidationReport report, string contentDir, Action<string, string> checkUnique)
+        {
+            try
+            {
+                var content = Wayfinder.Campaign.CampaignContent.FromDirectory(contentDir);
+                foreach (var id in content.StreamingAssets.Keys)
+                    checkUnique("streaming_asset", id);
+                string streamingRoot = Path.Combine(Application.dataPath, "StreamingAssets");
+                Wayfinder.World.StreamingAssetCatalog.VerifyAllOnDisk(content.StreamingAssets, streamingRoot);
+            }
+            catch (Exception ex)
+            {
+                report.Error($"streaming_assets: {ex.Message}");
+            }
         }
     }
 }

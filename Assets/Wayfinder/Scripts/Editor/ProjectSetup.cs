@@ -74,6 +74,8 @@ namespace Wayfinder.Editor
             AssetDatabase.ImportAsset(ControlsOutputPath, ImportAssetOptions.ForceSynchronousImport);
             Breadcrumb("campaign content");
             CopyCampaignContent();
+            Breadcrumb("3D streaming assets");
+            VerifyStreamingAssets();
             Breadcrumb("quality tiers");
             ConfigureQualityTiers();
             Breadcrumb("URP asset");
@@ -115,6 +117,27 @@ namespace Wayfinder.Editor
                 AssetDatabase.ImportAsset(destination, ImportAssetOptions.ForceSynchronousImport);
             }
             Debug.Log($"[Wayfinder] Campaign content copied to {CampaignContentResourcesDir}.");
+        }
+
+        /// <summary>
+        /// Verifies that all 10 required 3D streaming mesh assets exist under Assets/StreamingAssets/Models/
+        /// and match the canonical manifest (streaming_assets.json) in SHA-256, triangle budget and bounds.
+        /// </summary>
+        [MenuItem("Tools/Wayfinder/Verify 3D Streaming Assets")]
+        public static void VerifyStreamingAssets()
+        {
+            try
+            {
+                var content = Wayfinder.Campaign.CampaignContent.FromDirectory(CanonicalContentDir);
+                Wayfinder.World.StreamingAssetCatalog.VerifyAllOnDisk(
+                    content.StreamingAssets,
+                    Wayfinder.World.StreamingAssetCatalog.DefaultStreamingAssetsRoot);
+                Debug.Log($"[Wayfinder] Verified {content.StreamingAssets.Count} required 3D streaming assets in {Wayfinder.World.StreamingAssetCatalog.DefaultStreamingAssetsRoot}.");
+            }
+            catch (Exception ex)
+            {
+                throw new BuildFailedException($"Required 3D streaming asset check failed: {ex.Message}");
+            }
         }
 
         static void SetDefaultIdentifier(NamedBuildTarget target)

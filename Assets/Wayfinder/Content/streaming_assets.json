@@ -1,0 +1,272 @@
+[
+  {
+    "id": "veh.scout.s1.chassis",
+    "name": "Scout S1 Chassis & Cab",
+    "category": "vehicle",
+    "relativePath": "Models/scout_s1_chassis.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 288,
+    "uvCount": 288,
+    "normalCount": 96,
+    "triangleCount": 96,
+    "maxTrianglesLod0": 45000,
+    "boundsMin": [
+      -0.85,
+      0.0,
+      -1.95
+    ],
+    "boundsMax": [
+      0.85,
+      1.45,
+      1.95
+    ],
+    "sha256": "e5bc42c6b0128148df9ded08755c72b0dbf595192c674993a28380f2a804fff0",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "veh.scout.s1.wheel",
+    "name": "Scout S1 Off-Road Wheel",
+    "category": "vehicle_wheel",
+    "relativePath": "Models/scout_s1_wheel.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "axle_center",
+    "vertexCount": 288,
+    "uvCount": 288,
+    "normalCount": 96,
+    "triangleCount": 96,
+    "maxTrianglesLod0": 4500,
+    "boundsMin": [
+      -0.13,
+      -0.36,
+      -0.36
+    ],
+    "boundsMax": [
+      0.13,
+      0.36,
+      0.36
+    ],
+    "sha256": "81b81572540d8ef5fa333609c8184b2a585888f9ef6115057e23ab60d0550985",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.hub.home_garage",
+    "name": "Forest Home Garage Bay",
+    "category": "building",
+    "relativePath": "Models/home_garage_bay.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 204,
+    "uvCount": 204,
+    "normalCount": 68,
+    "triangleCount": 68,
+    "maxTrianglesLod0": 25000,
+    "boundsMin": [
+      -6.0,
+      0.0,
+      -5.0
+    ],
+    "boundsMax": [
+      6.0,
+      5.2,
+      5.0
+    ],
+    "sha256": "ad98b51b7288df46874bc14afb4b57eb20ab2c34bf8a0f6f4d883b95b7c39a84",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.hub.field_camp",
+    "name": "Expedition Field Camp Shelter",
+    "category": "camp",
+    "relativePath": "Models/field_camp_shelter.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 168,
+    "uvCount": 168,
+    "normalCount": 56,
+    "triangleCount": 56,
+    "maxTrianglesLod0": 15000,
+    "boundsMin": [
+      -2.5,
+      0.0,
+      -2.5
+    ],
+    "boundsMax": [
+      2.5,
+      2.8,
+      2.5
+    ],
+    "sha256": "0d59c166c44d8302ed0b7d0ffa4ad30ee79573c1dcc6e449700bf0ec8dc2e9b2",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.landmark.watchtower",
+    "name": "Forest Lookout Watchtower",
+    "category": "landmark",
+    "relativePath": "Models/landmark_watchtower.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 276,
+    "uvCount": 276,
+    "normalCount": 92,
+    "triangleCount": 92,
+    "maxTrianglesLod0": 25000,
+    "boundsMin": [
+      -2.1,
+      0.0,
+      -2.1
+    ],
+    "boundsMax": [
+      2.1,
+      12.0,
+      2.1
+    ],
+    "sha256": "4d7098b035520787e899f2e539249085cf2230b6047785978418576a21e9a8b6",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.prop.relay_tower",
+    "name": "Regional Radio Relay Mast",
+    "category": "landmark",
+    "relativePath": "Models/relay_mast_tower.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 324,
+    "uvCount": 324,
+    "normalCount": 108,
+    "triangleCount": 108,
+    "maxTrianglesLod0": 25000,
+    "boundsMin": [
+      -1.2,
+      0.0,
+      -1.2
+    ],
+    "boundsMax": [
+      1.2,
+      18.0,
+      1.2
+    ],
+    "sha256": "8a7975539b3b98fec053edafd328f12a49565ec99240e28f2ce4c59747197c68",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.prop.salvage_cache",
+    "name": "Weatherproof Salvage Cache Crate",
+    "category": "prop",
+    "relativePath": "Models/salvage_cache_crate.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 156,
+    "uvCount": 156,
+    "normalCount": 52,
+    "triangleCount": 52,
+    "maxTrianglesLod0": 1500,
+    "boundsMin": [
+      -0.6,
+      0.0,
+      -0.45
+    ],
+    "boundsMax": [
+      0.6,
+      0.8,
+      0.45
+    ],
+    "sha256": "10e00b29cddeb8c10c84069a8a757d284402973b05e8ef8a2af0dec06aebc13f",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.prop.creek_gauge",
+    "name": "Hydrological Creek Depth Gauge",
+    "category": "prop",
+    "relativePath": "Models/creek_depth_gauge.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 180,
+    "uvCount": 180,
+    "normalCount": 60,
+    "triangleCount": 60,
+    "maxTrianglesLod0": 1500,
+    "boundsMin": [
+      -0.2,
+      0.0,
+      -0.2
+    ],
+    "boundsMax": [
+      0.2,
+      2.4,
+      0.2
+    ],
+    "sha256": "a688b295a4654432ff6dd3d4a5a69918ad3319671f689ff907fb9462568b867a",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.tree.forest_pine",
+    "name": "Frontier Conifer Pine Tree",
+    "category": "tree",
+    "relativePath": "Models/forest_pine_tree.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 336,
+    "uvCount": 336,
+    "normalCount": 112,
+    "triangleCount": 112,
+    "maxTrianglesLod0": 4000,
+    "boundsMin": [
+      -1.6,
+      0.0,
+      -1.6
+    ],
+    "boundsMax": [
+      1.6,
+      8.5,
+      1.6
+    ],
+    "sha256": "9aeff5b4a642e1c59521a93d77e8e38354fcb9716bc32a24b804aa559f580a26",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  },
+  {
+    "id": "env.rock.granite_outcrop",
+    "name": "Granite Outcrop Boulder",
+    "category": "rock",
+    "relativePath": "Models/granite_boulder_outcrop.obj",
+    "format": "obj",
+    "required": true,
+    "pivotConvention": "ground_datum_y0",
+    "vertexCount": 240,
+    "uvCount": 240,
+    "normalCount": 80,
+    "triangleCount": 80,
+    "maxTrianglesLod0": 2000,
+    "boundsMin": [
+      -1.2762,
+      0.0,
+      -1.0712
+    ],
+    "boundsMax": [
+      1.4,
+      1.8,
+      1.1712
+    ],
+    "sha256": "f0412b4ed2c84830b74d6386d4c960e4894d145b3aa32826b603c2135b9af1e7",
+    "license": "Project-owned generated",
+    "generator": "Tools/Art/generate_streaming_assets.py"
+  }
+]

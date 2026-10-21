@@ -1,0 +1,5 @@
+# Pin LF line endings on text-based 3D streaming meshes and JSON manifests so SHA-256 digests
+# remain byte-identical across Linux, macOS, and Windows checkouts.
+Assets/StreamingAssets/Models/*.obj text eol=lf
+Assets/Wayfinder/Content/*.json text eol=lf
+Docs/ASSET_MANIFEST.csv text eol=lf

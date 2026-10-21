@@ -27,6 +27,9 @@ namespace Wayfinder.Tests
 
         public static string ContentDir => _contentDir ??= LocateContentDir();
 
+        public static string StreamingAssetsDir =>
+            Path.GetFullPath(Path.Combine(ContentDir, "..", "..", "StreamingAssets"));
+
         static string LocateContentDir()
         {
 #if UNITY_5_3_OR_NEWER
