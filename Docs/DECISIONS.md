@@ -648,3 +648,102 @@ all: a survivor is a claim that some code is load-bearing, and here that claim w
 `validate_content.py` and `formula_checks.py` clean. §10.4's automated arbitrage test ("crafting and
 reselling must never create currency") is still unwritten — it is a pricing rule rather than a
 logistics one, and stays open on its own.
+
+## 2026-10-21 — D-043 §10.4's arbitrage rule: three checks were weaker than the sentence, and they checked tables the runtime never loads
+
+**Context.** §10.4:698 — "Materials can be sold at 40% of purchase price, rounded down. Crafted
+consumables sell for less than their total input purchase value. Add an automated arbitrage test;
+crafting/reselling must never create currency." The requested test already existed in **three** places,
+and reading all three against the sentence turned up two separate problems.
+
+*Problem 1 — every check was weaker than the spec.* `CraftingService.CraftResaleCreatesCurrency` (the
+QA-17 predicate), `validate_content.py`'s `check_items_recipes` and `economy_sim.py`'s `arbitrage_scan`
+each **added `salvageFee` to the input side** before comparing. §10.4's sentence counts *materials
+only*; the fee belongs to QA case 17, a different rule. A recipe selling for more than its materials
+but less than materials + fee would have satisfied all three checks while breaking the rule as written.
+Today's four recipes clear both bars comfortably (repair_kit 18 < 32, tire_patch 8 < 12,
+recovery_boards 14 < 34, camp_kit 40 < 89), so this was a latent hole rather than a live defect — but
+nothing would have noticed if content moved into it.
+
+*Problem 2 — the checks read files the runtime never loads.* `ItemCatalog` (19 items,
+`Progression/InventoryService.cs:40`) and `CraftingService.Recipes` (4 recipes,
+`Progression/EconomyService.cs:582`) are hardcoded C# tables. `items.json` and `recipes.json` are read
+by `validate_content.py`, by `economy_sim.py`, and by the editor's `ContentImporter` — which only
+collects ids from them. `CampaignContent.RequiredFiles` lists **neither**. So every price, mass,
+stack-size, protected-ledger and arbitrage rule this project validated applied to a file the game
+ignores, and the two representations agreed by luck. That is DEF-016's exact shape; the validator's own
+header warns that such a drift "went unnoticed because nothing checked the path".
+
+**Decision.**
+
+1. **Pin the two tables together by assertion, not by convention.** `EconomyArbitrageTests` reads
+   `items.json` / `recipes.json` and compares *every field of every entry* — id set, `nameKey`,
+   `maxStack`, `unitMassKg`, `protectedLedger`, `sellable`, `purchasePriceSalvage`; recipe output,
+   quantity, fee and each input quantity — against the tables that actually run. Mutants M3–M6 (one
+   drifted price, one drifted `sellable`, one drifted fee, one drifted input quantity) are each caught,
+   so the pin is real rather than decorative.
+2. **Do not silently make the JSON authoritative.** Loading both files through `CampaignContent` and
+   deleting the hardcoded tables is the right eventual fix, but it is an architecture change: a new
+   required-content dependency, a load path that works headless *and* in Unity, and a check that no
+   existing save references an item id absent from content. None of that can be verified in Unity from
+   here. A parity test buys the same protection today at a fraction of the risk, so the duplication is
+   recorded as **KI-046** instead of being half-migrated.
+3. **Assert §10.4's sentence and QA case 17 separately.** `CraftedOutputsSellForLessThanTheirInput-
+   PurchaseValue_Spec10_4` uses materials only; `CraftedOutputsAlsoStayUnderInputsPlusTheFee_QA17`
+   keeps the predicate's own rule. Both Python checks now do the same, so the three implementations
+   agree on what they are testing rather than quietly differing.
+4. **Prove each sweep can fail.** `TheArbitragePredicateFiresOnARecipeThatWouldProfit` builds a
+   deliberately profitable recipe (one polymer in, a camp kit out: sell 40 > materials 12) and requires
+   the predicate to say so; `TheSweepsBelowHaveSomethingToSweep` pins the table sizes at 19 and 4,
+   because a `foreach` over an empty collection passes without testing anything — which is exactly how
+   an "automated arbitrage test" can exist and still prove nothing. The Python side gets the same
+   treatment out of band: `validator-negative-control.log` injects a recipe that sells for 16 against
+   12 of materials and a 10 fee, which the *old* check passed and the new one reports.
+5. **Execute the loop, not just the arithmetic.** `BuyCraftSell_NeverCreatesCurrency_EndToEnd` grants
+   materials + fee, spends the purchase value, delivers the inputs, crafts, sells, and asserts the
+   wallet ends strictly below where it started — plus that the fee was charged exactly once (KI-022),
+   the output landed, and the inputs were consumed rather than duplicated. A content predicate cannot
+   see any of that wiring.
+6. **Per-unit flooring is pinned explicitly.** §10.4 says "rounded down" per material price, and
+   `CheckSell` computes `SellPrice(unit) × quantity`. Flooring the *total* instead would pay 14 for
+   three polymer rather than 12, leaking 2 Salvage per stack; mutant M10 makes exactly that change and
+   `SellingPaysThePerUnitFloor_NotTheFloorOfTheTotal` catches it.
+7. **Selling Salvage itself is a currency-creation vector and is tested.** `salvage_bundle` is marked
+   `sellable: true` in content but banks 1:1 on extraction, so selling one would turn a bundle into
+   Salvage twice. `CheckSell` refuses it by category, and the fixture now asserts that refusal (mutant
+   M12 removes it and is caught).
+
+8. **The `sellable` flag is tested on an item no content exercises.** Every unsellable object in
+   `items.json` is *also* `protectedLedger` or a quest/delivery object, so `CheckSell`'s two category
+   refusals alone reject all nine and the `!def.Sellable` clause looks redundant. It is not: content may
+   mark *any* item unsellable, and a plain `Material` is the case nothing in the catalog exercises.
+   `TheSellableFlagAloneRefusesASale_WhateverTheCategory` flips `scrap_metal.Sellable` off inside a
+   `try`/`finally` (the catalog is a shared static table, and NUnit runs these fixtures sequentially —
+   there is no `Parallelizable` attribute in the assembly), asserts the sale is refused *with stock
+   present* so the failure cannot be mistaken for missing materials, and restores the flag.
+9. **Two mutants survived the first run, for two different reasons.** M12 (dropping the Currency
+   refusal) survived because `salvage_bundle` costs 1, so `floor(1 × 0.4) = 0` and the later
+   `unit <= 0` guard refuses it with the same `FailureReason.ItemNotUsableHere` — only the
+   player-facing detail differed ("worth nothing to sell" instead of "Salvage bundles bank
+   automatically at 1:1"). Asserting the detail caught it. That is the same lesson Batch L's L4 taught,
+   so it is recorded as a convention: **when two refusal paths share a `FailureReason`, the test must
+   assert the detail.** M11 (dropping `!def.Sellable`) survived for a different reason and was *not*
+   fixed by the detail: all nine unsellable objects are caught by the category clauses, which produce
+   the identical reason and the identical message, so no assertion over current content can see the
+   difference. It needed point 8 — a test of the clause on an item whose category does not already
+   refuse it. A survivor can mean "the test is weak" or "the content never exercises the code"; the two
+   call for different fixes, and guessing wrong leaves a guard that looks tested and is not.
+
+**Rationale.** Three checks agreeing with each other is not evidence when all three read the same
+weaker rule from the same unread file. The value here is not the arithmetic — today's content passes
+every version of it — but that the rule now matches the sentence, that the tables the rule reads are
+the tables the game runs, and that each check has been shown to fail when it should. Keeping the
+duplication (KI-046) rather than migrating it is the honest trade: a test that fails loudly on drift
+beats a refactor that cannot be verified in Unity from this environment.
+
+**Status:** Executed 2026-10-21. 12 new `EconomyArbitrageTests`; suite 254 → 266 passing, 0 warnings;
+**12/12** mutation checks caught on the third run — the first reported 10/12 and the second 11/12, and
+both survivors were fixed in the tests rather than waved off (points 8 and 9)
+(`Docs/evidence/arbitrage-content-parity-2026-10-21/`); validator negative control demonstrates the
+strengthened rule firing on a recipe the previous check passed; `validate_content.py`, `economy_sim.py`
+and `formula_checks.py` clean. KI-046 opened for the underlying table duplication.

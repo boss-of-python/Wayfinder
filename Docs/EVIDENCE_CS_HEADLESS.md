@@ -1,5 +1,17 @@
 # Wayfinder — Executed Evidence: headless C# compile + EditMode tests (2026-10-14)
 
+> **Update 2026-10-21 (Batch M — §10.4 arbitrage rule + content-table parity, D-043/KI-046):**
+> 7 assemblies / 0 warnings, **266/266** EditMode tests (254 → 266), .NET Standard 2.1 profile OK,
+> 30 Unity-dependent files parse, `validate_content.py` + `economy_sim.py` + `formula_checks.py` clean.
+> New fixture `EconomyArbitrageTests` (12). **12/12** mutation checks caught on the third run (the first
+> reported 10/12, the second 11/12; both survivors were fixed in the tests, D-043 points 8–9)
+> (`Docs/evidence/arbitrage-content-parity-2026-10-21/`), plus a validator **negative control** showing
+> the strengthened §10.4 rule firing on a recipe the previous check passed (sell 16 vs materials 12,
+> materials + fee 22). Two real findings: all three existing arbitrage checks added the crafting fee to
+> the input side, making them weaker than §10.4's sentence; and `ItemCatalog` /
+> `CraftingService.Recipes` are hardcoded while `items.json` / `recipes.json` are what the validators
+> read — `CampaignContent.RequiredFiles` loads neither, so the tables now agree by assertion (KI-046).
+>
 > **Update 2026-10-21 (Batch L — §10.4 community logistics: free instant hub-to-hub transfer,
 > KI-028 closed):** 7 assemblies / 0 warnings, **254/254** EditMode tests (239 → 254), .NET Standard
 > 2.1 profile OK, 30 Unity-dependent files parse, `validate_content.py` + `formula_checks.py` clean.
