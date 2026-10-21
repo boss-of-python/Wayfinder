@@ -490,3 +490,84 @@ round-tripped through disk caught it.
 **Status:** Executed 2026-10-21. 9 `CampaignCampStorageTests` (including two on-disk schema-1
 migrations and pooled-row adoption) + 4 migration tests in `PersistenceTests`; 12/12 mutation checks
 caught; suite 216/216, 0 warnings; `validate_content.py` and `formula_checks.py` clean.
+
+
+## 2026-10-21 — D-041 §10.2 equipment slots: the fitted loadout composes, and unlocks come from research
+
+**Context.** The last open half of KI-028. §10.2 gives the Scout one module per named slot — tire set,
+suspension package, engine tune, tank package, intake package, differential package, cargo rack,
+sensor, winch — plus **two utility slots**, and states that permanent modules never compete with
+consumable cargo. Until now `ResearchService.ApplyTo` composed *every* researched tier: buying
+Suspension II stacked its travel on Suspension I's, three cargo racks summed their slots, and the two
+utility tiers were indistinguishable from the named ones. `Stat.RockTires` existed in the resolver and
+**nothing in content or code ever set it**, so the Rock tire set — which §10.2 prices at +20% dry rock
+grip — was unreachable in every save.
+
+**Decisions.**
+
+1. **A slot is a property of the tier table, and content mirrors it.** `ModuleSlot` lives in
+   `Wayfinder.Progression` beside the 20 tiers; `upgrades.json` carries the same slot per tier as
+   `moduleSlot`. The spellings come from `Wayfinder.Simulation.EquipmentSlots` — the §10.2 vocabulary
+   the resolver already published and nothing consumed — so the enum, the JSON, `validate_content.py`
+   and `ContentCatalogTests` cannot drift apart on names. `ResearchService.SlotName` /
+   `TryParseSlot` are the single authority for the string form. Utility is one slot *kind* with two
+   instances, spelled `"utility"` rather than `Utility1`/`Utility2`: a module does not choose which of
+   the two it occupies. `"none"` is not a slot — it marks a research unlock.
+2. **Only what is fitted composes.** `ApplyTo` skips a researched tier that occupies a slot and is not
+   in the fitted set. Slot-less tiers (8 Mud Tires, 18 Cold-Weather Kit) are unlocks rather than
+   equipment: being researched is enough, and they always compose.
+3. **Researching a module fits it.** The tree is strictly progressive, so the newest module in a slot
+   is the sane default — and this preserves the meaning of all 216 existing tests, which buy tiers and
+   assert their effects. The player may still fit an earlier module, or none: dropping the Expedition
+   Rack's loaded-COM penalty or the diff lock's turning scrub is precisely the "meaningful terrain
+   preparation" §10.2 asks for. A full Utility slot leaves the new module unfitted instead of failing
+   the purchase — the Salvage was spent and the research is permanent (§17.5).
+4. **Fitting a named slot replaces its occupant; Utility refuses a third.** One module per named slot
+   is §10.2's rule, so replacement is the only legal move and needs no confirmation step. The
+   third-utility refusal is defensive: canonical content has exactly two utility tiers and fitting an
+   already-fitted module is refused earlier as `AlreadyApplied`, so that branch is unreachable through
+   the public API. It is recorded here as uncovered rather than claimed as tested.
+5. **Tire-set unlocks come from research, not from the fitted loadout.** `IsTireSetUnlocked` scans
+   researched tiers for the `MudTires` / `RockTires` / `SnowTires` flag, so removing the differential
+   lock never un-unlocks the Rock set. §11.2 tier 13 now sets `RockTires`, closing the unreachable-set
+   defect, and tier 20 carries `PeakTorqueNm ×1.10` forward from tier 10: §11.2:739 asks for
+   "explicit final stat composition", and the capstone takes the engine slot, so without the carried
+   effect it would have silently dropped the torque curve while keeping only the drain change.
+6. **Loadout changes are a garage service, and they are critical.** `EquipModule` / `UnequipModule` /
+   `SelectTireSet` refuse outside a garage (`WrongState`; §10.4 lists "vehicle change" among the
+   garage-only services), run inside `RunCritical`, re-run `ConfigureContainers()`, clamp `FuelLiters`
+   to the new capacity (§5.4 — garages refuel for free, so clamping down costs the player nothing),
+   and only then enforce **QA case 9**: if the loaded cargo no longer fits, the command returns
+   `OverCapacity` and the verified snapshot rollback restores the previous loadout. Checking *after*
+   the swap is what makes the guard exact — it tests the real composed container sizes rather than a
+   prediction of them.
+7. **`ResolveStats` uses the mounted set and research-derived unlock flags.** It passed
+   `TireSet.AllTerrain, …, false, false, false` before, so the garage could never show a mounted
+   specialized set even though §11.2:741 requires garage display == driving. `VerticalSliceDriver`
+   now also assigns `vehicle.tireSet = _session.SelectedTireSet`, which nothing did before, so the
+   physics rig's own `GripFor` lookup finally sees the player's choice (part of KI-025).
+8. **Persistence is additive — no schema bump.** `VehicleDto.equippedTireSet` defaults to
+   `"AllTerrain"`, so a schema-2 file without the field loads unchanged (the D-021 precedent; a second
+   migration in one week for a field whose absence has exactly one legal meaning would buy nothing).
+   `equippedModuleIds` now records the *fitted* loadout instead of every researched tier, and
+   `unlockedTireSets` is written from research instead of a hardcoded `{"AllTerrain"}`.
+9. **A pre-slot save reconciles to the highest tier per slot.** `Restore(researched, fitted, tireSet)`
+   reads a null fitted list as "everything researched" — what an older build wrote — then walks the
+   tiers ascending so the highest tier wins each named slot and the first two win Utility. For every
+   canonical tier that reproduces exactly the composition the old rank-based `Set`/`Multiply` stacking
+   produced, so an existing player's vehicle does not change underneath them, and no research is lost
+   (§17.5). A saved tire set that is not unlocked is clamped to all-terrain rather than rejected: a
+   load must not fail because content moved.
+
+**Rationale.** Composing only what is fitted is what makes §10.2's slots mean anything: without it a
+player who owns every tier drives a vehicle no tier table describes, and the rack, tank and suspension
+numbers shown in the garage are fiction. Auto-fitting on purchase is the compatibility choice — it
+keeps 216 existing tests asserting what they always asserted — while `UnequipModule` keeps the choice
+real and reversible. Deriving unlocks from research rather than from the loadout protects a capability
+the player paid for from being lost by rearranging equipment, which §17.5 forbids. The QA-9 guard sits
+after the swap because `RunCritical`'s rollback is already proven, so an after-the-fact capacity check
+cannot be wrong about which container sizes are in force.
+
+**Status:** Executed 2026-10-21. 22 new `CampaignModuleSlotTests` + `UpgradeTable_MatchesCanonicalSlotsAndEffects_D041`
+in `ContentCatalogTests`; suite 216 → 239 passing, 0 warnings; 27/27 mutation checks caught
+(`Docs/evidence/module-slots-2026-10-21/`); `validate_content.py` and `formula_checks.py` clean.
