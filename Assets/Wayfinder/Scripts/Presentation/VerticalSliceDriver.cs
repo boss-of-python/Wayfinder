@@ -206,7 +206,8 @@ namespace Wayfinder.Presentation
             vehicle.ZeroInputsAndHold();
         }
 
-        /// <summary>Session → vehicle after load/extraction. Only tank size and cargo mass are wired so far (KI-025).</summary>
+        /// <summary>Session → vehicle after load/extraction: resolver, tire set, resolved rig
+        /// geometry (ApplyEffectiveStats, KI-025/D-044), fuel, condition and cargo mass.</summary>
         void ApplySessionToVehicle()
         {
             // Researched modules reach the physics rig through its own resolver (KI-025, D-030); the

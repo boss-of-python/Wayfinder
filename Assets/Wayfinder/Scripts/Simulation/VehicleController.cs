@@ -111,6 +111,65 @@ namespace Wayfinder.Simulation
         /// grip, wading depth, fuel drain, tank size — includes research (KI-025, D-030).
         /// </summary>
         public VehicleStatsResolver StatsResolver => _resolver;
+        /// <summary>Rig settings currently live on the WheelColliders (KI-025, D-044).</summary>
+        public WheelRigSettings RigSettings => _rigSettings;
+        /// <summary>True once a winch module is fitted and applied (tiers 3/15).</summary>
+        public bool HasWinch => _rigSettings.HasWinch;
+        /// <summary>Fitted winch anchor reach (m); 0 means no winch.</summary>
+        public float WinchReachMeters => _rigSettings.WinchReachM;
+        /// <summary>Fitted winch pull cap (N); 0 means no winch.</summary>
+        public float WinchForceCapNewtons => _rigSettings.WinchForceCapN;
+        /// <summary>True when the fitted winch can anchor at the given distance.</summary>
+        public bool WinchCanReach(float distanceMeters) => _rigSettings.WinchCanReach(distanceMeters);
+
+        /// <summary>
+        /// The seam researched stats enter the physics rig through (KI-025, D-044). Translates the
+        /// stats with the engine-free <see cref="WheelRigMath"/> and writes suspension travel,
+        /// spring/damper rates, wheel radius and the clearance wheel-center offset to each
+        /// WheelCollider — but only when <see cref="WheelRigMath.RequiresGeometryUpdate"/> says a
+        /// loadout or condition change actually moved a geometry-bearing value, so calling this
+        /// every FixedUpdate rewrites nothing in steady state (§18.2). Wheel centers are captured
+        /// lazily per wheel because scene builders assign the colliders after Awake runs.
+        /// Center of mass is deliberately untouched: the blueprint requires it to be solved
+        /// against the imported chassis datum in a calibration scene (§4.2), not assigned blindly.
+        /// Rigidbody mass follows the resolved total here so a parked loadout change applies
+        /// immediately; FixedUpdate still recomputes it per tick from live fuel/cargo.
+        /// </summary>
+        public void ApplyEffectiveStats(EffectiveVehicleStats stats)
+        {
+            if (stats == null || spec == null) return;
+            _stats = stats;
+            var next = WheelRigMath.FromStats(spec, stats);
+            if (!_rigApplied || WheelRigMath.RequiresGeometryUpdate(_rigSettings, next))
+            {
+                for (int i = 0; i < 4; i++) ApplyWheelGeometry(GetWheel(i), i, next);
+            }
+            _rigSettings = next;
+            _rigApplied = true;
+            if (_rb != null) _rb.mass = stats.TotalMassKg;
+        }
+
+        void ApplyWheelGeometry(WheelCollider wheel, int index, WheelRigSettings settings)
+        {
+            if (wheel == null) return;
+            if (!_centerCaptured[index])
+            {
+                _baseWheelCenters[index] = wheel.center;
+                _centerCaptured[index] = true;
+            }
+            bool front = index == 0 || index == 1;
+            wheel.suspensionDistance = settings.SuspensionDistanceM;
+            wheel.radius = settings.WheelRadiusM;
+            var spring = wheel.suspensionSpring;
+            spring.spring = front ? settings.SpringRateFrontNm : settings.SpringRateRearNm;
+            spring.damper = front ? settings.DamperFrontNsm : settings.DamperRearNsm;
+            spring.targetPosition = settings.TargetPosition;
+            wheel.suspensionSpring = spring;
+            var center = _baseWheelCenters[index];
+            center.y += settings.WheelCenterYOffsetM;
+            wheel.center = center;
+        }
+
         /// <summary>Tank capacity after research (not the base spec), used for every fuel clamp.</summary>
         public float FuelCapacityLiters => spec == null ? 0f : ResolveStats().FuelCapacityLiters;
         public void RefuelFully() => _fuelLiters = FuelCapacityLiters;
@@ -223,7 +282,7 @@ namespace Wayfinder.Simulation
 
             int index = WheelIndex(wheel);
             float surfaceGrip = SurfaceTable.Get(_surfaces[index]).EffectiveGrip(SurfaceWet);
-            float brakeScale = MathUtil.Clamp01(surfaceGrip / 0.9f + 0.1f); // ABS-ish assist envelope
+            float brakeScale = WheelRigMath.BrakeScale(surfaceGrip); // ABS-ish assist envelope
             wheel.brakeTorque = brakeCmd * (wheel == wheelFrontLeft || wheel == wheelFrontRight
                 ? spec.BrakeTorqueFrontNmPerWheel
                 : spec.BrakeTorqueRearNmPerWheel) * brakeScale;
@@ -233,13 +292,14 @@ namespace Wayfinder.Simulation
             // Per-wheel: each wheel resolves grip for the surface it is actually standing on, so ice,
             // deep mud and asphalt no longer share one packed-dirt coefficient (DEF-005). Before
             // 2026-10-19 the whole vehicle was resolved for `PackedDirt, wet:false` and the per-wheel
-            // surface only scaled brake torque.
+            // surface only scaled brake torque. The stiffness formulas themselves live in the
+            // engine-free WheelRigMath so they execute in headless tests (KI-025, D-044).
             float grip = _resolver.GripFor(tireSet, _surfaces[index], SurfaceWet, stats.TireGripFactor, out float lateral);
             var fwd = wheel.forwardFriction;
-            fwd.stiffness = grip * (1f + _mud.SinkFraction * -0.5f) * _mud.TractionMultiplier;
+            fwd.stiffness = WheelRigMath.ForwardFrictionStiffness(grip, _mud.SinkFraction, _mud.TractionMultiplier);
             wheel.forwardFriction = fwd;
             var side = wheel.sidewaysFriction;
-            side.stiffness = grip * lateral * _mud.TractionMultiplier;
+            side.stiffness = WheelRigMath.SidewaysFrictionStiffness(grip, lateral, _mud.TractionMultiplier);
             wheel.sidewaysFriction = side;
         }
 
