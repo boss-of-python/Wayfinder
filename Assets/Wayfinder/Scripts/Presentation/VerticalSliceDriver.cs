@@ -176,7 +176,11 @@ namespace Wayfinder.Presentation
 
             if (frame.InteractionCommitted && !frame.InteractionResult.Success)
                 _toasts.Enqueue(frame.InteractionResult.Detail);
-            if (frame.InteractionCommitted) vehicle.SetCargoMass(_session.Inventory.TotalMassKg(CampaignSession.Cargo));
+            if (frame.InteractionCommitted)
+            {
+                vehicle.SetCargoMass(_session.Inventory.TotalMassKg(CampaignSession.Cargo));
+                SyncVehicleModel();
+            }
             if (frame.ArrivalTriggered && frame.Extraction != null) ShowSummary(frame.Extraction);
         }
 
@@ -221,7 +225,19 @@ namespace Wayfinder.Presentation
             vehicle.SetCargoMass(_session.Inventory.TotalMassKg(CampaignSession.Cargo));
             vehicle.ApplyEffectiveStats(_session.ResolveStats());
             if (_session.Damage.EngineCondition > 0) vehicle.RestartAfterWaterRecovery();
+            SyncVehicleModel();
             ApplySettingsToUi();
+        }
+
+        void SyncVehicleModel()
+        {
+            if (vehicle == null || _session == null) return;
+            bool carryingCargo = _session.Inventory.TotalMassKg(CampaignSession.Cargo) > 0f;
+            StreamingMeshRuntime.ApplyVehicleVisuals(
+                vehicle,
+                _session.ActiveVehicleId,
+                carryingCargo,
+                catalog: _session.Content?.StreamingAssets);
         }
 
         void ApplySettingsToUi()

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Wayfinder.Core;
@@ -8,11 +7,12 @@ using Wayfinder.World;
 namespace Wayfinder.Platform
 {
     /// <summary>
-    /// Runtime world chunk streamer (§6.4, §18.3, KI-037). Hosts <see cref="ChunkStreamPlanner"/>
+    /// Runtime world chunk streamer (§6.4, §14.2, §18.3, KI-037). Hosts <see cref="ChunkStreamPlanner"/>
     /// inside a Unity scene, executing its state transitions cleanly (<c>Request → DataReady →
     /// Activate → Active → Deactivate → DataReady/Unloaded</c>), building 3D heightfield chunk
-    /// meshes + colliders, placing deterministic biome scatter props, and attaching road-shoulder
-    /// <see cref="WinchAnchor"/> components with zero handle leaks.
+    /// meshes + colliders, instantiating verified 3D biome scatter <c>.obj</c> models via
+    /// <see cref="StreamingAssetBindings"/>, and attaching verified <c>winch_anchor_bollard.obj</c>
+    /// road-shoulder <see cref="WinchAnchor"/> posts with zero handle leaks.
     /// </summary>
     public sealed class WorldStreamer : MonoBehaviour
     {
@@ -28,14 +28,19 @@ namespace Wayfinder.Platform
 
         readonly NoiseField _noise = new NoiseField();
         readonly Dictionary<(int x, int z), GameObject> _activeObjects = new Dictionary<(int, int), GameObject>();
+        IReadOnlyDictionary<string, StreamingAssetDefinition> _catalog;
 
         public int LiveChunkObjectCount => _activeObjects.Count;
 
-        public void Initialize(MainlandRouteGraph routes = null, IEnumerable<ReservedSocket> reservedSockets = null)
+        public void Initialize(
+            MainlandRouteGraph routes = null,
+            IEnumerable<ReservedSocket> reservedSockets = null,
+            IReadOnlyDictionary<string, StreamingAssetDefinition> catalog = null)
         {
             Planner = new ChunkStreamPlanner();
             Routes = routes ?? new MainlandRouteGraph();
             ScatterSurface = new WorldScatterSurface(Routes, reservedSockets, _noise);
+            _catalog = catalog ?? StreamingMeshRuntime.LoadDefaultCatalog();
         }
 
         void Awake()
@@ -113,34 +118,34 @@ namespace Wayfinder.Platform
                 _ => SurfaceType.PackedDirt
             };
 
-            var anchors = ScatterSurface.PlaceWinchAnchorsForChunk(cx, cz);
-            for (int i = 0; i < anchors.Count; i++)
+            if (_catalog != null && _catalog.TryGetValue(StreamingAssetBindings.WinchBollardAssetId, out var winchDef))
             {
-                var a = anchors[i];
-                var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                go.name = $"WinchAnchor_{cx}_{cz}_{i}";
-                go.transform.SetParent(root.transform, false);
-                go.transform.position = new Vector3(a.X, a.Y + 1.25f, a.Z);
-                go.transform.localScale = new Vector3(0.55f, 1.25f, 0.55f);
-                go.AddComponent<WinchAnchor>();
-                if (WinchAnchorMaterial != null)
-                    go.GetComponent<Renderer>().sharedMaterial = WinchAnchorMaterial;
+                var anchors = ScatterSurface.PlaceWinchAnchorsForChunk(cx, cz);
+                for (int i = 0; i < anchors.Count; i++)
+                {
+                    var a = anchors[i];
+                    var go = StreamingMeshRuntime.InstantiateModel(winchDef, WinchAnchorMaterial, root.transform, addBoxCollider: true);
+                    go.name = $"WinchAnchor_{cx}_{cz}_{i}";
+                    go.transform.position = new Vector3(a.X, a.Y, a.Z);
+                    go.AddComponent<WinchAnchor>();
+                }
             }
 
             foreach (var rules in WorldScatterSurface.DefaultBiomeRules(biome))
             {
+                string speciesAssetId = StreamingAssetBindings.ScatterSpeciesAssetFor(rules.SpeciesId);
+                if (_catalog == null || !_catalog.TryGetValue(speciesAssetId, out var scatterDef))
+                    continue;
+
                 var points = ScatterPlacer.PlaceChunk(cx, cz, rules, ScatterSurface);
                 for (int i = 0; i < points.Count; i++)
                 {
                     var p = points[i];
-                    var prop = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                    var prop = StreamingMeshRuntime.InstantiateModel(scatterDef, PropMaterial, root.transform, addBoxCollider: false);
                     prop.name = $"{rules.SpeciesId}_{p.CandidateIndex}";
-                    prop.transform.SetParent(root.transform, false);
-                    prop.transform.position = new Vector3(p.X, p.Y + 1.4f * p.Scale, p.Z);
+                    prop.transform.position = new Vector3(p.X, p.Y, p.Z);
                     prop.transform.rotation = Quaternion.Euler(0f, p.YawDegrees, 0f);
-                    prop.transform.localScale = new Vector3(1.05f * p.Scale, 1.6f * p.Scale, 1.05f * p.Scale);
-                    if (PropMaterial != null)
-                        prop.GetComponent<Renderer>().sharedMaterial = PropMaterial;
+                    prop.transform.localScale = Vector3.one * p.Scale;
                 }
             }
 

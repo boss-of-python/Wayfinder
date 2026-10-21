@@ -10,10 +10,12 @@ Emits:
     `BuildCommands`, and `StreamingAssetCatalog`).
 """
 
+import argparse
 import hashlib
 import json
 import math
 import os
+import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 STREAMING_MODELS_DIR = os.path.join(ROOT, "Assets", "StreamingAssets", "Models")
@@ -916,7 +918,68 @@ ASSET_SPECS = [
 ]
 
 
+def verify_on_disk(mirror_resources: bool = False) -> int:
+    if not os.path.isfile(MANIFEST_PATH):
+        print(f"ERROR: missing streaming manifest {MANIFEST_PATH}", file=sys.stderr)
+        return 1
+
+    with open(MANIFEST_PATH, "r", encoding="utf-8") as f:
+        rows = json.load(f)
+
+    if len(rows) != len(ASSET_SPECS):
+        print(f"ERROR: expected {len(ASSET_SPECS)} entries in {MANIFEST_PATH}, got {len(rows)}", file=sys.stderr)
+        return 1
+
+    rows_by_id = {row["id"]: row for row in rows}
+    resources_dir = os.path.join(ROOT, "Assets", "Wayfinder", "Resources", "StreamingModels")
+    if mirror_resources:
+        os.makedirs(resources_dir, exist_ok=True)
+
+    total_tris = 0
+    for spec in ASSET_SPECS:
+        aid = spec["id"]
+        if aid not in rows_by_id:
+            print(f"ERROR: missing required 3D asset '{aid}' in {MANIFEST_PATH}", file=sys.stderr)
+            return 1
+        row = rows_by_id[aid]
+        obj_path = os.path.join(ROOT, "Assets", "StreamingAssets", row["relativePath"])
+        if not os.path.isfile(obj_path):
+            print(f"ERROR: missing .obj file on disk for '{aid}': {obj_path}", file=sys.stderr)
+            return 1
+        with open(obj_path, "rb") as f:
+            raw = f.read()
+        if b"\r" in raw:
+            print(f"ERROR: CRLF detected in '{obj_path}'; LF line endings required", file=sys.stderr)
+            return 1
+        digest = hashlib.sha256(raw).hexdigest()
+        if digest != row["sha256"]:
+            print(f"ERROR: SHA-256 mismatch for '{aid}': manifest={row['sha256']} disk={digest}", file=sys.stderr)
+            return 1
+        if row["triangleCount"] <= 0 or row["triangleCount"] > row["maxTrianglesLod0"]:
+            print(f"ERROR: triangle budget violation for '{aid}': {row['triangleCount']}/{row['maxTrianglesLod0']}", file=sys.stderr)
+            return 1
+        total_tris += row["triangleCount"]
+
+        if mirror_resources:
+            stem = os.path.splitext(os.path.basename(row["relativePath"]))[0]
+            dst = os.path.join(resources_dir, f"{stem}.txt")
+            with open(dst, "wb") as mf:
+                mf.write(raw)
+
+    mode_note = " + mirrored to Assets/Wayfinder/Resources/StreamingModels/" if mirror_resources else ""
+    print(f"OK: verified all {len(ASSET_SPECS)}/30 3D streaming assets ({total_tris} total triangles, SHA-256 intact){mode_note}")
+    return 0
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Generate or verify the 30 Wayfinder 3D streaming .obj assets.")
+    parser.add_argument("--verify", action="store_true", help="Verify all 30 .obj files on disk against streaming_assets.json.")
+    parser.add_argument("--mirror-resources", action="store_true", help="Mirror verified .obj files to Assets/Wayfinder/Resources/StreamingModels/*.txt.")
+    args = parser.parse_args()
+
+    if args.verify:
+        sys.exit(verify_on_disk(mirror_resources=args.mirror_resources))
+
     os.makedirs(STREAMING_MODELS_DIR, exist_ok=True)
     manifest_rows = []
 

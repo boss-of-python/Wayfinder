@@ -16,6 +16,8 @@ namespace Wayfinder.Editor
         public const string CampaignContentResourcesDir = "Assets/Wayfinder/Resources/Content";
         /// <summary>Runtime TextAsset copies of the 30 3D streaming meshes for synchronous Android/iOS loading.</summary>
         public const string StreamingModelsResourcesDir = "Assets/Wayfinder/Resources/StreamingModels";
+        /// <summary>Pre-baked persistent Unity Mesh assets serialized directly into scenes &amp; player builds.</summary>
+        public const string StreamingMeshesResourcesDir = "Assets/Wayfinder/Resources/StreamingModels/Meshes";
         public const string CanonicalContentDir = "Assets/Wayfinder/Content";
         public const string PipelinePath = "Assets/Wayfinder/Settings/WayfinderURP.asset";
         public const string RendererPath = "Assets/Wayfinder/Settings/WayfinderRenderer.asset";
@@ -145,14 +147,16 @@ namespace Wayfinder.Editor
 
         /// <summary>
         /// Mirrors the verified Wavefront <c>.obj</c> files from <c>Assets/StreamingAssets/Models/</c> into
-        /// <c>Assets/Wayfinder/Resources/StreamingModels/*.txt</c> so <see cref="Wayfinder.Presentation.StreamingMeshLoader"/>
-        /// can load them synchronously via <c>Resources.Load&lt;TextAsset&gt;</c> on Android/iOS player builds.
+        /// <c>Assets/Wayfinder/Resources/StreamingModels/*.txt</c> AND bakes persistent Unity <see cref="Mesh"/>
+        /// assets into <c>Assets/Wayfinder/Resources/StreamingModels/Meshes/*.asset</c> so both baked scenes
+        /// and runtime player builds load native serialized GPU meshes with zero CPU parse cost on Android/iOS.
         /// </summary>
         [MenuItem("Tools/Wayfinder/Refresh 3D Streaming Assets")]
         public static void CopyStreamingAssetsToResources()
         {
             var content = Wayfinder.Campaign.CampaignContent.FromDirectory(CanonicalContentDir);
             Directory.CreateDirectory(StreamingModelsResourcesDir);
+            Directory.CreateDirectory(StreamingMeshesResourcesDir);
             AssetDatabase.Refresh();
             foreach (var def in content.StreamingAssets.Values)
             {
@@ -162,8 +166,37 @@ namespace Wayfinder.Editor
                 string dst = StreamingModelsResourcesDir + "/" + stem + ".txt";
                 File.Copy(src, dst, overwrite: true);
                 AssetDatabase.ImportAsset(dst, ImportAssetOptions.ForceSynchronousImport);
+
+                string objText = File.ReadAllText(src);
+                var parsed = Wayfinder.World.StreamingAssetCatalog.VerifyAssetContent(def, objText);
+
+                string meshAssetPath = StreamingMeshesResourcesDir + "/" + stem + ".asset";
+                var mesh = Wayfinder.Platform.StreamingMeshRuntime.ToUnityMesh(def.Id, parsed);
+                if (AssetDatabase.LoadAssetAtPath<Mesh>(meshAssetPath) != null)
+                    AssetDatabase.DeleteAsset(meshAssetPath);
+                AssetDatabase.CreateAsset(mesh, meshAssetPath);
             }
-            Debug.Log($"[Wayfinder] {content.StreamingAssets.Count} 3D streaming models copied to {StreamingModelsResourcesDir}.");
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log($"[Wayfinder] {content.StreamingAssets.Count} 3D streaming models mirrored & baked to {StreamingModelsResourcesDir}.");
+        }
+
+        /// <summary>Loads or creates the persistent serialized Unity <see cref="Mesh"/> asset for <paramref name="def"/>.</summary>
+        public static Mesh LoadOrCreateStreamingMeshAsset(Wayfinder.World.StreamingAssetDefinition def)
+        {
+            Directory.CreateDirectory(StreamingMeshesResourcesDir);
+            string stem = Path.GetFileNameWithoutExtension(def.RelativePath);
+            string meshAssetPath = StreamingMeshesResourcesDir + "/" + stem + ".asset";
+            var existing = AssetDatabase.LoadAssetAtPath<Mesh>(meshAssetPath);
+            if (existing != null) return existing;
+
+            string src = Path.Combine(Wayfinder.World.StreamingAssetCatalog.DefaultStreamingAssetsRoot,
+                def.RelativePath.Replace('/', Path.DirectorySeparatorChar));
+            string objText = File.ReadAllText(src);
+            var parsed = Wayfinder.World.StreamingAssetCatalog.VerifyAssetContent(def, objText);
+            var mesh = Wayfinder.Platform.StreamingMeshRuntime.ToUnityMesh(def.Id, parsed);
+            AssetDatabase.CreateAsset(mesh, meshAssetPath);
+            return mesh;
         }
 
         static void SetDefaultIdentifier(NamedBuildTarget target)

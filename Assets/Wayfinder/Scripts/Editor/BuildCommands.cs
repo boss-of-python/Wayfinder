@@ -24,7 +24,30 @@ namespace Wayfinder.Editor
             if (!File.Exists(ProjectSetup.ControlsOutputPath))
                 throw new BuildFailedException("Generated input resource missing. Run Setup Project.");
             ProjectSetup.VerifyStreamingAssets();
+            EnsureBakedStreamingAssetsPresent();
             return scenes;
+        }
+
+        static void EnsureBakedStreamingAssetsPresent()
+        {
+            var content = Wayfinder.Campaign.CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir);
+            bool missingAny = false;
+            foreach (var def in content.StreamingAssets.Values)
+            {
+                string stem = Path.GetFileNameWithoutExtension(def.RelativePath);
+                string txtPath = ProjectSetup.StreamingModelsResourcesDir + "/" + stem + ".txt";
+                string meshPath = ProjectSetup.StreamingMeshesResourcesDir + "/" + stem + ".asset";
+                if (!File.Exists(txtPath) || !File.Exists(meshPath))
+                {
+                    missingAny = true;
+                    break;
+                }
+            }
+            if (missingAny)
+            {
+                Debug.Log("[Wayfinder] Rebuilding missing Resources/StreamingModels assets prior to player build...");
+                ProjectSetup.CopyStreamingAssetsToResources();
+            }
         }
 
         // The four entry points below are what CI invokes with -executeMethod. EditorFailureLog

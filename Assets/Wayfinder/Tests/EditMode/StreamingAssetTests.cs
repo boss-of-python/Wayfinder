@@ -1,9 +1,11 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
 using Wayfinder.Campaign;
+using Wayfinder.Core;
 using Wayfinder.World;
 using static Wayfinder.Tests.CampaignTestKit;
 
@@ -101,7 +103,6 @@ namespace Wayfinder.Tests
                 File.Copy(src, dst, overwrite: true);
             }
 
-            // Delete one required 3D streaming asset
             string victimPath = Path.Combine(_tempRoot,
                 Content.StreamingAssets["veh.scout.s1.chassis"].RelativePath.Replace('/', Path.DirectorySeparatorChar));
             File.Delete(victimPath);
@@ -131,12 +132,84 @@ namespace Wayfinder.Tests
             foreach (string name in CampaignContent.RequiredFiles)
                 files[name] = File.ReadAllText(Path.Combine(ContentDir, name));
 
-            // Provide one fewer than RequiredAssetCount in streaming_assets.json
             var subset = Content.StreamingAssets.Values.Take(StreamingAssetCatalog.RequiredAssetCount - 1).ToList();
             files["streaming_assets.json"] = Newtonsoft.Json.JsonConvert.SerializeObject(subset);
 
             var ex = Assert.Throws<InvalidDataException>(() => CampaignContent.FromJson(files));
             StringAssert.Contains("streaming_assets.json", ex.Message);
+        }
+
+        [Test]
+        public void AllThirtyRequiredAssetsAreActivelyBoundAcrossVehiclesWorldAndBiomes()
+        {
+            var bound = StreamingAssetBindings.CollectAllBoundAssetIds();
+            Assert.AreEqual(StreamingAssetCatalog.RequiredAssetCount, bound.Count,
+                $"Expected all {StreamingAssetCatalog.RequiredAssetCount} required 3D streaming assets to be bound, got {bound.Count}: " +
+                string.Join(", ", StreamingAssetCatalog.RequiredAssetIds.Except(bound)));
+
+            foreach (string requiredId in StreamingAssetCatalog.RequiredAssetIds)
+            {
+                Assert.IsTrue(bound.Contains(requiredId),
+                    $"Required 3D asset '{requiredId}' is not bound in StreamingAssetBindings");
+                Assert.IsTrue(Content.StreamingAssets.ContainsKey(requiredId),
+                    $"Required 3D asset '{requiredId}' missing from Content.StreamingAssets");
+            }
+        }
+
+        [Test]
+        public void EveryPlayableVehicleHasDistinctChassisAndAxleCenteredWheelAssets()
+        {
+            var chassisSet = new HashSet<string>();
+            var wheelSet = new HashSet<string>();
+            foreach (string vehicleId in StreamingAssetBindings.AllVehicleIds)
+            {
+                string chassisId = StreamingAssetBindings.ChassisForVehicle(vehicleId);
+                string wheelId = StreamingAssetBindings.WheelForVehicle(vehicleId);
+                Assert.IsTrue(chassisSet.Add(chassisId), $"Duplicate chassis binding '{chassisId}' for '{vehicleId}'");
+                Assert.IsTrue(wheelSet.Add(wheelId), $"Duplicate wheel binding '{wheelId}' for '{vehicleId}'");
+
+                var chassisDef = Content.StreamingAssets[chassisId];
+                var wheelDef = Content.StreamingAssets[wheelId];
+                Assert.AreEqual("vehicle", chassisDef.Category);
+                Assert.AreEqual("vehicle_wheel", wheelDef.Category);
+                Assert.AreEqual("axle_center", wheelDef.PivotConvention);
+                Assert.AreEqual("ground_datum_y0", chassisDef.PivotConvention);
+            }
+            Assert.AreEqual(4, chassisSet.Count);
+            Assert.AreEqual(4, wheelSet.Count);
+        }
+
+        [Test]
+        public void AllCampaignWorldEntitiesResolveToVerifiedStreamingAssets()
+        {
+            foreach (var garage in Content.Garages.Values)
+                Assert.IsTrue(Content.StreamingAssets.ContainsKey(StreamingAssetBindings.GarageBuildingFor(garage.Id)),
+                    $"Garage '{garage.Id}' failed to resolve to a verified 3D asset");
+
+            foreach (var lm in Content.Landmarks.Values)
+            {
+                var biome = WorldHydrology.NearestBiome(lm.Position.X, lm.Position.Z);
+                string assetId = StreamingAssetBindings.LandmarkAssetFor(lm.Id, lm.Vista, biome);
+                Assert.IsTrue(Content.StreamingAssets.ContainsKey(assetId),
+                    $"Landmark '{lm.Id}' resolved to unknown 3D asset '{assetId}'");
+            }
+
+            foreach (var site in Content.Slice.InspectTargets)
+            {
+                string assetId = StreamingAssetBindings.WorldSiteAssetFor(site.Id, "inspect", WorldBiome.Forest);
+                Assert.IsTrue(Content.StreamingAssets.ContainsKey(assetId),
+                    $"Inspect site '{site.Id}' resolved to unknown 3D asset '{assetId}'");
+            }
+
+            foreach (WorldBiome biome in Enum.GetValues(typeof(WorldBiome)))
+            {
+                foreach (var rule in WorldScatterSurface.DefaultBiomeRules(biome))
+                {
+                    string assetId = StreamingAssetBindings.ScatterSpeciesAssetFor(rule.SpeciesId);
+                    Assert.IsTrue(Content.StreamingAssets.ContainsKey(assetId),
+                        $"Biome scatter rule '{rule.SpeciesId}' ({biome}) resolved to unknown 3D asset '{assetId}'");
+                }
+            }
         }
     }
 }

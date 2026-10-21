@@ -21,6 +21,7 @@ import time
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 STEPS = [
+    ("30 Required 3D Streaming Assets Integrity", [sys.executable, "Tools/Art/generate_streaming_assets.py", "--verify"]),
     ("Content & Schema Validation", [sys.executable, "Tools/Validation/validate_content.py"]),
     ("Physics, World & Formula Invariants", [sys.executable, "Tools/Validation/formula_checks.py"]),
     ("Economy Progression & Arbitrage Sim", [sys.executable, "Tools/Balance/economy_sim.py"]),

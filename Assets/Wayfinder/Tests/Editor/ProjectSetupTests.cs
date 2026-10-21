@@ -83,6 +83,7 @@ namespace Wayfinder.Tests
         {
             Assert.DoesNotThrow(() => ProjectSetup.VerifyStreamingAssets());
             var content = Wayfinder.Campaign.CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir);
+            Assert.AreEqual(Wayfinder.World.StreamingAssetCatalog.RequiredAssetCount, content.StreamingAssets.Count);
             StreamingMeshLoader.ClearCache();
             foreach (var def in content.StreamingAssets.Values)
             {
