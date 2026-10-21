@@ -747,3 +747,76 @@ both survivors were fixed in the tests rather than waved off (points 8 and 9)
 (`Docs/evidence/arbitrage-content-parity-2026-10-21/`); validator negative control demonstrates the
 strengthened rule firing on a recipe the previous check passed; `validate_content.py`, `economy_sim.py`
 and `formula_checks.py` clean. KI-046 opened for the underlying table duplication.
+
+---
+
+## 2026-10-21 — D-045 Relic sets come from content; the sensor loop is the first consumer of SignalRadiusM
+
+**Context.** MAP-03 (§8.3–8.4) was the last dependency-ready M2 gap. Recon found that its four
+requirement clauses were in three *different* states, and that two of them looked implemented while
+being unreachable:
+
+1. **§8.3's relic sets had no code at all.** `DiscoveryService` held a `HashSet<string>` behind an
+   unvalidated `TryAddRelic(string)`: no set concept, no biome grouping, no reward keys, nothing that
+   knew a set was five. `relics.json` — 25 relics, five per biome, each with a reward key,
+   `protectedLedger: true` and `sellable: false` — was read by `validate_content.py` and by nobody in
+   the game, because `CampaignContent.RequiredFiles` did not list it. That is KI-046's shape in a third
+   table: the content that was validated was not the content that ran.
+2. **§8.3's sensor ranges were composed and consumed by nothing.** `VehicleStatsResolver` composes a
+   baseline `SignalRadiusM` of 80 m, `ResearchService` raises it to 140 m (tier 9, Radar I) and 220 m
+   (tier 19, Radar II), and `upgrades.json` matches §11.2:726/:736 exactly. A determinism test pinned
+   the numbers. The only other reference in the repo was a regression test asserting the composition.
+   **No behaviour depended on it**, so both paid radar upgrades were inert.
+3. **§8.4's mapping rewards and 60% finale gate are genuinely implemented** and partly tested.
+
+**Decision.**
+
+1. **Relics are content, and the protected ledger is the only place they live.** `relics.json` joins
+   `RequiredFiles`; `CampaignContent` parses `RelicDefinition` (id, biome, nameKey, rewardKey,
+   protectedLedger, sellable) and groups ids into per-biome sets, Ordinal-sorted so a capture and a UI
+   always agree. `CollectRelic` validates against content: an unknown id is `ContentMissing`, never a
+   silently accepted string. Set size is read from content, not hardcoded to five — §8.3 says five
+   today, and content is allowed to say otherwise.
+2. **A relic never becomes an item.** No cargo slot, no mass, no garage stack, nothing to sell or
+   transfer or lose in a rescue. `CheckSell` cannot reach one because there is no catalog entry, which
+   is a stronger guarantee than a refusal branch: §8.3's "cannot be sold or lost" holds structurally.
+3. **Set completion is derived, never stored.** `IsRelicSetComplete(biome)` counts the ledger against
+   the content set on every call. A persisted "set complete" flag could disagree with the relics
+   actually found after a migration or a rescue; a derived answer cannot. What persists is the *reward*,
+   as a claimed key.
+4. **Two reward keys, per §8.4.** Each relic claims `reward.relic.<biome>.NN`; a completed set claims
+   `reward.relicset.<biome>`. Both go through `ClaimedRewardLedger.TryClaim`, which pays once and
+   survives reload. When cosmetic memorabilia and journal content exist, they hang off those keys — no
+   second ledger, and no stat may move (asserted against eight resolved stats).
+5. **The sensor loop lives in `Campaign/Map`, not `Progression`.** `Progression` cannot reference
+   `CampaignContent`, so relic-set logic sits on `CampaignSession`; the sensor needs
+   `MapMarkerRules.SearchAreaCenter`, which is `Campaign` too. `SensorLoop` itself is a pure static
+   model taking an observer position and a radius, so it is testable with no vehicle, no session and no
+   Unity — and `VehicleController` / map views only render its readings.
+6. **Precision is a separate constant from range.** §8.3 gives 80 m for the pulse and 45 m for
+   directional precision, and Radar I/II raise *only* the pulse range. Tying precision to the resolved
+   radius would make Radar II precise at 220 m and quietly delete the search-area rule, so
+   `DirectionalPrecisionRadiusM` stays 45 m at every radar tier (mutant M04).
+7. **Beyond 45 m the sensor draws the marker rules' own search-area centre.** Reusing `SearchAreaCenter`
+   instead of inventing a second offset means §8.3's "a search area, not exact vertical navigation" has
+   one implementation, and the sensor and the exploration map cannot disagree about where to look.
+8. **A missing radius falls back to the baseline — not to silence, not to unlimited range.** Content
+   that forgets to compose `SignalRadiusM` must still behave like an 80 m sensor (mutants M08, M09).
+   Deafening the player or revealing the whole map are both worse failure modes than the baseline.
+9. **Signals are the sites content already places.** `relics.json` has no coordinates, no `sites.json`
+   kind is a relic, and `vertical_slice.json` places none, so the sweep uses `Content.Sites` — relays,
+   quest items, inspect targets, deliveries and routes. Relic sockets become one more signal source when
+   they are placed (KI-047); the sensor needs no change.
+
+**Alternatives considered.** Authoring 25 relic placements now was rejected: choosing defensible
+positions is world-pipeline work (M3, KI-037/038), and the standing scope decision is to close
+dependency-ready M2 gaps before M3. Leaving `SignalRadiusM` unconsumed was rejected: a green stat test
+is not evidence a feature works, and two paid upgrades that do nothing is a live defect, not a missing
+one. Putting the sensor in `Progression` was rejected on the assembly-reference rule. Storing set
+completion in the save was rejected because it duplicates derivable state.
+
+**Status.** Executed 2026-10-21. 16 new tests in `CampaignRelicSensorTests`; suite 266 → **282**
+passing, 7 assemblies, 0 warnings; **23/23** mutation checks caught on the second run (run 1: 21/23; both survivors were one test weakness, fixed in the test) (`Docs/evidence/relics-sensor-loop-2026-10-21/`);
+`validate_content.py` and the 30-file syntax check clean. KI-047 opened for relic placements. MAP-03's
+remaining work is §8.4's side: no test asserts `MapCoveragePercent` or `MeetsFinaleMapRequirement`, and
+the target-progression test §8.4 mandates is still outstanding.

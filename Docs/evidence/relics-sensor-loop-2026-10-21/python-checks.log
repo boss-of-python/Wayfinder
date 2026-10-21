@@ -1,0 +1,27 @@
+$ python3 Tools/Validation/validate_content.py
+vertical slice: income without mapping 3436 vs spend 3130 (margin 306); materials {'polymer': 4, 'scrap_metal': 4, 'electronics': 2}
+validate_content: 0 error(s), 0 warning(s)
+CONTENT VALIDATION PASSED
+
+$ python3 Tools/Balance/economy_sim.py
+
+--- pattern: thorough ---
+  tiers by 1 h: 4 (target ≥ 3) | by 5 h: 10 (target ≥ 5) | by 12 h: 16 (target ≥ 10)
+  full tree after 16.0 h, bank 2
+
+deadlock scan: OK (free garage services + no-cost repeatable jobs + Salvage-only research)
+arbitrage scan: OK (no recipe creates currency)
+
+NOTE: this is a model (KI-010). It cannot certify fun or playtime.
+ECONOMY SIMULATION COMPLETED WITH NO DEADLOCKS
+
+$ python3 Tools/Validation/formula_checks.py
+[ok  ] heightfield: non-degenerate relief (spread > 50 m) — spread 184.1 m, range 172.4..356.4
+
+2 check(s) are documentation mirrors, not evidence (they cannot fail on a C# change):
+  mirror: rescue: 25% floor of 37 units = 9
+  mirror: seam: adjacent chunk borders agree ≤ 1 mm
+
+0 failure(s)
+FORMULA CHECKS PASSED
+EXIT 0
