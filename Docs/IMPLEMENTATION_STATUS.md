@@ -6,6 +6,41 @@ Last updated: 2026-10-21 (Batch M). Status values: **Not started / In progress /
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
 
+## 2026-10-21 — Batch N: the `ApplyEffectiveStats` seam — researched suspension, clearance and winch reach the rig (KI-025 narrowed)
+
+KI-025's remaining shape was precise: the resolver produced suspension travel, ground clearance
+and winch values, the garage displayed them, and nothing pushed them into the WheelColliders —
+tiers 5 and 14 changed a panel number, not the vehicle. There was also no single seam a
+fitted/unfitted loadout change could enter the rig through.
+
+**What changed.** New engine-free `Simulation/WheelRigMath.cs`: `WheelRigSettings` (immutable) and
+`WheelRigMath.FromStats(spec, stats)` translate one resolved stat set into rig numbers — travel
+(clamped 0.05–0.60 m), authored spring rates passed through, dampers scaled by
+`DampingEffectiveness` (§5.5), clearance gain as a wheel-center offset (−delta, clamped
+−0.05…+0.20 m), radius passthrough, mid-travel rest, and winch reach/force with
+`WinchCanReach`. The per-wheel forward/sideways friction-stiffness and brake-envelope formulas
+moved here verbatim from `VehicleController.SetWheelDrive`, so the rig and the tests share one
+source. `VehicleController.ApplyEffectiveStats(stats)` is the seam: it writes geometry to each
+WheelCollider only when `RequiresGeometryUpdate` trips (steady state rewrites nothing, §18.2),
+captures authored wheel centers lazily per wheel (scene builders assign colliders after Awake),
+sets Rigidbody mass from the resolved total, and exposes `HasWinch`/`WinchReachMeters`/
+`WinchCanReach`. FixedUpdate calls it after every resolve; `VerticalSliceDriver.ApplySessionToVehicle`
+calls it with the session's stats. Center of mass is deliberately untouched — §4.2 requires it to
+be solved against the imported chassis datum in a calibration scene, not assigned blindly.
+
+**Evidence.** Suite 266 → **278/278** passing, 0 warnings (12 new `WheelRigMathTests`); **8/8**
+mutation checks caught (`Docs/evidence/rig-stats-seam-2026-10-21/`) — the first run reported 7/8:
+mutant N6 (travel never counts as geometry) survived because the travel test also changed
+clearance, and the clearance clause masked the dead travel clause; isolating each field caught it.
+`validate_content.py`, `formula_checks.py`, `economy_sim.py` clean; 30 Unity-dependent files still
+parse. Not proven here: any Unity-side behaviour — `ApplyEffectiveStats` is syntax-checked only
+(KI-026), WheelCollider spring/friction values remain authored starting points needing M1
+skidpad/ledge calibration in-editor, and the M2 gate still needs the 30-minute on-device playtest.
+
+**Remaining dependency-ready work without Unity:** KI-046 (load the item and recipe tables from
+content instead of hardcoding them); KI-037 `WorldStreamer` host; KI-038 baker `IScatterSurface`;
+KI-027 slice terrain bake; KI-029 `IMapTerrainSource`; KI-030 route graph.
+
 ## 2026-10-21 — Batch M: §10.4's arbitrage rule, and the content tables the runtime never loads
 
 §10.4:698 asks for three things — materials sell at 40% of purchase price rounded down, crafted

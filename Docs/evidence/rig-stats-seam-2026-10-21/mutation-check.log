@@ -1,0 +1,11 @@
+CAUGHT    N1   clearance lift moves the wheel centers the wrong way  (tests 276/278) by FromStats_CarriesResearchedTravelAndClearance_ToTheRig_KI025, FromStats_ClampsTravelAndClearance_SoAMalformedStatCannotInvertAWheel
+CAUGHT    N2   front damper ignores suspension condition  (tests 276/278) by EndToEnd_ResearchComposition_ReachesTheRigNumbers, FromStats_SpringsPassThrough_DampersScaleWithSuspensionCondition
+CAUGHT    N3   suspension travel is not clamped  (tests 277/278) by FromStats_ClampsTravelAndClearance_SoAMalformedStatCannotInvertAWheel
+CAUGHT    N4   forward friction ignores mud sink  (tests 277/278) by FrictionStiffness_MatchesThePreBatchNInlineFormulas
+CAUGHT    N5   brake envelope loses its 10% floor (zero brake on ice-grip 0)  (tests 277/278) by BrakeScale_MatchesThePreBatchNEnvelope_AndStaysInUnitRange
+CAUGHT    N6   a travel change never counts as a geometry update  (tests 277/278) by RequiresGeometryUpdate_TripsOnLoadoutChanges_NotOnPerFrameSignals
+CAUGHT    N7   an anchor exactly at winch reach is refused  (tests 277/278) by FromStats_WinchCapabilityFollowsTheFittedTier
+CAUGHT    N8   spring rate wrongly scales with suspension condition  (tests 277/278) by FromStats_SpringsPassThrough_DampersScaleWithSuspensionCondition
+
+8/8 mutants caught; survivors: none
+tree clean after run

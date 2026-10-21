@@ -747,3 +747,46 @@ both survivors were fixed in the tests rather than waved off (points 8 and 9)
 (`Docs/evidence/arbitrage-content-parity-2026-10-21/`); validator negative control demonstrates the
 strengthened rule firing on a recipe the previous check passed; `validate_content.py`, `economy_sim.py`
 and `formula_checks.py` clean. KI-046 opened for the underlying table duplication.
+
+## 2026-10-21 — D-044 The `ApplyEffectiveStats` seam: one pure translation from resolved stats to rig geometry (Batch N, KI-025)
+
+**Decision.** Researched stats enter the physics rig through exactly one seam,
+`VehicleController.ApplyEffectiveStats(EffectiveVehicleStats)`, and every number it writes is
+computed by the engine-free `WheelRigMath.FromStats(spec, stats)`:
+
+1. **Geometry comes from the same resolver the garage displays** (§11.2). Suspension tiers author
+   travel and clearance only, so spring rates pass through from the spec; dampers scale by
+   `DampingEffectiveness` (§5.5). Clearance gain becomes a negative wheel-center Y offset (the hull
+   rises relative to the contact patch), clamped to −0.05…+0.20 m; travel is clamped to
+   0.05–0.60 m so a malformed stat can never invert a WheelCollider.
+2. **Change-gated application.** `RequiresGeometryUpdate` compares geometry-bearing fields within
+   1e-4; FixedUpdate may call the seam every tick and rewrites colliders only when a loadout or
+   condition change moves something (§18.2). Rigidbody mass follows the resolved total in the seam
+   (FixedUpdate still recomputes it per tick from live fuel/cargo — identical value, live source).
+3. **Center of mass is not set.** §4.2 requires solving it against the imported chassis datum in a
+   calibration scene; assigning a guessed offset would be precisely the blind `(0, -0.6, 0)` the
+   blueprint forbids. It stays M1 work.
+4. **The friction/brake formulas moved, unchanged.** Forward/sideways stiffness and the brake
+   envelope were extracted verbatim from `SetWheelDrive` into `WheelRigMath` (with a non-negativity
+   floor that no valid input can observe), so the numbers the rig uses are the numbers the headless
+   tests execute.
+5. **Winch capability, not winch behaviour.** Reach/force/`WinchCanReach` now reach the rig;
+   anchor search and pull forces remain unimplemented and are not implied by this batch.
+
+**A surviving mutant, and what it taught.** The first mutation run reported 7/8: N6 (a travel
+change never counts as a geometry update) survived because the test changed travel *and* clearance
+together, and the clearance clause masked the dead travel clause. The fix was to isolate each field
+— travel-only and clearance-only changes must each trip the gate. Recorded as a convention:
+**a change-detection predicate needs one test per clause, varying exactly one field at a time.**
+
+**Rationale.** The panel and the physics disagreeing is the worst kind of bug for a preparation
+game: the player pays 700 Salvage for suspension and the number changes but the car does not. Doing
+the translation in pure C# keeps the guarantee executable from this environment (278/278 headless)
+while the Unity application stays syntax-checked (KI-026) — and keeps the M1 calibration surface
+small: one method to tune, not scattered assignments.
+
+**Status:** Executed 2026-10-21. 12 new `WheelRigMathTests`; suite 266 → 278 passing, 0 warnings;
+**8/8** mutation checks caught on the second run (N6 survivor fixed in the test, see above);
+`validate_content.py`, `formula_checks.py` and `economy_sim.py` clean; 30 Unity-dependent files
+still parse (`Docs/evidence/rig-stats-seam-2026-10-21/`). KI-025 narrowed to in-editor calibration,
+COM solve and winch pull behaviour.
