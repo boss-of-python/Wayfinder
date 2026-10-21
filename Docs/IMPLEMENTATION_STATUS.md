@@ -1,10 +1,45 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-21 (Batch O). Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-21 (Batch P). Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## 2026-10-21 — Batch P: §8.4's exploration rewards, the finale gate, and a target the game does not meet
+
+Batch O closed §8.3. §8.4 was the rest of MAP-03: its rewards existed in `DiscoveryService` and were
+partly covered, but **nothing asserted `MapCoveragePercent` or `MeetsFinaleMapRequirement`**, and the
+target progression test §8.4 explicitly mandates did not exist (D-046).
+
+**The mandated test was written, and it reports the target is not met.** §8.4: "Target progression tests
+must show that story routes plus reasonable detours can achieve 60%; otherwise adjust route exposure or
+the threshold." Measured with the real reveal code and real content: playing Q01–Q04 end to end reveals
+**1.22%** of countable cells (112). Adding every detour content places — each landmark, cache, site,
+garage and camp socket, plus each checkpoint route walked at 32 m steps, 332 reveal stops — reaches
+**7.22%** (665 of 9216). The finale needs 60%, i.e. 5530 cells.
+
+Two causes compound. The slice places **one** checkpoint route (`route.forest.ford`, 2 checkpoints) and
+15 positioned points, and missions Q05–Q20 have no placed sites, so for most of the game there are no
+story routes to drive. And `BakeCountableMask` keeps every cell whose base height is above sea level —
+on the canonical seed **none falls below it** — so the mask counts all 9216 = 96×96 cells even though its
+own doc comment says "excluding ocean/decorative cliffs". The denominator is the whole map, not the
+playable region. Neither was tuned away: lowering 60% would falsify a blueprint number for the full game
+to make a slice test pass, and shrinking the mask to the slice's bounding box would game the metric.
+Both real fixes need M3 (KI-030's route graph, KI-027/038's bake), so this is **KI-048**.
+
+**What was verified.** 120 Salvage once per landmark under `reward.landmark.<id>`; 50 Salvage per 50
+newly revealed countable cells under per-threshold `reward.map.N` keys, **escrowed not banked**; the
+paid-threshold index persisted across save/reload so no threshold can pay twice; one ledger holding both
+namespaces with separate keys; and the gate flipping at exactly 5530 of 9216 cells. §8.4's literal
+numbers are pinned absolutely, because every other assertion derives from those constants.
+
+**One behaviour that looked like a bug and is not.** Discovering a *vista* landmark escrowed 220 Salvage,
+not 120. §8.1 makes a vista survey a 384 m disc, which reveals enough countable cells to cross mapping
+thresholds — so the landmark pays its own 120 **plus** 50 per threshold, under separate keys. That is
+correct, and is now asserted deliberately rather than discovered by accident.
+
+12 new tests in `CampaignExplorationProgressionTests`; suite 282 → **294**, 0 warnings. **13/13** mutation checks caught on the second run (run 1: 10/13; all three survivors were test weaknesses, fixed in the tests).
 
 ## 2026-10-21 — Batch O: §8.3's relic sets, and a sensor loop that finally reads SignalRadiusM
 

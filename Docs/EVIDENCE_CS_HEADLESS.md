@@ -1,5 +1,14 @@
 # Wayfinder — Executed Evidence: headless C# compile + EditMode tests (2026-10-14)
 
+> **Update 2026-10-21 (Batch P — MAP-03 §8.4: exploration rewards, the finale gate, and the mandated
+> progression test, D-046/KI-048):** 7 assemblies / 0 warnings, **294/294** EditMode tests (282 → 294),
+> .NET Standard 2.1 profile OK, 30 Unity-dependent files parse, `validate_content.py` + `economy_sim.py`
+> + `formula_checks.py` clean. New fixture `CampaignExplorationProgressionTests` (12). **13/13** mutation checks caught on the second run (run 1: 10/13; all three survivors were test weaknesses, fixed in the tests)
+> (`Docs/evidence/exploration-rewards-finale-gate-2026-10-21/`). The finding: §8.4's mandated target
+> progression test **fails its target** — Q01–Q04 reveal 1.22% of countable cells and every detour
+> content places brings it to 7.22% (665 of 9216) against a 60% gate, because the slice has one
+> checkpoint route and `BakeCountableMask` excludes no cell at all (KI-048). Recorded, not tuned away.
+>
 > **Update 2026-10-21 (Batch O — MAP-03 §8.3: relic sets, and the sensor loop that finally consumes
 > `SignalRadiusM`, D-045/KI-047):** 7 assemblies / 0 warnings, **282/282** EditMode tests (266 → 282),
 > .NET Standard 2.1 profile OK, 30 Unity-dependent files parse, `validate_content.py` clean. New fixture

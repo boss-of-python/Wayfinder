@@ -1,0 +1,17 @@
+CAUGHT    M01  a mapping threshold is 40 cells instead of 50 (§8.4)  (tests 286/293) by AVistaLandmarkPaysItsOwn120_PlusTheMappingThresholdsItsRevealCrosses, EveryFiftyCountableCellsPaysFiftySalvageOnce_UnderItsOwnRewardKey, MappingAndLandmarkRewardsShareOneLedger_WithSeparateKeys
+CAUGHT    M02  a mapping threshold pays 45 Salvage instead of 50 (§8.4)  (tests 288/293) by AVistaLandmarkPaysItsOwn120_PlusTheMappingThresholdsItsRevealCrosses, MappingAndLandmarkRewardsShareOneLedger_WithSeparateKeys, TheSection84NumbersAreTheBlueprintsNumbers
+CAUGHT    M03  a landmark pays 110 Salvage instead of 120 (§8.4)  (tests 292/293) by TheSection84NumbersAreTheBlueprintsNumbers
+CAUGHT    M04  the finale gate drops to 50% coverage (§8.4)  (tests 291/293) by TheSection84NumbersAreTheBlueprintsNumbers, NewGame_MapStartsBlank_OnlyYouTheHomeGarageAndTheQ01SearchArea_S8_1
+SURVIVED  M05  only one mapping threshold is paid per reveal instead of all of them  (tests 293/293)
+CAUGHT    M06  every mapping threshold shares one reward key, so only the first pays  (tests 289/293) by AVistaLandmarkPaysItsOwn120_PlusTheMappingThresholdsItsRevealCrosses, ThePaidThresholdIndexSurvivesReload_AndCannotPayTheSameThresholdTwice, Loop_DepartCollectDiscoverReturnBankResearch_SurvivesReload_FLOW01
+CAUGHT    M07  the paid-threshold index advances by 1 cell, paying almost every reveal  (tests 287/293) by AVistaLandmarkPaysItsOwn120_PlusTheMappingThresholdsItsRevealCrosses, EveryFiftyCountableCellsPaysFiftySalvageOnce_UnderItsOwnRewardKey, MappingAndLandmarkRewardsShareOneLedger_WithSeparateKeys
+SURVIVED  M08  a mapping reward is escrowed even when its key was already claimed  (tests 293/293)
+CAUGHT    M09  revealing cells pays no mapping reward at all  (tests 288/293) by AVistaLandmarkPaysItsOwn120_PlusTheMappingThresholdsItsRevealCrosses, EveryFiftyCountableCellsPaysFiftySalvageOnce_UnderItsOwnRewardKey, MappingAndLandmarkRewardsShareOneLedger_WithSeparateKeys
+CAUGHT    M10  every landmark shares one reward key, so only the first pays  (tests 288/293) by ALandmarkPays120Once_UnderALandmarkKey_NotAMappingKey, AVistaLandmarkPaysItsOwn120_PlusTheMappingThresholdsItsRevealCrosses, MappingAndLandmarkRewardsShareOneLedger_WithSeparateKeys
+SURVIVED  M11  a landmark reward is escrowed even when its key was already claimed  (tests 293/293)
+CAUGHT    M12  the paid-threshold index is saved as 0, so a reload can re-earn every threshold  (tests 292/293) by ThePaidThresholdIndexSurvivesReload_AndCannotPayTheSameThresholdTwice
+CAUGHT    M13  the paid-threshold index is restored as 0  (tests 288/293) by CampStoresSurviveSaveAndReload_SeparatelyPerCamp, ThePaidThresholdIndexSurvivesReload_AndCannotPayTheSameThresholdTwice, TransfersSurviveSaveAndReload
+
+10/13 mutants caught; survivors: ['M05', 'M08', 'M11']
+tree clean after run
+EXIT 1
