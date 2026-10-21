@@ -1,0 +1,27 @@
+CAUGHT    M01  the pulse test excludes the boundary (80 m exactly goes quiet)  (tests 280/282) by TheScanReportsNearestFirst_AndOnlyPulsingSignals, TheSensorPulsesInsideTheResolvedRadius_AndNotBeyond
+CAUGHT    M02  the baseline sensor reaches only 45 m  (tests 276/282) by AMissingSignalRadiusFallsBackToTheBaseline_NotToSilenceOrToUnlimitedRange, BeyondFortyFiveMetresTheMapShowsTheSearchAreaCentre_NotTheExactPosition, RadarIAndRadarIIExtendWhatTheSensorHears_EndToEndThroughResearch
+CAUGHT    M03  precision arrives at 80 m instead of 45 m  (tests 279/282) by BeyondFortyFiveMetresTheMapShowsTheSearchAreaCentre_NotTheExactPosition, DirectionalPrecisionArrivesAtFortyFiveMetres_AndWithItTheTruePosition, TheScanReportsNearestFirst_AndOnlyPulsingSignals
+CAUGHT    M04  precision follows the resolved radius, so Radar II is precise at 220 m  (tests 280/282) by BeyondFortyFiveMetresTheMapShowsTheSearchAreaCentre_NotTheExactPosition, DirectionalPrecisionArrivesAtFortyFiveMetres_AndWithItTheTruePosition
+CAUGHT    M05  a bearing is reported even beyond the precision range  (tests 281/282) by BeyondFortyFiveMetresTheMapShowsTheSearchAreaCentre_NotTheExactPosition
+CAUGHT    M06  the bearing transposes east and north  (tests 281/282) by DirectionalPrecisionArrivesAtFortyFiveMetres_AndWithItTheTruePosition
+CAUGHT    M07  a distant signal reveals its exact position  (tests 281/282) by BeyondFortyFiveMetresTheMapShowsTheSearchAreaCentre_NotTheExactPosition
+CAUGHT    M08  a missing radius deafens the sensor instead of falling back to 80 m  (tests 281/282) by AMissingSignalRadiusFallsBackToTheBaseline_NotToSilenceOrToUnlimitedRange
+CAUGHT    M09  a missing radius becomes unlimited range  (tests 281/282) by AMissingSignalRadiusFallsBackToTheBaseline_NotToSilenceOrToUnlimitedRange
+CAUGHT    M10  the scan reports out-of-range signals too  (tests 278/282) by RadarIAndRadarIIExtendWhatTheSensorHears_EndToEndThroughResearch, TheScanReportsNearestFirst_AndOnlyPulsingSignals, TheSensorIsSilentWhenParked_AndThePoseOverloadAgreesWithTheExplicitOne
+CAUGHT    M11  the scan reports farthest first  (tests 281/282) by TheScanReportsNearestFirst_AndOnlyPulsingSignals
+CAUGHT    M12  Radar I is recorded as 150 m instead of 140 m (§11.2 tier 9)  (tests 281/282) by RadarIAndRadarIIExtendWhatTheSensorHears_EndToEndThroughResearch
+CAUGHT    M13  Radar II is recorded as 140 m, so tier 19 changes nothing (§11.2 tier 19)  (tests 281/282) by RadarIAndRadarIIExtendWhatTheSensorHears_EndToEndThroughResearch
+CAUGHT    M14  SensorScan ignores the resolved radius and always uses the 80 m baseline  (tests 281/282) by RadarIAndRadarIIExtendWhatTheSensorHears_EndToEndThroughResearch
+SURVIVED  M15  the pose overload sweeps the world origin instead of the vehicle  (tests 282/282)
+SURVIVED  M16  the sensor sweeps even when parked  (tests 282/282)
+CAUGHT    M17  a relic's own reward key is never claimed (§8.4 separate keys)  (tests 281/282) by ARelicIsCollectedOnce_AndClaimsItsOwnRewardKeyOnce
+CAUGHT    M18  a completed set claims no set reward key  (tests 280/282) by CompletingABiomesSetClaimsTheSetKeyOnce_AndAnnouncesIt, RelicsAndCompletedSetsSurviveSaveAndReload
+CAUGHT    M19  any relic at all completes its biome's set  (tests 279/282) by ARelicIsCollectedOnce_AndClaimsItsOwnRewardKeyOnce, CompletingABiomesSetClaimsTheSetKeyOnce_AndAnnouncesIt, RelicsAndCompletedSetsSurviveSaveAndReload
+CAUGHT    M20  set progress counts the set's members instead of the ones found  (tests 278/282) by ARelicIsCollectedOnce_AndClaimsItsOwnRewardKeyOnce, CollectingARelicFillsTheLedger_NotTheCargo, CompletingABiomesSetClaimsTheSetKeyOnce_AndAnnouncesIt
+CAUGHT    M21  the same relic can be collected again  (tests 280/282) by ARelicIsCollectedOnce_AndClaimsItsOwnRewardKeyOnce, CompletingABiomesSetClaimsTheSetKeyOnce_AndAnnouncesIt
+CAUGHT    M22  an unknown relic is refused as a bad target, not as missing content (§14)  (tests 281/282) by AnUnknownRelicAndNoActiveExpeditionAreBothRefused
+CAUGHT    M23  recovering a relic is silent — no per-relic notice  (tests 281/282) by CompletingABiomesSetClaimsTheSetKeyOnce_AndAnnouncesIt
+
+21/23 mutants caught; survivors: ['M15', 'M16']
+tree clean after run
+EXIT 1

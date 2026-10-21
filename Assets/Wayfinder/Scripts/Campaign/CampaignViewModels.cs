@@ -59,6 +59,12 @@ namespace Wayfinder.Campaign
             return sb.ToString();
         }
 
+        /// <summary>"relic.forest.01" → "Relic Forest 01"; content supplies the real name key.</summary>
+        public static string Relic(string relicId) => Title(relicId);
+
+        /// <summary>"forest" → "Forest Relic Set" (§8.3: five sets, one per biome).</summary>
+        public static string RelicSet(string biome) => Title(biome) + " Relic Set";
+
         static string Title(string id)
         {
             var words = id.Replace('_', ' ').Replace('.', ' ').Split(' ');

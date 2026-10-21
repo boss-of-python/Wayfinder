@@ -202,6 +202,68 @@ namespace Wayfinder.Campaign
             });
         }
 
+        /// <summary>
+        /// §8.3: collect a named relic into the protected relic ledger. Relics have no weight and cannot
+        /// be sold or lost, and they are NOT ordinary cargo — so nothing is added to <see cref="Cargo"/>
+        /// and no slot or mass check applies. Each relic claims its own reward key once (§8.4: the
+        /// ledger records separate reward keys); completing a biome's set of five claims that set's key,
+        /// which unlocks cosmetic memorabilia and journal content and never traction or fuel.
+        /// </summary>
+        public CommandResult CollectRelic(string relicId)
+        {
+            if (!Expedition.IsActive) return CommandResult.Fail(FailureReason.WrongState, "no active expedition");
+            if (string.IsNullOrEmpty(relicId) || !Content.Relics.TryGetValue(relicId, out var relic))
+                return CommandResult.Fail(FailureReason.ContentMissing, $"unknown relic '{relicId}'");
+            if (Discovery.HasRelic(relicId))
+                return CommandResult.Fail(FailureReason.AlreadyCollected, relicId);
+            return RunCritical(() =>
+            {
+                Discovery.TryAddRelic(relicId);
+                Discovery.RewardLedger.TryClaim(relic.RewardKey);
+                Notice(CampaignNoticeKind.RelicCollected, $"Relic recovered: {DisplayNames.Relic(relicId)}", 1, relicId);
+                if (IsRelicSetComplete(relic.Biome) &&
+                    Discovery.RewardLedger.TryClaim(RelicSetRewardKey(relic.Biome)))
+                    Notice(CampaignNoticeKind.RelicSetCompleted,
+                        $"{DisplayNames.RelicSet(relic.Biome)} complete — memorabilia and journal unlocked",
+                        RelicsInSet(relic.Biome), relic.Biome);
+                return CommandResult.Ok();
+            });
+        }
+
+        /// <summary>§8.3: five relic sets, one per biome, five named relics each.</summary>
+        public const string RelicSetRewardPrefix = "reward.relicset.";
+
+        public static string RelicSetRewardKey(string biome) => RelicSetRewardPrefix + (biome ?? string.Empty);
+
+        /// <summary>How many relics this biome's set has, from content — not a hardcoded five.</summary>
+        public int RelicsInSet(string biome) =>
+            Content.RelicSets.TryGetValue(biome ?? string.Empty, out var set) ? set.Count : 0;
+
+        public int RelicsFoundInSet(string biome)
+        {
+            if (!Content.RelicSets.TryGetValue(biome ?? string.Empty, out var set)) return 0;
+            int found = 0;
+            foreach (var id in set)
+                if (Discovery.HasRelic(id)) found++;
+            return found;
+        }
+
+        public bool IsRelicSetComplete(string biome)
+        {
+            int total = RelicsInSet(biome);
+            return total > 0 && RelicsFoundInSet(biome) >= total;
+        }
+
+        /// <summary>Biomes whose relic set is complete, Ordinal-sorted so a capture and a UI agree.</summary>
+        public List<string> CompletedRelicSets()
+        {
+            var done = new List<string>();
+            foreach (var biome in Content.RelicSets.Keys)
+                if (IsRelicSetComplete(biome)) done.Add(biome);
+            done.Sort(StringComparer.Ordinal);
+            return done;
+        }
+
         /// <summary>Relay activation (Q04): consumes the protected fuse and sets the infrastructure flag.</summary>
         public CommandResult ActivateRelay(string relayId)
         {

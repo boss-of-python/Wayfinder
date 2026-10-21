@@ -1,5 +1,17 @@
 # Wayfinder — Executed Evidence: headless C# compile + EditMode tests (2026-10-14)
 
+> **Update 2026-10-21 (Batch O — MAP-03 §8.3: relic sets, and the sensor loop that finally consumes
+> `SignalRadiusM`, D-045/KI-047):** 7 assemblies / 0 warnings, **282/282** EditMode tests (266 → 282),
+> .NET Standard 2.1 profile OK, 30 Unity-dependent files parse, `validate_content.py` clean. New fixture
+> `CampaignRelicSensorTests` (16). **23/23** mutation checks caught on the second run (run 1: 21/23; both survivors were one test weakness, fixed in the test)
+> (`Docs/evidence/relics-sensor-loop-2026-10-21/`). Two real findings: `relics.json` was validated but
+> never loaded — `CampaignContent.RequiredFiles` omitted it — so §8.3's five relic sets had no code
+> behind them, only an unvalidated `TryAddRelic(string)`; and `Stat.SignalRadiusM` was composed to
+> 80/140/220 m by the resolver, research and `upgrades.json`, pinned by a determinism test, and **read
+> by nothing**, so Radar I and Radar II changed no behaviour. `Campaign/Map/SensorLoop.cs` is the first
+> consumer. Relics still have no world positions, so the sweep covers the sites content does place
+> (KI-047).
+>
 > **Update 2026-10-21 (Batch M — §10.4 arbitrage rule + content-table parity, D-043/KI-046):**
 > 7 assemblies / 0 warnings, **266/266** EditMode tests (254 → 266), .NET Standard 2.1 profile OK,
 > 30 Unity-dependent files parse, `validate_content.py` + `economy_sim.py` + `formula_checks.py` clean.

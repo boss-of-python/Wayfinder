@@ -1,10 +1,45 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-21 (Batch M). Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-21 (Batch O). Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## 2026-10-21 — Batch O: §8.3's relic sets, and a sensor loop that finally reads SignalRadiusM
+
+MAP-03 (§8.3–8.4) was the last dependency-ready M2 gap: its files are engine-free, unlike DRIVE-04's
+`Presentation/PresentationModels.cs` and `Platform/InputRouter.cs`. Recon split it into three different
+shapes of "implemented" (D-045).
+
+**Relic sets had no code at all.** `DiscoveryService` kept a `HashSet<string>` behind an unvalidated
+`TryAddRelic(string)` — no set concept, no biome grouping, no reward keys. `relics.json` (25 relics,
+five per biome, each with a reward key, `protectedLedger: true`, `sellable: false`) was checked by
+`validate_content.py` and never loaded by the game, because `CampaignContent.RequiredFiles` did not
+list it: KI-046's duplication shape in a third table. The file is now required and parsed, sets are
+grouped per biome and Ordinal-sorted, and `CollectRelic` refuses an id content does not define
+(`ContentMissing`) instead of accepting any string. A relic goes only into the protected ledger — no
+cargo slot, no mass, never sellable — each relic claims its own reward key once, and a completed set
+claims a separate `reward.relicset.<biome>` key. Per §8.3 a completed set moves **no** resolved stat:
+cosmetic memorabilia and journal content, not traction or fuel.
+
+**§8.3's sensor ranges were composed and consumed by nothing.** `VehicleStatsResolver` composes a
+baseline `SignalRadiusM` of 80 m; `ResearchService` raises it to 140 m at tier 9 (Radar I) and 220 m at
+tier 19 (Radar II); `upgrades.json` agrees with §11.2:726/:736; a determinism test pinned the numbers.
+No code read the result, so **both paid radar upgrades changed no behaviour** — a green stat test was
+not evidence the feature worked. `Campaign/Map/SensorLoop.cs` is that consumer: a pulse inside the
+resolved radius, a trustworthy bearing and the true position only inside 45 m, and beyond it the same
+deterministic search-area centre `MapMarkerRules` already draws, so §8.3's "a search area, not exact
+vertical navigation" is one implementation rather than two and the sensor and map cannot disagree.
+
+**§8.4's rewards and gate were already real** (`DiscoveryService`: 120 Salvage per landmark, 50 per 50
+newly revealed countable cells with a paid-threshold index, `MeetsFinaleMapRequirement` at 60%) and are
+partly covered by `CampaignSessionTests`. The target-progression test §8.4 mandates — story routes plus
+reasonable detours must reach 60% — is still outstanding and is the next MAP-03 step.
+
+16 new tests in `CampaignRelicSensorTests`; suite 266 → **282**, 0 warnings. **23/23** mutation checks caught on the second run (run 1: 21/23; both survivors were one test weakness, fixed in the test). Relics are still
+placed nowhere in the world, so the sweep covers the sites content does place and relic sockets join
+when M3 places them (**KI-047**).
 
 ## 2026-10-21 — Batch M: §10.4's arbitrage rule, and the content tables the runtime never loads
 
