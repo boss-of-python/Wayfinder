@@ -62,6 +62,9 @@ jobs:
       - name: Pin the Unity version for this build only (nothing is committed)
         run: python3 Tools/Build/pin_toolchain.py --editor-version "$UNITY_VERSION"
 
+      - name: Verify and stage 30 required 3D streaming assets
+        run: python3 Tools/Art/generate_streaming_assets.py --verify --mirror-resources
+
       - name: Run preflight verification suite (content, formulas, economy, 319+ NUnit tests, 12-assembly type check)
         run: python3 Tools/Build/run_all_checks.py
 

@@ -35,7 +35,10 @@ jobs:
           restore-keys: |
             wayfinder-headless-toolchain-v1-
 
-      - name: Run all 6 verification gates
+      - name: Verify 30 required 3D streaming assets (.obj + SHA-256 + manifest)
+        run: python3 Tools/Art/generate_streaming_assets.py --verify
+
+      - name: Run all verification gates
         run: python3 Tools/Build/run_all_checks.py
 
       - name: Upload NUnit XML, compile report & Unity type-check artifacts

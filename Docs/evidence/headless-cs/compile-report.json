@@ -50,6 +50,7 @@
       "Assets/Wayfinder/Scripts/World/MainlandRouteGraph.cs",
       "Assets/Wayfinder/Scripts/World/RouteGraph.cs",
       "Assets/Wayfinder/Scripts/World/ScatterPlacer.cs",
+      "Assets/Wayfinder/Scripts/World/StreamingAssetBindings.cs",
       "Assets/Wayfinder/Scripts/World/StreamingAssetCatalog.cs",
       "Assets/Wayfinder/Scripts/World/TerrainLineOfSight.cs",
       "Assets/Wayfinder/Scripts/World/WorldDefinition.cs",
@@ -130,6 +131,7 @@
       "Assets/Wayfinder/Scripts/Presentation/PrototypeSafeArea.cs",
       "Assets/Wayfinder/Scripts/Presentation/PrototypeUi.cs",
       "Assets/Wayfinder/Scripts/Presentation/ProvingGroundDriver.cs",
+      "Assets/Wayfinder/Scripts/Presentation/StreamingMeshLoader.cs",
       "Assets/Wayfinder/Scripts/Presentation/TitleFlowHost.cs",
       "Assets/Wayfinder/Scripts/Presentation/TouchHoldButton.cs",
       "Assets/Wayfinder/Scripts/Presentation/VerticalSliceDriver.cs"

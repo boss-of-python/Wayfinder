@@ -1,18 +1,21 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using Wayfinder.Campaign;
-using Wayfinder.Platform;
 using Wayfinder.Core;
-using Wayfinder.Simulation;
+using Wayfinder.Platform;
 using Wayfinder.Presentation;
+using Wayfinder.Simulation;
+using Wayfinder.World;
 
 namespace Wayfinder.Editor
 {
     /// <summary>
-    /// Deterministic scene generation (D-006): Bootstrap, Title, PhysicsTestGround (with the full
-    /// §4.6 obstacle set), and VerticalSlice greybox. Menu: Tools → Wayfinder → Build Scenes.
+    /// Deterministic scene generation (D-006, §14.2, §14.3): Bootstrap, Title, PhysicsTestGround,
+    /// VerticalSlice, and WorldShell using all 30 verified 3D streaming <c>.obj</c> assets backed by
+    /// persistent serialized Unity <see cref="Mesh"/> assets. Menu: Tools → Wayfinder → Build Scenes.
     /// </summary>
     public static class SceneBuilder
     {
@@ -36,12 +39,13 @@ namespace Wayfinder.Editor
                 new EditorBuildSettingsScene($"{ScenesDir}/VerticalSlice.unity", true),
                 new EditorBuildSettingsScene($"{ScenesDir}/WorldShell.unity", true)
             };
-            Debug.Log("[Wayfinder] Scenes built and registered in EditorBuildSettings.");
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Wayfinder] Scenes built with 30 verified 3D streaming meshes and registered in EditorBuildSettings.");
         }
 
         static void NewScene(string name)
         {
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var lightGo = new GameObject("Directional Light");
             var light = lightGo.AddComponent<Light>();
             light.type = LightType.Directional;
@@ -66,8 +70,6 @@ namespace Wayfinder.Editor
         {
             NewScene("Bootstrap");
             var go = new GameObject("Bootstrap");
-            // Bootstrap host: composition root wires explicit services at boot (§15.3).
-            // App flow: Boot → validate data → Title (AppStateMachine).
             go.AddComponent<BootstrapHost>();
             Save("Bootstrap");
         }
@@ -81,13 +83,16 @@ namespace Wayfinder.Editor
         }
 
         /// <summary>
-        /// PhysicsTestGround (§4.6): asphalt braking lane, 10/20/30/35° ramps, 10/20/28° side
-        /// slopes, 0.10/0.20/0.30 m ledges, articulation blocks, mud trench, water channel,
-        /// jump landing. Unloaded/loaded tests run against this rig in M1.
+        /// PhysicsTestGround (§4.6, §14.2): asphalt braking lane, 10/20/30/35° ramps, 10/20/28° side
+        /// slopes, 0.10/0.20/0.30 m ledges, articulation blocks, mud trench, water channel with 3D
+        /// creek gauges &amp; bridge span, jump landing, home workshop bay, fuel depot, cargo pallets,
+        /// 4-vehicle 3D fleet showcase, winch bollards, watchtower, cairns, and forest perimeter props.
         /// </summary>
         static void BuildPhysicsTestGround()
         {
             NewScene("PhysicsTestGround");
+            var content = CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir);
+            var catalog = content.StreamingAssets;
             var root = new GameObject("TestGround");
             Box(root.transform, "TestAreaGround", new Vector3(240f, 1f, 340f), new Vector3(50f, -.6f, 150f),
                 new Color(.30f, .38f, .26f));
@@ -131,12 +136,15 @@ namespace Wayfinder.Editor
                     new Vector3(25f + i * 3.5f, 0.2f, 215f), new Color(0.42f, 0.36f, 0.3f));
             }
 
-            // Mud trench (surface label shallow/deep mud).
+            // Mud trench + 3D recovery bollard.
             var mud = Box(root.transform, "MudTrench", new Vector3(8f, 0.15f, 30f),
                 new Vector3(60f, 0.02f, 60f), new Color(0.25f, 0.18f, 0.12f));
             mud.AddComponent<SurfaceLabel>().surface = SurfaceType.DeepMud;
+            SpawnAsset(root.transform, StreamingAssetBindings.WinchBollardAssetId, "WinchAnchor_MudTrench",
+                new Vector3(54f, 0f, 76f), new Color(.84f, .62f, .18f), addCollider: true, catalog: catalog)
+                .AddComponent<WinchAnchor>();
 
-            // Water channel (water volume; depth poles beside it).
+            // Water channel with 3D creek depth gauges (§5.3) + timber bypass bridge span.
             var water = Box(root.transform, "WaterChannel", new Vector3(8f, 1.2f, 24f),
                 new Vector3(80f, 0.2f, 60f), new Color(0.15f, 0.3f, 0.45f, 0.6f));
             var volume = water.AddComponent<WaterVolume>();
@@ -144,15 +152,39 @@ namespace Wayfinder.Editor
             water.GetComponent<Collider>().isTrigger = true;
             for (int i = 0; i < 3; i++)
             {
-                Box(root.transform, $"DepthPole{i}", new Vector3(0.1f, 1.2f, 0.1f),
-                    new Vector3(76f + i * 0.6f, 0.6f, 48f + i * 2f), Color.yellow); // visible depth poles (§5.3)
+                SpawnAsset(root.transform, StreamingAssetBindings.WaterFordGaugeAssetId, $"DepthPole{i}",
+                    new Vector3(76f + i * 0.6f, 0f, 48f + i * 2f), new Color(.88f, .76f, .18f),
+                    addCollider: false, catalog: catalog);
             }
+            SpawnAsset(root.transform, StreamingAssetBindings.BridgeSpanAssetId, "ProvingBridgeSpan",
+                new Vector3(80f, 0f, 78f), new Color(.46f, .38f, .28f), addCollider: true, catalog: catalog);
 
             // Jump landing.
             Box(root.transform, "JumpRamp", new Vector3(8f, 0.5f, 12f), new Vector3(100f, 0.8f, 60f),
                 new Color(0.45f, 0.4f, 0.35f)).transform.rotation = Quaternion.Euler(-18f, 0f, 0f);
             Box(root.transform, "JumpLanding", new Vector3(14f, 0.1f, 20f), new Vector3(100f, 0f, 95f),
                 new Color(0.32f, 0.3f, 0.28f));
+
+            // Proving workshop bay + fuel tank + cargo pallets + full 4-vehicle fleet showcase.
+            SpawnAsset(root.transform, StreamingAssetBindings.HomeGarageAssetId, "ProvingGarageBay",
+                new Vector3(-18f, 0f, 12f), new Color(.50f, .45f, .40f), addCollider: true, catalog: catalog);
+            SpawnAsset(root.transform, StreamingAssetBindings.GarageFuelDepotAssetId, "ProvingFuelDepot",
+                new Vector3(-26f, 0f, 14f), new Color(.56f, .58f, .60f), addCollider: true, catalog: catalog);
+            SpawnAsset(root.transform, StreamingAssetBindings.CargoPalletStackAssetId, "ProvingCargoPallets",
+                new Vector3(-10f, 0f, 10f), new Color(.62f, .49f, .28f), addCollider: true, catalog: catalog);
+            SpawnFleetShowcase(root.transform, new Vector3(-24f, 0f, 28f), catalog);
+
+            SpawnAsset(root.transform, StreamingAssetBindings.WatchtowerAssetId, "ProvingWatchtower",
+                new Vector3(-24f, 0f, 90f), new Color(.48f, .38f, .28f), addCollider: true, catalog: catalog);
+            SpawnAsset(root.transform, StreamingAssetBindings.TrailCairnAssetId, "ProvingCairn",
+                new Vector3(-10f, 0f, 55f), new Color(.52f, .50f, .48f), addCollider: false, catalog: catalog);
+            for (int i = 0; i < 6; i++)
+            {
+                SpawnAsset(root.transform, "env.tree.forest_pine", $"ProvingPine{i}",
+                    new Vector3(-36f, 0f, 40f + i * 24f), new Color(.20f, .35f, .22f), addCollider: false, catalog: catalog);
+                SpawnAsset(root.transform, "env.rock.granite_outcrop", $"ProvingGranite{i}",
+                    new Vector3(132f, 0f, 40f + i * 24f), new Color(.42f, .42f, .44f), addCollider: true, catalog: catalog);
+            }
 
             var vehicle = CreateScoutRig(root.transform, new Vector3(0f, 1f, 10f));
             var router = vehicle.gameObject.AddComponent<InputRouter>();
@@ -167,56 +199,90 @@ namespace Wayfinder.Editor
         }
 
         /// <summary>
-        /// Vertical slice greybox (§21.3) generated from Content/vertical_slice.json and the canonical
-        /// catalog, in WORLD coordinates so content positions map 1:1: 1024 m ground, home garage and
-        /// arrival pad, six landmark markers, twelve caches, two camp sockets, the creek gauge, ford
-        /// checkpoints over shallow water, relay mast, fuse site, mud and a hill. The Scout starts at the
-        /// garage spawn with the slice driver wired. Markers are visual only — interaction is
-        /// distance-based in Wayfinder.Campaign, so decorative markers carry no colliders.
+        /// Vertical slice (§21.3, §14.2) generated from Content/vertical_slice.json and the canonical
+        /// catalog in 1:1 WORLD coordinates, using verified 3D streaming meshes for the home garage,
+        /// fleet apron, vista watchtowers, trail cairns, salvage caches, field camp shelters, relays,
+        /// telemetry pods, bridge spans, creek gauges, winch bollards, and perimeter conifer forest.
         /// </summary>
         static void BuildVerticalSlice()
         {
             NewScene("VerticalSlice");
-            var content = CampaignContent.FromDirectory("Assets/Wayfinder/Content");
+            var content = CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir);
+            var catalog = content.StreamingAssets;
             var slice = content.Slice;
             var root = new GameObject("VerticalSliceGreybox").transform;
             float half = slice.AreaSizeMeters * .5f;
+            float centerX = slice.AreaMinX + half;
+            float centerZ = slice.AreaMinZ + half;
             Box(root, "Ground", new Vector3(slice.AreaSizeMeters, 1f, slice.AreaSizeMeters),
-                new Vector3(slice.AreaMinX + half, -.5f, slice.AreaMinZ + half), new Color(.30f, .38f, .26f));
+                new Vector3(centerX, -.5f, centerZ), new Color(.30f, .38f, .26f));
 
             var garage = content.Garages[slice.GarageId].Position;
-            Box(root, "Garage.Home", new Vector3(12f, 5f, 10f), new Vector3(garage.X, 2.5f, garage.Z), new Color(.5f, .45f, .4f));
+            SpawnAsset(root, StreamingAssetBindings.HomeGarageAssetId, "Garage.Home",
+                new Vector3(garage.X, 0f, garage.Z), new Color(.50f, .45f, .40f), addCollider: true, catalog: catalog);
+            SpawnAsset(root, StreamingAssetBindings.GarageFuelDepotAssetId, "Garage.Home Fuel Depot",
+                new Vector3(garage.X - 9f, 0f, garage.Z + 2f), new Color(.56f, .58f, .60f), addCollider: true, catalog: catalog);
+            SpawnAsset(root, StreamingAssetBindings.CargoPalletStackAssetId, "Garage.Home Cargo Apron",
+                new Vector3(garage.X + 8f, 0f, garage.Z - 2f), new Color(.62f, .49f, .28f), addCollider: true, catalog: catalog);
+            SpawnFleetShowcase(root, new Vector3(garage.X - 18f, 0f, garage.Z + 12f), catalog);
             Marker(root, "Garage Arrival Pad", new Vector3(slice.ArrivalRadiusMeters * 2f, .04f, slice.ArrivalRadiusMeters * 2f),
                 slice.ArrivalCenter, .02f, new Color(.55f, .55f, .30f));
 
             foreach (var l in slice.Landmarks)
             {
                 var p = content.Landmarks[l.Id].Position;
-                // Solid marker; VerticalSliceDriver's line-of-sight test treats "Landmark …" hits as visible.
-                Box(root, "Landmark " + l.Id, new Vector3(3f, 12f, 3f), new Vector3(p.X, 6f, p.Z),
-                    l.Vista ? new Color(.85f, .75f, .35f) : new Color(.75f, .55f, .35f));
+                string lmAsset = StreamingAssetBindings.LandmarkAssetFor(l.Id, l.Vista, WorldBiome.Forest);
+                // Solid BoxCollider on "Landmark <id>" preserves VerticalSliceDriver's LOS raycast check verbatim.
+                SpawnAsset(root, lmAsset, "Landmark " + l.Id, new Vector3(p.X, 0f, p.Z),
+                    l.Vista ? new Color(.85f, .75f, .35f) : new Color(.75f, .55f, .35f),
+                    addCollider: true, catalog: catalog);
             }
+
             foreach (var id in slice.CacheIds)
-                Marker(root, "Cache " + id, new Vector3(1.2f, .8f, 1.2f), content.Caches[id].Position, .4f, new Color(.25f, .55f, .75f));
+            {
+                var cp = content.Caches[id].Position;
+                SpawnAsset(root, StreamingAssetBindings.SalvageCacheAssetId, "Cache " + id,
+                    new Vector3(cp.X, 0f, cp.Z), new Color(.25f, .55f, .75f), addCollider: false, catalog: catalog);
+            }
+
             foreach (var camp in slice.CampSockets)
             {
                 Marker(root, "Camp Socket " + camp.Id, new Vector3(6f, .05f, 6f), camp.Position, .03f, new Color(.45f, .30f, .20f));
-                Marker(root, "Camp Post " + camp.Id, new Vector3(.3f, 2.5f, .3f), camp.Position, 1.25f, new Color(.85f, .45f, .20f));
+                SpawnAsset(root, StreamingAssetBindings.FieldCampAssetId, "Camp Shelter " + camp.Id,
+                    new Vector3(camp.Position.X, 0f, camp.Position.Z), new Color(.58f, .46f, .32f),
+                    addCollider: false, catalog: catalog);
             }
+
             foreach (var site in slice.InspectTargets)
-                Marker(root, "Inspect " + site.Id, new Vector3(.3f, 3f, .3f), site.Position, 1.5f, Color.yellow);
+            {
+                string siteAsset = StreamingAssetBindings.WorldSiteAssetFor(site.Id, "inspect", WorldBiome.Forest);
+                SpawnAsset(root, siteAsset, "Inspect " + site.Id,
+                    new Vector3(site.Position.X, 0f, site.Position.Z), new Color(.85f, .76f, .24f),
+                    addCollider: false, catalog: catalog);
+            }
+
             foreach (var site in slice.QuestItemSites)
-                Marker(root, "Mission Item " + site.Id, new Vector3(.8f, .6f, .8f), site.Position, .3f, new Color(.95f, .85f, .2f));
+            {
+                SpawnAsset(root, StreamingAssetBindings.SalvageCacheAssetId, "Mission Item " + site.Id,
+                    new Vector3(site.Position.X, 0f, site.Position.Z), new Color(.95f, .85f, .20f),
+                    addCollider: false, catalog: catalog);
+            }
+
             foreach (var relay in slice.Relays)
-                Box(root, "Relay " + relay.Id, new Vector3(1f, 18f, 1f), new Vector3(relay.Position.X, 9f, relay.Position.Z),
-                    new Color(.6f, .6f, .65f));
+            {
+                SpawnAsset(root, StreamingAssetBindings.RelayTowerAssetId, "Relay " + relay.Id,
+                    new Vector3(relay.Position.X, 0f, relay.Position.Z), new Color(.60f, .62f, .66f),
+                    addCollider: true, catalog: catalog);
+            }
+
             foreach (var route in slice.CheckpointRoutes)
                 for (int i = 0; i < route.Checkpoints.Count; i++)
                 {
                     var cp = route.Checkpoints[i];
                     foreach (float side in new[] { -route.RadiusMeters, route.RadiusMeters })
-                        Marker(root, $"Checkpoint {route.Id}[{i}]", new Vector3(.25f, 2f, .25f),
-                            new WorldPoint(cp.X + side, 0f, cp.Z), 1f, new Color(.95f, .55f, .15f));
+                        SpawnAsset(root, StreamingAssetBindings.TrailCairnAssetId, $"Checkpoint {route.Id}[{i}]",
+                            new Vector3(cp.X + side, 0f, cp.Z), new Color(.95f, .55f, .15f),
+                            addCollider: false, catalog: catalog);
                 }
 
             foreach (var feature in slice.GreyboxFeatures)
@@ -230,6 +296,15 @@ namespace Wayfinder.Editor
                             new Color(.15f, .3f, .45f, .6f));
                         water.AddComponent<WaterVolume>().surfaceHeightY = size.Y;
                         water.GetComponent<Collider>().isTrigger = true;
+                        SpawnAsset(root, StreamingAssetBindings.WaterFordGaugeAssetId, "Ford Depth Gauge West",
+                            new Vector3(c.X - size.X * .5f - 1.5f, 0f, c.Z), new Color(.88f, .76f, .18f),
+                            addCollider: false, catalog: catalog);
+                        SpawnAsset(root, StreamingAssetBindings.WaterFordGaugeAssetId, "Ford Depth Gauge East",
+                            new Vector3(c.X + size.X * .5f + 1.5f, 0f, c.Z), new Color(.88f, .76f, .18f),
+                            addCollider: false, catalog: catalog);
+                        SpawnAsset(root, StreamingAssetBindings.BridgeSpanAssetId, "Ford Timber Bridge Span",
+                            new Vector3(c.X - size.X * .5f - 9f, 0f, c.Z), new Color(.46f, .38f, .28f),
+                            addCollider: true, catalog: catalog);
                         break;
                     case "mud":
                         Box(root, "Mud Patch", new Vector3(size.X, size.Y, size.Z), new Vector3(c.X, .02f, c.Z),
@@ -248,21 +323,36 @@ namespace Wayfinder.Editor
                 }
             }
 
-            // Authoritative road-shoulder winch anchors around the ford, mud trench, and hill climb (§4.5, KI-028).
+            // Authoritative road-shoulder winch bollards around the ford, mud trench, and hill climb (§4.5, KI-028).
             var anchorPoints = new[]
             {
-                new Vector3(985f, 1.25f, 2322f),
-                new Vector3(985f, 1.25f, 2378f),
-                new Vector3(1110f, 1.25f, 2060f),
-                new Vector3(1110f, 1.25f, 2120f),
-                new Vector3(792f, 1.25f, 2410f),
-                new Vector3(828f, 1.25f, 2500f)
+                new Vector3(985f, 0f, 2322f),
+                new Vector3(985f, 0f, 2378f),
+                new Vector3(1110f, 0f, 2060f),
+                new Vector3(1110f, 0f, 2120f),
+                new Vector3(792f, 0f, 2410f),
+                new Vector3(828f, 0f, 2500f)
             };
             for (int i = 0; i < anchorPoints.Length; i++)
             {
-                var post = Box(root, $"Winch Anchor {i + 1}", new Vector3(.55f, 2.5f, .55f), anchorPoints[i],
-                    new Color(.42f, .28f, .16f));
+                var post = SpawnAsset(root, StreamingAssetBindings.WinchBollardAssetId, $"Winch Anchor {i + 1}",
+                    anchorPoints[i], new Color(.84f, .62f, .18f), addCollider: true, catalog: catalog);
                 post.AddComponent<WinchAnchor>();
+            }
+
+            // Perimeter forest pines & granite outcrops framing the 1 km² basin.
+            for (int i = 0; i < 20; i++)
+            {
+                float rad = i * (360f / 20f) * Mathf.Deg2Rad;
+                SpawnAsset(root, "env.tree.forest_pine", $"SlicePine{i}",
+                    new Vector3(centerX + Mathf.Cos(rad) * (half - 24f), 0f, centerZ + Mathf.Sin(rad) * (half - 24f)),
+                    new Color(.20f, .35f, .22f), addCollider: false, catalog: catalog);
+                if (i % 2 == 0)
+                {
+                    SpawnAsset(root, "env.rock.granite_outcrop", $"SliceGranite{i}",
+                        new Vector3(centerX + Mathf.Cos(rad + .14f) * (half - 14f), 0f, centerZ + Mathf.Sin(rad + .14f) * (half - 14f)),
+                        new Color(.42f, .42f, .44f), addCollider: true, catalog: catalog);
+                }
             }
 
             var spawn = slice.GarageSpawn;
@@ -280,24 +370,86 @@ namespace Wayfinder.Editor
         }
 
         /// <summary>
-        /// Streaming mainland world shell (§6.4, KI-037): initializes <see cref="WorldStreamer"/>
-        /// over the baked continental heightfield, five-biome route network, scatter surface, and
-        /// active campaign vehicle rig.
+        /// Streaming mainland world shell (§6.4, §14.2, KI-037): initializes <see cref="WorldStreamer"/>
+        /// over the baked continental heightfield, five-biome route network, scatter surface, active
+        /// campaign vehicle rig, AND places verified 3D streaming meshes across all 5 garages, camps,
+        /// landmarks, caches, relics, and regional biome overlooks.
         /// </summary>
         static void BuildWorldShell()
         {
             NewScene("WorldShell");
             var content = CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir);
-            var routes = Wayfinder.World.MainlandRouteGraph.FromFile(
+            var catalog = content.StreamingAssets;
+            var routes = MainlandRouteGraph.FromFile(
                 Path.Combine(ProjectSetup.CanonicalContentDir, "routes.json"));
-            var noise = new Wayfinder.World.NoiseField();
+            var noise = new NoiseField();
 
             var root = new GameObject("WorldShell").transform;
             var streamer = root.gameObject.AddComponent<WorldStreamer>();
             streamer.TerrainMaterial = Material(new Color(.33f, .40f, .28f));
             streamer.PropMaterial = Material(new Color(.24f, .33f, .21f));
-            streamer.WinchAnchorMaterial = Material(new Color(.44f, .29f, .16f));
-            streamer.Initialize(routes);
+            streamer.WinchAnchorMaterial = Material(new Color(.84f, .62f, .18f));
+            streamer.Initialize(routes, catalog: catalog);
+
+            // Continental 3D POIs across all 5 regions (Home & Outpost Garages, Camps, Landmarks, Caches, Relics, Biome Landmarks)
+            var poiRoot = new GameObject("ContinentalPOIs").transform;
+            poiRoot.SetParent(root, false);
+
+            foreach (var g in content.Garages.Values)
+            {
+                float gy = noise.BaseHeight(g.Position.X, g.Position.Z);
+                Vector3 bayPos = new Vector3(g.Position.X - 14f, gy, g.Position.Z - 12f);
+                SpawnAsset(poiRoot, StreamingAssetBindings.GarageBuildingFor(g.Id), "Garage " + g.Id,
+                    bayPos, new Color(.50f, .45f, .40f), addCollider: true, catalog: catalog);
+                SpawnAsset(poiRoot, StreamingAssetBindings.GarageFuelDepotAssetId, "FuelDepot " + g.Id,
+                    bayPos + new Vector3(-9f, 0f, 2f), new Color(.56f, .58f, .60f), addCollider: true, catalog: catalog);
+                SpawnAsset(poiRoot, StreamingAssetBindings.CargoPalletStackAssetId, "CargoApron " + g.Id,
+                    bayPos + new Vector3(8f, 0f, -2f), new Color(.62f, .49f, .28f), addCollider: true, catalog: catalog);
+            }
+
+            foreach (var camp in content.Camps.Values)
+            {
+                float cy = noise.BaseHeight(camp.Position.X, camp.Position.Z);
+                SpawnAsset(poiRoot, StreamingAssetBindings.FieldCampAssetId, "Camp " + camp.Id,
+                    new Vector3(camp.Position.X, cy, camp.Position.Z), new Color(.58f, .46f, .32f),
+                    addCollider: true, catalog: catalog);
+            }
+
+            foreach (var lm in content.Landmarks.Values)
+            {
+                float ly = noise.BaseHeight(lm.Position.X, lm.Position.Z);
+                var biome = WorldHydrology.NearestBiome(lm.Position.X, lm.Position.Z);
+                string lmAsset = StreamingAssetBindings.LandmarkAssetFor(lm.Id, lm.Vista, biome);
+                SpawnAsset(poiRoot, lmAsset, "Landmark " + lm.Id,
+                    new Vector3(lm.Position.X, ly, lm.Position.Z),
+                    lm.Vista ? new Color(.85f, .75f, .35f) : new Color(.70f, .56f, .40f),
+                    addCollider: true, catalog: catalog);
+            }
+
+            foreach (var cache in content.Caches.Values)
+            {
+                float cy = noise.BaseHeight(cache.Position.X, cache.Position.Z);
+                SpawnAsset(poiRoot, StreamingAssetBindings.SalvageCacheAssetId, "Cache " + cache.Id,
+                    new Vector3(cache.Position.X, cy, cache.Position.Z), new Color(.25f, .55f, .75f),
+                    addCollider: false, catalog: catalog);
+            }
+
+            foreach (var relic in content.Relics.Values)
+            {
+                float ry = noise.BaseHeight(relic.Position.X, relic.Position.Z);
+                SpawnAsset(poiRoot, StreamingAssetBindings.TelemetryPodAssetId, "Relic " + relic.Id,
+                    new Vector3(relic.Position.X, ry, relic.Position.Z), new Color(.86f, .74f, .28f),
+                    addCollider: false, catalog: catalog);
+            }
+
+            // Signature regional setpieces ensuring all 5 biome landmarks (observatory, overpass, pump station, hoodoo, cypress, larch, basalt) stand in WorldShell
+            PlaceWorldSetpiece(poiRoot, StreamingAssetBindings.HighlandObservatoryAssetId, "HighlandObservatoryDome", 4920f, 5120f, new Color(.72f, .75f, .80f), noise, catalog);
+            PlaceWorldSetpiece(poiRoot, StreamingAssetBindings.WetlandPumpStationAssetId, "WetlandPumpStation", 2140f, 4240f, new Color(.44f, .50f, .48f), noise, catalog);
+            PlaceWorldSetpiece(poiRoot, StreamingAssetBindings.CityOverpassAssetId, "RuinedCityOverpass", 3920f, 3120f, new Color(.48f, .48f, .50f), noise, catalog);
+            PlaceWorldSetpiece(poiRoot, "env.rock.canyon_hoodoo", "CanyonSandstoneHoodoo", 2920f, 1840f, new Color(.72f, .42f, .28f), noise, catalog);
+            PlaceWorldSetpiece(poiRoot, "env.tree.wetland_cypress", "WetlandButtressedCypress", 2160f, 4260f, new Color(.22f, .36f, .24f), noise, catalog);
+            PlaceWorldSetpiece(poiRoot, "env.tree.highland_larch", "HighlandWindsweptLarch", 4945f, 5135f, new Color(.24f, .38f, .26f), noise, catalog);
+            PlaceWorldSetpiece(poiRoot, "env.rock.basalt_column_cluster", "HighlandBasaltColumns", 4960f, 5150f, new Color(.28f, .29f, .32f), noise, catalog);
 
             var home = content.Garages["garage.home"].Position;
             float groundY = noise.BaseHeight(home.X, home.Z);
@@ -316,6 +468,82 @@ namespace Wayfinder.Editor
             Save("WorldShell");
         }
 
+        static void PlaceWorldSetpiece(
+            Transform parent,
+            string assetId,
+            string name,
+            float x,
+            float z,
+            Color color,
+            NoiseField noise,
+            IReadOnlyDictionary<string, StreamingAssetDefinition> catalog)
+        {
+            float y = noise.BaseHeight(x, z);
+            SpawnAsset(parent, assetId, name, new Vector3(x, y, z), color, addCollider: true, catalog: catalog);
+        }
+
+        static void SpawnFleetShowcase(
+            Transform parent,
+            Vector3 origin,
+            IReadOnlyDictionary<string, StreamingAssetDefinition> catalog)
+        {
+            var fleetRoot = new GameObject("ExpeditionFleetShowcase").transform;
+            fleetRoot.SetParent(parent, false);
+            fleetRoot.position = origin;
+
+            var tireMat = Material(new Color(.11f, .12f, .13f));
+            (string vehicleId, string label, Color color)[] fleet =
+            {
+                ("vehicle.mule.m2", "Fleet_Mule_M2", new Color(.55f, .48f, .30f)),
+                ("vehicle.lynx.l3", "Fleet_Lynx_L3", new Color(.28f, .52f, .58f)),
+                ("vehicle.atlas.a4", "Fleet_Atlas_A4", new Color(.64f, .30f, .24f))
+            };
+
+            Vector3[] wheelOffsets =
+            {
+                new Vector3(-.88f, .38f, 1.35f),
+                new Vector3(.88f, .38f, 1.35f),
+                new Vector3(-.88f, .38f, -1.35f),
+                new Vector3(.88f, .38f, -1.35f)
+            };
+
+            for (int i = 0; i < fleet.Length; i++)
+            {
+                Vector3 bayOrigin = origin + new Vector3(i * 4.2f, 0f, 0f);
+                SpawnAsset(fleetRoot, StreamingAssetBindings.ChassisForVehicle(fleet[i].vehicleId),
+                    fleet[i].label + "_Chassis", bayOrigin, fleet[i].color, addCollider: true, catalog: catalog);
+                for (int w = 0; w < wheelOffsets.Length; w++)
+                {
+                    var wheelGo = SpawnAsset(fleetRoot, StreamingAssetBindings.WheelForVehicle(fleet[i].vehicleId),
+                        $"{fleet[i].label}_Wheel_{w}", bayOrigin + wheelOffsets[w],
+                        new Color(.11f, .12f, .13f), addCollider: false, catalog: catalog);
+                    wheelGo.GetComponent<Renderer>().sharedMaterial = tireMat;
+                }
+            }
+        }
+
+        static GameObject SpawnAsset(
+            Transform parent,
+            string assetId,
+            string name,
+            Vector3 position,
+            Color color,
+            bool addCollider,
+            IReadOnlyDictionary<string, StreamingAssetDefinition> catalog = null)
+        {
+            var map = catalog ?? CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir).StreamingAssets;
+            var def = map[assetId];
+            var go = StreamingMeshRuntime.InstantiateModel(
+                def,
+                Material(color),
+                parent,
+                addBoxCollider: addCollider,
+                meshResolver: ProjectSetup.LoadOrCreateStreamingMeshAsset);
+            go.name = name;
+            go.transform.position = position;
+            return go;
+        }
+
         /// <summary>Visual-only marker (no collider) standing on the ground at <paramref name="p"/>.</summary>
         static GameObject Marker(Transform parent, string name, Vector3 scale, WorldPoint p, float centerY, Color color)
         {
@@ -326,7 +554,8 @@ namespace Wayfinder.Editor
 
         public static VehicleController CreateScoutRig(Transform parent, Vector3 position)
         {
-            var go = new GameObject("Scout S1 Greybox");
+            var catalog = CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir).StreamingAssets;
+            var go = new GameObject("Scout S1");
             go.transform.SetParent(parent, false);
             go.transform.position = position;
             go.layer = 2; // Ignore Raycast: the chase camera must not collide with its own rig.
@@ -339,9 +568,7 @@ namespace Wayfinder.Editor
             var hull = go.AddComponent<BoxCollider>();
             hull.center = new Vector3(0f, .30f, 0f);
             hull.size = new Vector3(1.7f, .7f, 3.9f);
-            var mesh = Box(go.transform, "Body Greybox", hull.size, position + hull.center, new Color(.66f, .43f, .22f));
-            Object.DestroyImmediate(mesh.GetComponent<Collider>());
-            mesh.layer = 2;
+
             var controller = go.AddComponent<VehicleController>();
             controller.spec = spec;
             var wheels = new WheelCollider[4];
@@ -367,22 +594,26 @@ namespace Wayfinder.Editor
                 wheel.sprungMass = body.mass * (front ? spec.FrontAxleLoadFraction : 1f - spec.FrontAxleLoadFraction) * .5f;
                 wheels[i] = wheel;
                 var pivot = new GameObject(wheelGo.name + " Visual").transform;
+                pivot.gameObject.layer = 2;
                 pivot.SetParent(go.transform, false);
                 pivot.localPosition = wheelGo.transform.localPosition;
-                var tire = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                tire.name = "Tire Greybox";
-                tire.layer = 2;
-                tire.transform.SetParent(pivot, false);
-                tire.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
-                tire.transform.localScale = new Vector3(spec.WheelRadiusM * 2f, .13f, spec.WheelRadiusM * 2f);
-                Object.DestroyImmediate(tire.GetComponent<Collider>());
-                tire.GetComponent<Renderer>().sharedMaterial = Material(new Color(.10f, .11f, .12f));
                 visuals[i] = pivot;
             }
             controller.wheelFrontLeft = wheels[0]; controller.wheelFrontRight = wheels[1];
             controller.wheelRearLeft = wheels[2]; controller.wheelRearRight = wheels[3];
             controller.wheelVisualFrontLeft = visuals[0]; controller.wheelVisualFrontRight = visuals[1];
             controller.wheelVisualRearLeft = visuals[2]; controller.wheelVisualRearRight = visuals[3];
+
+            StreamingMeshRuntime.ApplyVehicleVisuals(
+                controller,
+                "vehicle.scout.s1",
+                showCargoStack: false,
+                chassisMaterial: Material(new Color(.66f, .43f, .22f)),
+                wheelMaterial: Material(new Color(.10f, .11f, .12f)),
+                cargoMaterial: Material(new Color(.62f, .49f, .28f)),
+                catalog: catalog,
+                meshResolver: ProjectSetup.LoadOrCreateStreamingMeshAsset);
+
             return controller;
         }
 

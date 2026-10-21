@@ -1078,6 +1078,15 @@ class CloudBuildWorkflowTests(unittest.TestCase):
         self.assertIn("m_EditorVersion: 6000.3.26f1", version)
         self.assertIn("m_EditorVersionWithRevision: 6000.3.26f1 (de8167e7440c)", version)
 
+    def test_both_apk_workflows_verify_and_stage_all_30_3d_streaming_assets(self):
+        build_yaml = (TOOLS.parent.parent / ".github/workflows/Build.yaml").read_text()
+        self.assertIn("python3 Tools/Art/generate_streaming_assets.py --verify --mirror-resources", self.text)
+        self.assertIn("python3 Tools/Art/generate_streaming_assets.py --verify --mirror-resources", build_yaml)
+        self.assertIn("androidTargetSdkVersion: '35'", build_yaml)
+        self.assertIn("UNITY_VERSION: 6000.3.26f1", build_yaml)
+        self.assertIn("Wayfinder.Editor.ProjectSetup.Setup", build_yaml)
+        self.assertIn("Wayfinder.Editor.BuildCommands.BuildAndroidDev", build_yaml)
+
 
 if __name__ == "__main__":
     unittest.main()
