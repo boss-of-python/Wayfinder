@@ -135,7 +135,10 @@ namespace Wayfinder.Simulation
 
         /// <summary>
         /// Damped spring-like pull along cable direction (cable length = current separation at
-        /// attach). Pull magnitude capped at module force. Tension excess for 2 s pauses reeling.
+        /// attach). Pull magnitude capped at module force and clamped to non-negative tension so
+        /// a slack cable cannot push the chassis backwards (DEF-027). Overload time accumulates
+        /// continuously while stretch exceeds <paramref name="forceCapN"/> and decays only below
+        /// the cap (DEF-026: previously decayed unconditionally first, freezing at deltaSeconds).
         /// </summary>
         public float ComputePullForce(
             float currentCableLengthM,
@@ -148,21 +151,30 @@ namespace Wayfinder.Simulation
             const float springNPerM = 4000f;
             const float dampingNPerMs = 800f;
 
-            _excessTensionTimer = Math.Max(0f, _excessTensionTimer - deltaSeconds);
-
+            float dt = Math.Max(0f, deltaSeconds);
+            float cap = Math.Max(0f, forceCapN);
             float extension = currentCableLengthM - targetCableLengthM;
-            float force = extension * springNPerM - cableTensionVelocityMs * dampingNPerMs;
+            float rawForce = extension > 0f
+                ? Math.Max(0f, extension * springNPerM - cableTensionVelocityMs * dampingNPerMs)
+                : 0f;
 
-            if (Math.Abs(force) > forceCapN)
+            float force;
+            if (cap > 0f && rawForce > cap)
             {
-                force = MathUtil.Clamp(force, -forceCapN, forceCapN);
-                _excessTensionTimer += deltaSeconds;
+                force = cap;
+                _excessTensionTimer = Math.Min(ExcessTensionPauseSeconds, _excessTensionTimer + dt);
+            }
+            else
+            {
+                force = Math.Min(rawForce, cap);
+                _excessTensionTimer = Math.Max(0f, _excessTensionTimer - dt);
             }
             reelingPaused = _excessTensionTimer >= ExcessTensionPauseSeconds;
             return force;
         }
 
         float _excessTensionTimer;
+        public float ExcessTensionSeconds => _excessTensionTimer;
 
         /// <summary>Reel input decreases target length at up to 0.8 m/s.</summary>
         public static float Reel(float targetCableLengthM, float reelInput, float deltaSeconds)

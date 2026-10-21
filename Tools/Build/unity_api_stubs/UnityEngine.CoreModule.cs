@@ -163,6 +163,7 @@ namespace UnityEngine
         public Matrix4x4 worldToLocalMatrix => throw new NotImplementedException();
         public void SetParent(Transform p) => throw new NotImplementedException();
         public void SetParent(Transform p, bool worldPositionStays) => throw new NotImplementedException();
+        public bool IsChildOf(Transform parent) => throw new NotImplementedException();
         public void SetAsLastSibling() => throw new NotImplementedException();
         public void SetAsFirstSibling() => throw new NotImplementedException();
         public void SetSiblingIndex(int index) => throw new NotImplementedException();
@@ -858,6 +859,21 @@ namespace UnityEngine
     }
 
     public class MeshRenderer : Renderer { }
+
+    public class LineRenderer : Renderer
+    {
+        public int positionCount { get; set; }
+        public float startWidth { get; set; }
+        public float endWidth { get; set; }
+        public Color startColor { get; set; }
+        public Color endColor { get; set; }
+        public bool useWorldSpace { get; set; }
+        public void SetPosition(int index, Vector3 position) => throw new NotImplementedException();
+        public Vector3 GetPosition(int index) => throw new NotImplementedException();
+    }
+
+    [AttributeUsage(AttributeTargets.Class, Inherited = false)]
+    public sealed class DisallowMultipleComponent : Attribute { }
 
     public class Camera : Behaviour
     {
