@@ -229,6 +229,95 @@ namespace Wayfinder.Campaign
             });
         }
 
+        // ================================================================== community logistics (§10.4)
+
+        /// <summary>
+        /// The store a hub keeps property in (§10.4). Every garage shares the ONE unlimited garage
+        /// store; each camp has its own store sized by its content (D-039). Null when the id is not an
+        /// activated hub, so a caller can never address a store the player has not earned.
+        /// </summary>
+        public InventoryId? HubStore(string hubId)
+        {
+            if (string.IsNullOrEmpty(hubId)) return null;
+            if (Garage.IsGarageUnlocked(hubId)) return GarageStorage;
+            if (Garage.IsCampActivated(hubId)) return CampStorageFor(hubId);
+            return null;
+        }
+
+        /// <summary>
+        /// The activated hubs property may be exchanged with, in a deterministic order (garages then
+        /// camps, each sorted) so a UI list and a canonical capture agree.
+        /// </summary>
+        public List<string> LogisticsHubs()
+        {
+            var hubs = new List<string>(Garage.UnlockedGarages);
+            hubs.Sort(StringComparer.Ordinal);
+            var camps = new List<string>(Garage.ActivatedCamps);
+            camps.Sort(StringComparer.Ordinal);
+            hubs.AddRange(camps);
+            return hubs;
+        }
+
+        /// <summary>
+        /// Sends items from the store of the hub the player is at to another activated hub's store —
+        /// §10.4 "version 1 allows free instant transfer among activated hubs while the player is at a
+        /// hub; no field access". Free, instant, and committed only with a verified save.
+        /// </summary>
+        public CommandResult TransferToHub(string destinationHubId, string itemId, int quantity) =>
+            TransferBetweenHubs(CurrentHubId, destinationHubId, itemId, quantity);
+
+        /// <summary>
+        /// Pulls items from another activated hub's store into the store of the hub the player is at.
+        /// This is the only way property stored elsewhere becomes reachable: §10.4 is explicit that it
+        /// is "not magically accessible for field repairs".
+        /// </summary>
+        public CommandResult TransferFromHub(string sourceHubId, string itemId, int quantity) =>
+            TransferBetweenHubs(sourceHubId, CurrentHubId, itemId, quantity);
+
+        CommandResult TransferBetweenHubs(string fromHubId, string toHubId, string itemId, int quantity)
+        {
+            if (string.IsNullOrEmpty(itemId) || !ItemCatalog.TryGet(itemId, out var def))
+                return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown item '{itemId}'");
+            if (def.ProtectedLedger)
+                return CommandResult.Fail(FailureReason.ItemNotUsableHere, "protected objects never move (§10.4)");
+            if (quantity <= 0)
+                return CommandResult.Fail(FailureReason.InvalidTarget, "nothing to transfer");
+
+            // No field access: the gate is the progression service's own §10.4 rule.
+            string here = CurrentHubId;
+            var atHub = Garage.TryLogisticsTransfer(here);
+            if (!atHub.Success) return atHub;
+
+            string other = string.Equals(fromHubId, here, StringComparison.Ordinal) ? toHubId : fromHubId;
+            if (string.IsNullOrEmpty(other))
+                return CommandResult.Fail(FailureReason.InvalidTarget, "no hub selected");
+            if (string.Equals(other, here, StringComparison.Ordinal))
+                return CommandResult.Fail(FailureReason.WrongState, "already at that hub");
+            // One activation guard, immediately before the dereference it protects: `other` is always
+            // one of fromHubId/toHubId, and HubStore(here) cannot be null once the at-hub gate passed.
+            var from = HubStore(fromHubId);
+            var to = HubStore(toHubId);
+            if (from == null || to == null)
+                return CommandResult.Fail(FailureReason.InvalidTarget, "that hub is not activated (§10.4)");
+            if (from.Value.Equals(to.Value))
+                return CommandResult.Fail(FailureReason.WrongState,
+                    "every garage shares one unlimited store (§10.4), so there is nothing to move between two garages");
+
+            return RunCritical(() =>
+            {
+                // Idempotent and defensive: an activated camp's store is already sized, but a transfer
+                // must never depend on which command configured it last.
+                if (Garage.IsCampActivated(fromHubId)) ConfigureCampStore(fromHubId);
+                if (Garage.IsCampActivated(toHubId)) ConfigureCampStore(toHubId);
+                var result = Transactions.Execute(new TransferItems(NextTransactionId(), from.Value, to.Value,
+                    new ContentId(itemId), quantity));
+                if (result.Success)
+                    Notice(CampaignNoticeKind.LogisticsTransferred,
+                        $"Community logistics: {quantity} × {itemId} to {toHubId}", quantity, toHubId);
+                return result;
+            });
+        }
+
         // ================================================================== hub travel (§10.4)
 
         /// <summary>
