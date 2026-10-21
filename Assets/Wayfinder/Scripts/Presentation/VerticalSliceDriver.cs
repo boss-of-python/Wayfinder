@@ -222,6 +222,7 @@ namespace Wayfinder.Presentation
             vehicle.Damage.TiresCondition = _session.Damage.TiresCondition;
             vehicle.Damage.BodyCondition = _session.Damage.BodyCondition;
             vehicle.SetCargoMass(_session.Inventory.TotalMassKg(CampaignSession.Cargo));
+            vehicle.ApplyEffectiveStats(_session.ResolveStats());
             if (_session.Damage.EngineCondition > 0) vehicle.RestartAfterWaterRecovery();
         }
 

@@ -199,6 +199,7 @@ namespace Wayfinder.Simulation
 
             SampleGrounded();
             var stats = ResolveStats();
+            ApplyEffectiveStats(stats);
 
             bool reverseIndicated;
             float totalDriveTorque = _powertrain.Step(
