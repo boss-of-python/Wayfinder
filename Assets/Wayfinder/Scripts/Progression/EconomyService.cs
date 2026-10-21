@@ -579,7 +579,7 @@ namespace Wayfinder.Progression
             }
         }
 
-        public static readonly Recipe[] Recipes =
+        static Recipe[] BuildDefaultRecipes() => new[]
         {
             new Recipe
             {
@@ -602,6 +602,27 @@ namespace Wayfinder.Progression
                 SalvageFee = 80
             }.With("scrap_metal", 4).With("polymer", 2).With("electronics", 1)
         };
+
+        static Recipe[] _recipes = BuildDefaultRecipes();
+        public static Recipe[] Recipes => _recipes;
+
+        /// <summary>Replaces the live recipe list with definitions parsed from Content/recipes.json (KI-046).</summary>
+        public static void LoadRecipes(IEnumerable<Recipe> recipes)
+        {
+            if (recipes == null) throw new ArgumentNullException(nameof(recipes));
+            var list = new List<Recipe>();
+            foreach (var r in recipes)
+            {
+                if (r == null || string.IsNullOrEmpty(r.Id.Value) || string.IsNullOrEmpty(r.OutputItemId) ||
+                    r.OutputQuantity <= 0 || r.SalvageFee < 0 || r.Inputs.Count == 0)
+                    throw new ArgumentException("invalid recipe definition");
+                list.Add(r);
+            }
+            if (list.Count == 0) throw new ArgumentException("recipe catalog cannot be empty");
+            _recipes = list.ToArray();
+        }
+
+        public static void ResetToDefaults() => _recipes = BuildDefaultRecipes();
 
         public static Recipe GetRecipe(ContentId id)
         {

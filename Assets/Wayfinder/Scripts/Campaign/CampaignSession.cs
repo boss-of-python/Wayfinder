@@ -51,7 +51,7 @@ namespace Wayfinder.Campaign
         public EconomyService Economy { get; } = new EconomyService();
         public InventoryService Inventory { get; } = new InventoryService();
         public DiscoveryService Discovery { get; } = new DiscoveryService();
-        public MissionService Missions { get; } = new MissionService();
+        public MissionService Missions { get; }
         public ResearchService Research { get; }
         public GarageService Garage { get; } = new GarageService();
         public ContractService Contracts { get; } = new ContractService();
@@ -91,7 +91,8 @@ namespace Wayfinder.Campaign
             _saves = saves ?? throw new ArgumentNullException(nameof(saves));
             Content = content ?? throw new ArgumentNullException(nameof(content));
             Slot = slot;
-            Vehicle = VehicleSpec.ScoutS1();
+            Vehicle = content.VehicleSpecById(ScoutVehicleId);
+            Missions = new MissionService(content.MissionDefinitions);
             Research = new ResearchService(code => Missions.IsCompletedCode(code));
             Discovery.BindEconomy(Economy);
             // Land-only coverage from the first frame (DEF-008); a loaded save overrides it.

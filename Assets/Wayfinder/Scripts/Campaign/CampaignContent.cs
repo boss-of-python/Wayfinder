@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json.Linq;
+using Wayfinder.Core;
 using Wayfinder.Progression;
+using Wayfinder.Simulation;
 using Wayfinder.World;
 
 namespace Wayfinder.Campaign
@@ -67,6 +71,7 @@ namespace Wayfinder.Campaign
         public int DiscoveryRewardSalvage;
         public string RewardKey;
         public bool HeroSite;
+        public bool Vista;
         public string CapabilityBand;
     }
 
@@ -84,6 +89,7 @@ namespace Wayfinder.Campaign
     {
         public string Id;
         public string Biome;
+        public WorldPoint Position;
         public float StorageCapacityKg;
         public string RequiresItem;
         /// <summary>Functions this camp offers (§10.4), e.g. "save", "deposit", "hubTravel".</summary>
@@ -99,19 +105,34 @@ namespace Wayfinder.Campaign
     {
         public string Id;
         public string Biome;
+        public string Name;
         public string NameKey;
-        /// <summary>Ledger key paid once for this relic, separate from any landmark reward (§8.4).</summary>
+        public WorldPoint Position;
         public string RewardKey;
         public bool ProtectedLedger = true;
         public bool Sellable;
     }
 
-    /// <summary>A circular site the vehicle must reach (camp socket, inspect target, relay, quest item).</summary>
+    /// <summary>Parsed vehicle catalog row from Content/vehicles.json (§10.1, KI-046).</summary>
+    public sealed class VehicleCatalogEntry
+    {
+        public string Id;
+        public string NameKey;
+        public string Role;
+        public string RequiredMissionCode = string.Empty;
+        public int UnlockSalvageCost;
+        public VehicleSpec Spec;
+    }
+
+    /// <summary>A circular site the vehicle must reach (camp socket, inspect target, relay, quest item, delivery, visit, contract).</summary>
     public sealed class SliceSite
     {
         public string Id;
+        public string Kind = string.Empty;
+        public string Biome = string.Empty;
         public string MissionCode = "";
         public string ItemId = "";
+        public string UnlocksInfrastructure = "";
         public WorldPoint Position;
         public float RadiusMeters;
     }
@@ -189,14 +210,15 @@ namespace Wayfinder.Campaign
 
     /// <summary>
     /// Runtime content catalog for the campaign layer, parsed from the canonical JSON in
-    /// Assets/Wayfinder/Content (headless tests read the folder; the Unity runtime passes the
-    /// TextAssets that ProjectSetup copies into Resources/Content). Also serves as the
-    /// <see cref="IPickupCatalog"/> so cache collection grants authored contents (KI-020).
+    /// Assets/Wayfinder/Content (KI-046 single-source loader). Hydrates <see cref="ItemCatalog"/>,
+    /// <see cref="CraftingService"/>, <see cref="Vehicles"/>, and <see cref="MissionDefinitions"/>
+    /// directly from JSON so authoring edits take effect without modifying C#.
     /// </summary>
     public sealed class CampaignContent : IPickupCatalog
     {
         public static readonly string[] RequiredFiles =
         {
+            "items.json", "recipes.json", "vehicles.json",
             "caches.json", "landmarks.json", "garages.json", "camps.json", "missions.json", "upgrades.json",
             "vertical_slice.json", "sites.json", "contracts.json", "relics.json"
         };
@@ -209,12 +231,15 @@ namespace Wayfinder.Campaign
         readonly Dictionary<string, List<string>> _relicSets = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         readonly Dictionary<string, PickupContents> _pickups = new Dictionary<string, PickupContents>(StringComparer.Ordinal);
         readonly Dictionary<string, string> _missionNames = new Dictionary<string, string>(StringComparer.Ordinal);
+        readonly List<MissionDefinition> _missionDefinitions = new List<MissionDefinition>();
         readonly Dictionary<string, string> _upgradeResults = new Dictionary<string, string>(StringComparer.Ordinal);
         readonly Dictionary<string, SliceSite> _sites = new Dictionary<string, SliceSite>(StringComparer.Ordinal);
         readonly Dictionary<string, SliceCheckpointRoute> _routes =
             new Dictionary<string, SliceCheckpointRoute>(StringComparer.Ordinal);
         readonly Dictionary<string, ContractDefinition> _contracts =
             new Dictionary<string, ContractDefinition>(StringComparer.Ordinal);
+        readonly Dictionary<string, VehicleCatalogEntry> _vehicles =
+            new Dictionary<string, VehicleCatalogEntry>(StringComparer.Ordinal);
 
         public VerticalSliceManifest Slice { get; private set; }
         public IReadOnlyDictionary<string, CacheDefinition> Caches => _caches;
@@ -222,18 +247,12 @@ namespace Wayfinder.Campaign
         public IReadOnlyDictionary<string, GarageDefinition> Garages => _garages;
         public IReadOnlyDictionary<string, CampDefinition> Camps => _camps;
         public IReadOnlyDictionary<string, RelicDefinition> Relics => _relics;
-        /// <summary>§8.3 relic sets: biome → that biome's relic ids, Ordinal-sorted.</summary>
         public IReadOnlyDictionary<string, List<string>> RelicSets => _relicSets;
-        /// <summary>
-        /// World sites (Content/sites.json) — the inspect targets, relays, quest-item and delivery
-        /// sites and visit volumes that missions outside the forest slice reference. The slice is
-        /// still checked first; this is the fallback that makes Q05–Q20 resolvable (DEF-003).
-        /// </summary>
         public IReadOnlyDictionary<string, SliceSite> Sites => _sites;
-        /// <summary>Checkpoint routes outside the slice, keyed by route id.</summary>
         public IReadOnlyDictionary<string, SliceCheckpointRoute> Routes => _routes;
-        /// <summary>Optional contracts (§9.3) — the board's catalogue. 35 rows (DEF-007).</summary>
         public IReadOnlyDictionary<string, ContractDefinition> Contracts => _contracts;
+        public IReadOnlyDictionary<string, VehicleCatalogEntry> Vehicles => _vehicles;
+        public IReadOnlyList<MissionDefinition> MissionDefinitions => _missionDefinitions;
 
         CampaignContent() { }
 
@@ -255,7 +274,14 @@ namespace Wayfinder.Campaign
                 if (!files.ContainsKey(name) || string.IsNullOrEmpty(files[name]))
                     throw new InvalidDataException($"campaign content file missing: {name}");
 
+            // 1. Single-source item & crafting catalogs first so cache/quest item checks validate against JSON (KI-046).
+            ItemCatalog.LoadDefinitions(ParseItems(JArray.Parse(files["items.json"])));
+            CraftingService.LoadRecipes(ParseRecipes(JArray.Parse(files["recipes.json"])));
+
             var content = new CampaignContent();
+            foreach (var entry in ParseVehicles(JArray.Parse(files["vehicles.json"])))
+                content._vehicles[entry.Id] = entry;
+
             foreach (JObject c in JArray.Parse(files["caches.json"]))
             {
                 var def = new CacheDefinition
@@ -289,6 +315,7 @@ namespace Wayfinder.Campaign
                     DiscoveryRewardSalvage = l.Value<int?>("discoveryRewardSalvage") ?? DiscoveryService.LandmarkDiscoveryRewardSalvage,
                     RewardKey = Str(l, "rewardKey"),
                     HeroSite = l.Value<bool?>("heroSite") ?? false,
+                    Vista = l.Value<bool?>("vista") ?? false,
                     CapabilityBand = Str(l, "capabilityBand")
                 };
                 content._landmarks[def.Id] = def;
@@ -313,6 +340,7 @@ namespace Wayfinder.Campaign
                 {
                     Id = Str(c, "id"),
                     Biome = Str(c, "biome"),
+                    Position = Point(c["positionHint"]),
                     StorageCapacityKg = c.Value<float?>("storageCapacityKg") ?? CampService.CampStorageCapacityKg,
                     RequiresItem = Str(c, "requiresItem")
                 };
@@ -326,7 +354,9 @@ namespace Wayfinder.Campaign
                 {
                     Id = Str(r, "id"),
                     Biome = Str(r, "biome"),
+                    Name = Str(r, "name"),
                     NameKey = Str(r, "nameKey"),
+                    Position = Point(r["positionHint"]),
                     RewardKey = Str(r, "rewardKey"),
                     ProtectedLedger = r.Value<bool?>("protectedLedger") ?? true,
                     Sellable = r.Value<bool?>("sellable") ?? false
@@ -339,7 +369,11 @@ namespace Wayfinder.Campaign
             foreach (var set in content._relicSets.Values) set.Sort(StringComparer.Ordinal);
 
             foreach (JObject m in JArray.Parse(files["missions.json"]))
-                content._missionNames[Str(m, "displayCode")] = Str(m, "name");
+            {
+                string code = Str(m, "displayCode");
+                content._missionNames[code] = Str(m, "name");
+                content._missionDefinitions.Add(ParseMission(m));
+            }
             foreach (JObject u in JArray.Parse(files["upgrades.json"]))
                 content._upgradeResults[Str(u, "id")] = Str(u, "result");
 
@@ -365,6 +399,152 @@ namespace Wayfinder.Campaign
             content.ParseWorldSites(JArray.Parse(files["sites.json"]));
             content.ValidateSliceReferences();
             return content;
+        }
+
+        static List<ItemDefinition> ParseItems(JArray array)
+        {
+            var list = new List<ItemDefinition>(array.Count);
+            foreach (JObject o in array)
+            {
+                list.Add(new ItemDefinition
+                {
+                    Id = new ContentId(Str(o, "id")),
+                    NameKey = Str(o, "nameKey"),
+                    MaxStack = o.Value<int?>("maxStack") ?? 1,
+                    UnitMassKg = o.Value<float?>("unitMassKg") ?? 0f,
+                    ProtectedLedger = o.Value<bool?>("protectedLedger") ?? false,
+                    Sellable = o.Value<bool?>("sellable") ?? false,
+                    PurchasePriceSalvage = o.Value<int?>("purchasePriceSalvage") ?? 0
+                });
+            }
+            return list;
+        }
+
+        static List<CraftingService.Recipe> ParseRecipes(JArray array)
+        {
+            var list = new List<CraftingService.Recipe>(array.Count);
+            foreach (JObject o in array)
+            {
+                var output = (JObject)o["output"];
+                var r = new CraftingService.Recipe
+                {
+                    Id = new ContentId(Str(o, "id")),
+                    OutputItemId = Str(output, "itemId"),
+                    OutputQuantity = output.Value<int?>("quantity") ?? 1,
+                    SalvageFee = o.Value<int?>("salvageFee") ?? 0
+                };
+                if (o["inputs"] is JArray inputs)
+                    foreach (JObject inp in inputs)
+                        r.With(Str(inp, "itemId"), inp.Value<int?>("quantity") ?? 1);
+                list.Add(r);
+            }
+            return list;
+        }
+
+        static List<VehicleCatalogEntry> ParseVehicles(JArray array)
+        {
+            var list = new List<VehicleCatalogEntry>(array.Count);
+            foreach (JObject v in array)
+            {
+                string id = Str(v, "id");
+                var spec = new VehicleSpec
+                {
+                    Id = new ContentId(id),
+                    DisplayNameKey = Str(v, "nameKey"),
+                    DryMassKg = v.Value<float>("dryMassKg"),
+                    PayloadKg = v.Value<float>("payloadKg"),
+                    FuelCapacityLiters = v.Value<float>("fuelCapacityLiters"),
+                    PeakTorqueNm = v.Value<float>("peakTorqueNm"),
+                    GovernedSpeedKph = v.Value<float>("governedSpeedKph"),
+                    CargoSlots = v.Value<int>("cargoSlots"),
+                    WheelbaseM = v.Value<float>("wheelbaseM"),
+                    TrackM = v.Value<float>("trackM"),
+                    WheelRadiusM = v.Value<float>("wheelRadiusM"),
+                    GroundClearanceM = v.Value<float>("groundClearanceM"),
+                    ComHeightM = v.Value<float>("comHeightM"),
+                    FrontAxleLoadFraction = v.Value<float>("frontAxleLoadFraction"),
+                    ForwardGears = v["forwardGears"].Select(g => g.Value<float>()).ToArray(),
+                    ReverseGear = v.Value<float>("reverseGear"),
+                    FinalDrive = v.Value<float>("finalDrive"),
+                    DrivetrainEfficiency = v.Value<float>("drivetrainEfficiency"),
+                    BrakeTorqueFrontNmPerWheel = v.Value<float>("brakeTorqueFrontNmPerWheel"),
+                    BrakeTorqueRearNmPerWheel = v.Value<float>("brakeTorqueRearNmPerWheel"),
+                    SuspensionTravelM = v.Value<float>("suspensionTravelM"),
+                    SpringRateFrontNm = v.Value<float>("springRateFrontNm"),
+                    SpringRateRearNm = v.Value<float>("springRateRearNm"),
+                    DamperFrontNsm = v.Value<float>("damperFrontNsm"),
+                    DamperRearNsm = v.Value<float>("damperRearNsm"),
+                    AntiRollCouplingNm = v.Value<float>("antiRollCouplingNm"),
+                    TorqueCurve = v["torqueCurve"].Select(pair => new[] { pair[0].Value<float>(), pair[1].Value<float>() }).ToArray(),
+                    IdleRpm = v.Value<float>("idleRpm"),
+                    LimiterRpm = v.Value<float>("limiterRpm"),
+                    CdA = v.Value<float>("cdA")
+                };
+                ParseUnlockGate(Str(v, "unlock"), out string missionReq, out int salvageCost);
+                list.Add(new VehicleCatalogEntry
+                {
+                    Id = id,
+                    NameKey = spec.DisplayNameKey,
+                    Role = Str(v, "role"),
+                    RequiredMissionCode = missionReq,
+                    UnlockSalvageCost = salvageCost,
+                    Spec = spec
+                });
+            }
+            return list;
+        }
+
+        static void ParseUnlockGate(string unlock, out string missionCode, out int salvageCost)
+        {
+            missionCode = string.Empty;
+            salvageCost = 0;
+            if (string.IsNullOrEmpty(unlock) || string.Equals(unlock, "Start", StringComparison.OrdinalIgnoreCase))
+                return;
+            foreach (var part in unlock.Split('+'))
+            {
+                string trimmed = part.Trim();
+                if (trimmed.StartsWith("Q", StringComparison.Ordinal))
+                    missionCode = trimmed;
+                else
+                {
+                    var digits = trimmed.Split(' ')[0];
+                    if (int.TryParse(digits, NumberStyles.Integer, CultureInfo.InvariantCulture, out int cost))
+                        salvageCost = cost;
+                }
+            }
+        }
+
+        static MissionDefinition ParseMission(JObject m)
+        {
+            string code = Str(m, "displayCode");
+            var reward = m["reward"] as JObject;
+            var def = new MissionDefinition
+            {
+                Id = new ContentId(Str(m, "id")),
+                DisplayCode = code,
+                NameKey = Str(m, "nameKey"),
+                TurnInHub = new ContentId(Str(m, "turnInHub")),
+                RewardSalvage = reward?.Value<int?>("salvage") ?? 0,
+                RewardKey = reward != null ? Str(reward, "rewardKey") : ("reward.story." + code)
+            };
+            if (m["prerequisites"] is JArray prereqs)
+                foreach (var p in prereqs) def.Prerequisites.Add(new ContentId((string)p));
+            if (m["onAcceptGrant"] is JArray grants)
+                foreach (JObject g in grants)
+                    def.OnAcceptGrant.Add((Str(g, "itemId"), g.Value<int?>("quantity") ?? 1, Str(g, "destination")));
+            if (m["objectives"] is JArray objs)
+                foreach (JObject o in objs)
+                {
+                    if (!Enum.TryParse(Str(o, "type"), out MissionConditionType type))
+                        throw new InvalidDataException($"unknown mission objective type '{Str(o, "type")}' on {code}");
+                    def.Objectives.Add(new MissionObjective
+                    {
+                        Type = type,
+                        TargetId = new ContentId(Str(o, "targetId")),
+                        Count = o.Value<int?>("count") ?? 1
+                    });
+                }
+            return def;
         }
 
         static VerticalSliceManifest ParseSlice(JObject o)
@@ -422,7 +602,7 @@ namespace Wayfinder.Campaign
             return slice;
         }
 
-        /// <summary>Parses Content/sites.json — the world sites no slice places (DEF-003).</summary>
+        /// <summary>Parses Content/sites.json — world mission, relay, delivery, visit, and contract sites.</summary>
         void ParseWorldSites(JArray array)
         {
             foreach (JObject s in array)
@@ -430,9 +610,11 @@ namespace Wayfinder.Campaign
                 var site = new SliceSite
                 {
                     Id = Str(s, "id"),
-                    // A site several missions share lists all of them; MissionCode is the first.
+                    Kind = Str(s, "kind"),
+                    Biome = Str(s, "biome"),
                     MissionCode = Str(s, "missionCode"),
                     ItemId = Str(s, "itemId"),
+                    UnlocksInfrastructure = Str(s, "unlocksInfrastructure"),
                     Position = Point(s["positionHint"]),
                     RadiusMeters = s.Value<float?>("radiusMeters") ?? 12f
                 };
@@ -461,10 +643,6 @@ namespace Wayfinder.Campaign
             }
         }
 
-        /// <summary>
-        /// Looks a site up: the vertical slice first (authored geometry the scene actually contains),
-        /// then the world site catalog. Slice sites win so a slice override keeps working (DEF-003).
-        /// </summary>
         public SliceSite FindSite(List<SliceSite> sliceSites, string id)
         {
             var site = Slice.FindSite(sliceSites, id);
@@ -502,7 +680,6 @@ namespace Wayfinder.Campaign
 
         static string Str(JObject o, string key) => o.Value<string>(key) ?? string.Empty;
 
-        /// <summary>Reads a string array into <paramref name="into"/>, skipping blanks and duplicates.</summary>
         static void Strings(JObject o, string key, List<string> into)
         {
             if (!(o[key] is JArray array)) return;
@@ -522,25 +699,17 @@ namespace Wayfinder.Campaign
         public bool TryGetContents(string pickupId, out PickupContents contents) =>
             _pickups.TryGetValue(pickupId ?? string.Empty, out contents);
 
-        /// <summary>Mission display name from missions.json (English placeholder until string tables exist, KI-012).</summary>
         public string MissionName(string code) =>
             _missionNames.TryGetValue(code ?? string.Empty, out var name) && !string.IsNullOrEmpty(name) ? name : code;
 
-        /// <summary>Exact per-tier change text from upgrades.json (§13.3 "exact change per tier").</summary>
         public string UpgradeResult(string upgradeId) =>
             _upgradeResults.TryGetValue(upgradeId ?? string.Empty, out var text) ? text : string.Empty;
 
         public string LandmarkName(string landmarkId) =>
             _landmarks.TryGetValue(landmarkId ?? string.Empty, out var l) && !string.IsNullOrEmpty(l.Name) ? l.Name : landmarkId;
 
-        /// <summary>World position of a garage (home falls back to the slice spawn when unknown).</summary>
-        /// <summary>The §10.4 "safe-hub travel" service/function name used in garages.json and camps.json.</summary>
         public const string HubTravelService = "hubTravel";
 
-        /// <summary>
-        /// True when the hub's own content entry offers safe-hub travel (§10.4). Unknown hubs offer
-        /// nothing, so a typo can never grant fast travel.
-        /// </summary>
         public bool OffersHubTravel(string hubId)
         {
             if (string.IsNullOrEmpty(hubId)) return false;
@@ -551,5 +720,8 @@ namespace Wayfinder.Campaign
 
         public WorldPoint GaragePosition(string garageId) =>
             _garages.TryGetValue(garageId ?? string.Empty, out var g) ? g.Position : Slice.GarageSpawn.Position;
+
+        public VehicleSpec VehicleSpecById(string vehicleId) =>
+            _vehicles.TryGetValue(vehicleId ?? string.Empty, out var entry) ? entry.Spec : VehicleSpec.ById(vehicleId);
     }
 }

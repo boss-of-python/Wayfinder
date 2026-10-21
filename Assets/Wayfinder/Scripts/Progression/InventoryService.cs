@@ -37,7 +37,7 @@ namespace Wayfinder.Progression
         public const string SalvageBundle = "salvage_bundle";
         public const string CampKit = "camp_kit";
 
-        static readonly Dictionary<string, ItemDefinition> Items = new Dictionary<string, ItemDefinition>(StringComparer.Ordinal)
+        static Dictionary<string, ItemDefinition> BuildDefaults() => new Dictionary<string, ItemDefinition>(StringComparer.Ordinal)
         {
             ["salvage_bundle"] = Def("salvage_bundle", "item.salvage.name", 50, 0.10f, false, true, 1),
             ["scrap_metal"] = Def("scrap_metal", "item.scrap_metal.name", 10, 1.0f, false, true, 10),
@@ -57,10 +57,29 @@ namespace Wayfinder.Progression
             ["quest.archive_case"] = Def("quest.archive_case", "item.archive_case.name", 1, 10.0f, false, false, 0),
             ["quest.cable_spool"] = Def("quest.cable_spool", "item.cable_spool.name", 1, 35.0f, false, false, 0),
             ["quest.stabilizer_plates"] = Def("quest.stabilizer_plates", "item.stabilizer_plates.name", 1, 40.0f, false, false, 0),
-            // Q14 reads the pump diagram. It was referenced by missions.json but existed in no
-            // catalog, so the mission's CollectQuestItem could never complete (DEF-003).
             ["document.pump_diagram"] = Def("document.pump_diagram", "item.pump_diagram.name", 1, 1.0f, false, false, 0)
         };
+
+        static Dictionary<string, ItemDefinition> Items = BuildDefaults();
+
+        /// <summary>Replaces the live item catalog with definitions parsed from Content/items.json (KI-046).</summary>
+        public static void LoadDefinitions(IEnumerable<ItemDefinition> definitions)
+        {
+            if (definitions == null) throw new ArgumentNullException(nameof(definitions));
+            var next = new Dictionary<string, ItemDefinition>(StringComparer.Ordinal);
+            foreach (var def in definitions)
+            {
+                if (def == null || string.IsNullOrEmpty(def.Id.Value))
+                    throw new ArgumentException("item definition requires non-empty id");
+                if (def.MaxStack <= 0 || def.UnitMassKg < 0f || def.PurchasePriceSalvage < 0)
+                    throw new ArgumentException($"invalid item numeric bounds on '{def.Id.Value}'");
+                next[def.Id.Value] = def;
+            }
+            if (next.Count == 0) throw new ArgumentException("items catalog cannot be empty");
+            Items = next;
+        }
+
+        public static void ResetToDefaults() => Items = BuildDefaults();
 
         static ItemDefinition Def(string id, string nameKey, int stack, float mass, bool ledger, bool sellable, int price) =>
             new ItemDefinition
