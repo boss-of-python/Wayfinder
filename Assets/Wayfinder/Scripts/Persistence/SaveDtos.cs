@@ -82,6 +82,11 @@ namespace Wayfinder.Persistence
         public ConditionDto condition = new ConditionDto();
         public List<string> equippedModuleIds = new List<string>();
         public List<string> unlockedTireSets = new List<string>();
+        /// <summary>
+        /// The tire set mounted on this vehicle (§10.2: one tire set, mutually exclusive). Additive —
+        /// an older save has none and mounts all-terrain (D-021, D-041), so no schema bump is needed.
+        /// </summary>
+        public string equippedTireSet = "AllTerrain";
     }
 
     [Serializable]

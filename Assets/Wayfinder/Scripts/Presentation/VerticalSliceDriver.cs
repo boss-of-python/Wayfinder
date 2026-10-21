@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using Wayfinder.Campaign;
 using Wayfinder.Core;
 using Wayfinder.Platform;
+using Wayfinder.Progression;
 using Wayfinder.Simulation;
 // UnityEngine also defines a Pose struct; the alias makes every use below resolve to the campaign type.
 using Pose = Wayfinder.Campaign.Pose;
@@ -210,6 +211,9 @@ namespace Wayfinder.Presentation
             // Researched modules reach the physics rig through its own resolver (KI-025, D-030); the
             // tank clamp follows the resolved capacity, so the spec is no longer widened at runtime.
             _session.ConfigureResolver(vehicle.StatsResolver);
+            // The mounted tire set drives the surface grip lookup (§10.2), and the resolver composes
+            // only the modules fitted into their slots, so the garage shows what the rig will do.
+            vehicle.tireSet = _session.SelectedTireSet;
             vehicle.SetFuel(_session.FuelLiters);
             vehicle.Damage.EngineCondition = _session.Damage.EngineCondition;
             vehicle.Damage.SuspensionCondition = _session.Damage.SuspensionCondition;
@@ -465,28 +469,58 @@ namespace Wayfinder.Presentation
                 y -= .075f;
             }
 
-            // Research (left bottom) — one confirm, no drag purchase (§13.3)
+            // Research (left bottom) — one confirm, no drag purchase (§13.3). Buying a module fits it;
+            // the button then becomes the §10.2 slot control. Fitting is free and reversible, so unlike
+            // a purchase it needs no second tap (§10.4 "vehicle change").
             y = .58f;
             foreach (var row in model.Research)
             {
-                var label = PrototypeUi.Label(overlay, $"T{row.Tier} {row.Name} · {row.Cost} · {row.Result}",
+                bool owned = row.State == GarageModel.ResearchState.Researched;
+                string slotText = row.Slot == ModuleSlot.None ? "unlock" : row.SlotName;
+                var label = PrototypeUi.Label(overlay, $"T{row.Tier} {row.Name} · {slotText} · {row.Cost} · {row.Result}",
                     new Vector2(.02f, y - .06f), new Vector2(.40f, y), 14);
                 label.alignment = TextAnchor.MiddleLeft;
                 string id = row.UpgradeId;
-                string caption = row.State == GarageModel.ResearchState.Researched ? "Owned"
-                    : row.State == GarageModel.ResearchState.NeedsMission ? "Needs " + row.RequiredMission
-                    : row.State == GarageModel.ResearchState.NeedsPreviousTier ? "Locked"
-                    : row.State == GarageModel.ResearchState.NeedsSalvage ? "Need Salvage"
-                    : _armedResearchId == id ? $"Confirm {row.Cost}?" : "Research";
+                string caption = !owned
+                    ? (row.State == GarageModel.ResearchState.NeedsMission ? "Needs " + row.RequiredMission
+                        : row.State == GarageModel.ResearchState.NeedsPreviousTier ? "Locked"
+                        : row.State == GarageModel.ResearchState.NeedsSalvage ? "Need Salvage"
+                        : _armedResearchId == id ? $"Confirm {row.Cost}?" : "Research")
+                    : row.Slot == ModuleSlot.None ? "Owned"
+                    : row.IsFitted ? "Fitted ✓"
+                    : row.CanFit ? "Fit" : "Slots full";
                 var button = PrototypeUi.Button(overlay, caption, new Vector2(.41f, y - .055f), new Vector2(.49f, y - .005f));
-                button.interactable = row.CanPurchase;
-                button.onClick.AddListener(() =>
-                {
-                    if (_armedResearchId != id) { _armedResearchId = id; ShowGarage(); return; }
-                    _armedResearchId = string.Empty;
-                    Act(_session.ResearchUpgrade(id));
-                });
+                button.interactable = owned ? row.CanFit || row.CanUnfit : row.CanPurchase;
+                if (owned)
+                    button.onClick.AddListener(() => Act(row.IsFitted ? _session.UnequipModule(id) : _session.EquipModule(id)));
+                else
+                    button.onClick.AddListener(() =>
+                    {
+                        if (_armedResearchId != id) { _armedResearchId = id; ShowGarage(); return; }
+                        _armedResearchId = string.Empty;
+                        Act(_session.ResearchUpgrade(id));
+                    });
                 y -= .065f;
+            }
+
+            // Tire sets (§10.2): one set mounted at a time; unlocks come from research and survive
+            // fitting anything else, so a locked row says which tier unlocks it.
+            y -= .005f;
+            PrototypeUi.Label(overlay, $"Tire set — mounted: {model.SelectedTireSet}",
+                new Vector2(.02f, y - .04f), new Vector2(.40f, y), 14);
+            y -= .045f;
+            foreach (var tire in model.TireSets)
+            {
+                var set = (TireSet)Enum.Parse(typeof(TireSet), tire.TireSetId);
+                var tireLabel = PrototypeUi.Label(overlay,
+                    tire.Unlocked ? tire.Name : $"{tire.Name} — needs {tire.UnlockName}",
+                    new Vector2(.02f, y - .045f), new Vector2(.30f, y), 14);
+                tireLabel.alignment = TextAnchor.MiddleLeft;
+                var tireButton = PrototypeUi.Button(overlay, tire.Mounted ? "Mounted ✓" : "Mount",
+                    new Vector2(.31f, y - .04f), new Vector2(.40f, y - .005f));
+                tireButton.interactable = tire.CanMount;
+                tireButton.onClick.AddListener(() => Act(_session.SelectTireSet(set)));
+                y -= .05f;
             }
 
             // Cargo and storage (right)
