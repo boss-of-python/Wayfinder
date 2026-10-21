@@ -54,6 +54,12 @@ namespace Wayfinder.Tests
             foreach (var kv in Content.RelicSets)
                 Assert.AreEqual(5, kv.Value.Count, $"{kv.Key}: five relics per set (§8.3)");
 
+            CollectionAssert.AreEqual(
+                new[] { "relic.forest.01", "relic.forest.02", "relic.forest.03", "relic.forest.04",
+                        "relic.forest.05" },
+                Content.RelicSets["forest"],
+                "a set's order is deterministic (Ordinal), so a capture and a UI always agree");
+
             var rewardKeys = new HashSet<string>();
             foreach (var relic in Content.Relics.Values)
             {
