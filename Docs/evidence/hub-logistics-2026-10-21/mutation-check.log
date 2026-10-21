@@ -1,0 +1,22 @@
+CAUGHT    L1   transfers are allowed away from a hub (field access)  (tests 253/254) by NoFieldAccess_TransfersAreRefusedInTheOpenField
+CAUGHT    L2   protected ledger objects can be transferred  (tests 253/254) by UnknownItemsProtectedObjectsAndEmptyQuantities_AreRefused
+CAUGHT    L3   a non-positive quantity is accepted  (tests 253/254) by UnknownItemsProtectedObjectsAndEmptyQuantities_AreRefused
+CAUGHT    L4   transferring to the hub you are already at is allowed  (tests 253/254) by TransferToTheHubYouAreAlreadyAt_IsRefused
+CAUGHT    L5   an unactivated hub can send or receive  (tests 253/254) by AnUnactivatedHubCannotSendOrReceive
+CAUGHT    L6   garage-to-garage 'transfer' is accepted  (tests 253/254) by TwoGaragesShareOneUnlimitedStore_SoGarageToGarageIsRefused
+CAUGHT    L7   a camp's own store is replaced by the shared garage store  (tests 245/254) by ACampStoreIsMassLimited_AndAFailedTransferMovesNothing, ATransferIsCritical_AFailedVerifiedSaveRollsItBack, ATransferIsFreeAndInstant_NoFeeAndNoClockAdvance
+CAUGHT    L8   an unlocked garage addresses no store  (tests 244/254) by ACampStoreIsMassLimited_AndAFailedTransferMovesNothing, ATransferIsCritical_AFailedVerifiedSaveRollsItBack, ATransferIsFreeAndInstant_NoFeeAndNoClockAdvance
+CAUGHT    L9   pulling from another hub sends to it instead  (tests 252/254) by StandingAtACamp_ThatCampIsTheCurrentHub_AndPropertyMovesFromIt, TransferFromHub_PullsPropertyIntoTheHubYouAreAt
+CAUGHT    L10  the hub list puts camps before garages  (tests 253/254) by LogisticsHubs_AreDeterministicallyOrdered
+CAUGHT    L11  camps are missing from the hub list  (tests 252/254) by LogisticsHubs_AreDeterministicallyOrdered, TheGaragePanelListsEveryActivatedHubWithItsCapacity
+CAUGHT    L12  the transfer notice is dropped  (tests 253/254) by TransfersAnnounceThemselvesAsCommunityLogistics
+CAUGHT    L13  the notice names the hub property left, not the one that received it  (tests 253/254) by TransfersAnnounceThemselvesAsCommunityLogistics
+CAUGHT    L14  a failed verified save no longer rolls the transfer back (§17.4)  (tests 248/254) by ADepositIsStillACriticalSave_ThatRollsTheCampStoreBack, HubTravel_RollsBackCompletely_WhenTheVerifiedSaveFails, ATransferIsCritical_AFailedVerifiedSaveRollsItBack
+CAUGHT    L15  every hub row claims it can exchange  (tests 253/254) by TheGaragePanelListsEveryActivatedHubWithItsCapacity
+CAUGHT    L16  the panel never shows a store's capacity  (tests 253/254) by TheGaragePanelListsEveryActivatedHubWithItsCapacity
+CAUGHT    L17  the shared garage store is presented as a per-hub store  (tests 253/254) by TheGaragePanelListsEveryActivatedHubWithItsCapacity
+CAUGHT    L18  a hub's stored stacks are not listed  (tests 253/254) by TheGaragePanelListsEveryActivatedHubWithItsCapacity
+
+18/18 mutants caught; survivors: none
+tree clean after run
+EXIT 0

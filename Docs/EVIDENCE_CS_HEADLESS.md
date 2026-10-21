@@ -1,5 +1,14 @@
 # Wayfinder — Executed Evidence: headless C# compile + EditMode tests (2026-10-14)
 
+> **Update 2026-10-21 (Batch L — §10.4 community logistics: free instant hub-to-hub transfer,
+> KI-028 closed):** 7 assemblies / 0 warnings, **254/254** EditMode tests (239 → 254), .NET Standard
+> 2.1 profile OK, 30 Unity-dependent files parse, `validate_content.py` + `formula_checks.py` clean.
+> New fixture `CampaignLogisticsTransferTests` (15). **18/18** mutation checks caught
+> (`Docs/evidence/hub-logistics-2026-10-21/`); two survivors on the first run were real findings about
+> the code, not the tests — one was a duplicate activation guard that proved unreachable and was
+> removed, the other was masked by the shared-store refusal and is now caught by asserting the
+> player-facing `Detail` (D-042).
+>
 > **Update 2026-10-21 (Batch K — §10.2 equipment slots + swappable tire sets, KI-028 closed):**
 > 7 assemblies / 0 warnings, **239/239** EditMode tests (216 → 239), .NET Standard 2.1 profile OK,
 > 30 Unity-dependent files parse, `validate_content.py` + `formula_checks.py` clean. New fixture

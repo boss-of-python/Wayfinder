@@ -21,6 +21,19 @@ namespace Wayfinder.Campaign
             return Title(tail) + " Garage";
         }
 
+        /// <summary>"camp.forest.a" → "Forest A Camp".</summary>
+        public static string Camp(string campId)
+        {
+            if (string.IsNullOrEmpty(campId)) return "camp";
+            string tail = campId.StartsWith("camp.", StringComparison.Ordinal) ? campId.Substring(5) : campId;
+            return Title(tail.Replace('.', ' ')) + " Camp";
+        }
+
+        /// <summary>A hub's display name whether it is a garage or a camp (§10.4 logistics rows).</summary>
+        public static string Hub(string hubId) =>
+            !string.IsNullOrEmpty(hubId) && hubId.StartsWith("camp.", StringComparison.Ordinal)
+                ? Camp(hubId) : Garage(hubId);
+
         public static string Item(string itemId)
         {
             if (string.IsNullOrEmpty(itemId)) return string.Empty;
@@ -202,8 +215,26 @@ namespace Wayfinder.Campaign
             public string SellBlockedReason = string.Empty;
         }
 
+        /// <summary>
+        /// An activated hub the player may exchange property with (§10.4 community logistics). A
+        /// garage row is the ONE shared unlimited store, so two garages can never exchange with each
+        /// other and <see cref="CanExchange"/> says so before a UI offers the button.
+        /// </summary>
+        public sealed class LogisticsRow
+        {
+            public string HubId, Name;
+            public bool IsCurrent, SharedStore, CanExchange;
+            public int UsedSlots;
+            public float MassKg, CapacityKg;
+            /// <summary>What that hub is holding. Sell fields stay default: you cannot sell from a hub you are not at.</summary>
+            public readonly List<StackRow> Stacks = new List<StackRow>();
+        }
+
         public int Wallet, Escrow;
         public string CapacityLine = string.Empty;
+        /// <summary>The hub the player is standing at, and every hub property may move between (§10.4).</summary>
+        public string CurrentHubId = string.Empty;
+        public readonly List<LogisticsRow> Logistics = new List<LogisticsRow>();
         /// <summary>The mounted tire set, and every set with its unlock state (§10.2).</summary>
         public string SelectedTireSet = string.Empty;
         public readonly List<TireRow> TireSets = new List<TireRow>();
@@ -259,6 +290,28 @@ namespace Wayfinder.Campaign
                     Unlocked = s.Research.IsTireSetUnlocked(set),
                     Mounted = s.Research.SelectedTireSet == set
                 });
+
+            m.CurrentHubId = s.CurrentHubId ?? string.Empty;
+            bool standingAtGarage = s.Garage.IsGarageUnlocked(m.CurrentHubId);
+            foreach (var hubId in s.LogisticsHubs())
+            {
+                var store = s.HubStore(hubId);
+                if (store == null) continue;
+                bool shared = s.Garage.IsGarageUnlocked(hubId);
+                var row = new LogisticsRow
+                {
+                    HubId = hubId,
+                    Name = DisplayNames.Hub(hubId),
+                    IsCurrent = string.Equals(hubId, m.CurrentHubId, StringComparison.Ordinal),
+                    SharedStore = shared,
+                    UsedSlots = s.Inventory.UsedSlots(store.Value),
+                    MassKg = s.Inventory.TotalMassKg(store.Value),
+                    CapacityKg = s.Inventory.CapacityOf(store.Value).massKg
+                };
+                row.CanExchange = !row.IsCurrent && !(shared && standingAtGarage);
+                AddStacks(s, store.Value, row.Stacks);   // §10.4: "Camp storage holds 500 kg; show capacity"
+                m.Logistics.Add(row);
+            }
 
             foreach (var code in s.Content.Slice.MissionCodes)
             {

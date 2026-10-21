@@ -66,7 +66,8 @@ namespace Wayfinder.Campaign
         HubTravelled,
         ModuleFitted,
         ModuleRemoved,
-        TireSetMounted
+        TireSetMounted,
+        LogisticsTransferred
     }
 
     /// <summary>Committed-outcome notification for the HUD queue (§13.2). Never emitted for rolled-back work.</summary>

@@ -40,6 +40,7 @@ namespace Wayfinder.Presentation
         Button _pauseButton, _interactButton, _rescueButton;
         bool _paused, _left, _right, _gas, _brake, _interactTouch, _rescueArmed;
         string _armedResearchId = string.Empty;
+        string _armedLogisticsHub = string.Empty;
         float _nextHud, _toastTimer;
         MapPresenter _mapPresenter;
         MinimapView _minimap;
@@ -550,6 +551,60 @@ namespace Wayfinder.Presentation
                     .onClick.AddListener(() => Act(_session.LoadCargo(item, qty)));
                 y -= .05f;
                 if (y < .2f) break;
+            }
+
+            // Community logistics (§10.4): pick a partner hub, then send from the store you are
+            // standing at or pull from theirs. Free and instant, and only while at a hub.
+            y -= .02f;
+            if (y > .22f)
+            {
+                GarageModel.LogisticsRow here = null;
+                foreach (var h in model.Logistics) if (h.IsCurrent) { here = h; break; }
+
+                PrototypeUi.Label(overlay, $"Community logistics — at {DisplayNames.Hub(model.CurrentHubId)}",
+                    new Vector2(.52f, y - .04f), new Vector2(.98f, y), 16);
+                y -= .045f;
+                foreach (var hub in model.Logistics)
+                {
+                    if (y < .22f) break;
+                    string hubId = hub.HubId;
+                    bool armed = _armedLogisticsHub == hubId;
+                    string detail = hub.SharedStore ? "shared, unlimited" : $"{hub.MassKg:0}/{hub.CapacityKg:0} kg";
+                    var hubLabel = PrototypeUi.Label(overlay, (hub.IsCurrent ? "• " : "") + hub.Name + " — " + detail,
+                        new Vector2(.52f, y - .045f), new Vector2(.74f, y), 14);
+                    hubLabel.alignment = TextAnchor.MiddleLeft;
+                    var choose = PrototypeUi.Button(overlay, armed ? "Partner ✓" : "Choose",
+                        new Vector2(.75f, y - .045f), new Vector2(.84f, y - .005f));
+                    choose.interactable = !hub.IsCurrent;
+                    choose.onClick.AddListener(() =>
+                    {
+                        _armedLogisticsHub = armed ? string.Empty : hubId;
+                        ShowGarage();
+                    });
+                    y -= .05f;
+                    if (!armed || !hub.CanExchange || here == null) continue;
+
+                    foreach (var mine in here.Stacks)
+                    {
+                        if (y < .22f) break;
+                        string item = mine.ItemId;
+                        int qty = mine.Quantity;
+                        PrototypeUi.Label(overlay, $"send {mine.Name} ×{qty}", new Vector2(.56f, y - .04f), new Vector2(.78f, y), 13);
+                        PrototypeUi.Button(overlay, "Send", new Vector2(.79f, y - .04f), new Vector2(.88f, y - .005f))
+                            .onClick.AddListener(() => Act(_session.TransferToHub(hubId, item, qty)));
+                        y -= .045f;
+                    }
+                    foreach (var theirs in hub.Stacks)
+                    {
+                        if (y < .22f) break;
+                        string item = theirs.ItemId;
+                        int qty = theirs.Quantity;
+                        PrototypeUi.Label(overlay, $"pull {theirs.Name} ×{qty}", new Vector2(.56f, y - .04f), new Vector2(.78f, y), 13);
+                        PrototypeUi.Button(overlay, "Pull", new Vector2(.79f, y - .04f), new Vector2(.88f, y - .005f))
+                            .onClick.AddListener(() => Act(_session.TransferFromHub(hubId, item, qty)));
+                        y -= .045f;
+                    }
+                }
             }
 
             PrototypeUi.Button(overlay, "Craft camp kit (80 + materials)", new Vector2(.52f, .10f), new Vector2(.74f, .18f))
