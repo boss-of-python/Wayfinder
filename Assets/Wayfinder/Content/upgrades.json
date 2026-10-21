@@ -5,6 +5,7 @@
     "costSalvage": 200,
     "prerequisites": [],
     "requiredMission": "Q01",
+    "moduleSlot": "tires",
     "effects": [
       {
         "stat": "dirtGravelGrip",
@@ -24,6 +25,7 @@
       "upgrade.scout.01.trailTires1"
     ],
     "requiredMission": "Q02",
+    "moduleSlot": "utility",
     "effects": [
       {
         "stat": "underbodyDamageFactor",
@@ -43,6 +45,7 @@
       "upgrade.scout.02.underbodyGuard"
     ],
     "requiredMission": "Q02",
+    "moduleSlot": "winch",
     "effects": [
       {
         "stat": "winchReachM",
@@ -67,6 +70,7 @@
       "upgrade.scout.03.fieldWinch1"
     ],
     "requiredMission": "Q03",
+    "moduleSlot": "cargoRack",
     "effects": [
       {
         "stat": "cargoSlots",
@@ -86,6 +90,7 @@
       "upgrade.scout.04.cargoOrganizer"
     ],
     "requiredMission": "Q04",
+    "moduleSlot": "suspension",
     "effects": [
       {
         "stat": "suspensionTravelM",
@@ -110,6 +115,7 @@
       "upgrade.scout.05.suspension1"
     ],
     "requiredMission": "Q04",
+    "moduleSlot": "tank",
     "effects": [
       {
         "stat": "fuelCapacityLiters",
@@ -129,6 +135,7 @@
       "upgrade.scout.06.tank1"
     ],
     "requiredMission": "Q05",
+    "moduleSlot": "utility",
     "effects": [
       {
         "stat": "lowRange",
@@ -148,6 +155,7 @@
       "upgrade.scout.07.lowRange"
     ],
     "requiredMission": "Q06",
+    "moduleSlot": "none",
     "effects": [
       {
         "stat": "mudTires",
@@ -167,6 +175,7 @@
       "upgrade.scout.08.mudTires"
     ],
     "requiredMission": "Q07",
+    "moduleSlot": "sensor",
     "effects": [
       {
         "stat": "signalRadiusM",
@@ -186,6 +195,7 @@
       "upgrade.scout.09.radar1"
     ],
     "requiredMission": "Q08",
+    "moduleSlot": "engineTune",
     "effects": [
       {
         "stat": "peakTorqueNm",
@@ -210,6 +220,7 @@
       "upgrade.scout.10.engineTune1"
     ],
     "requiredMission": "Q09",
+    "moduleSlot": "cargoRack",
     "effects": [
       {
         "stat": "cargoSlots",
@@ -234,6 +245,7 @@
       "upgrade.scout.11.reinforcedRack"
     ],
     "requiredMission": "Q10",
+    "moduleSlot": "intake",
     "effects": [
       {
         "stat": "safeWadingDepthM",
@@ -253,9 +265,15 @@
       "upgrade.scout.12.raisedIntake"
     ],
     "requiredMission": "Q11",
+    "moduleSlot": "differential",
     "effects": [
       {
         "stat": "diffLock",
+        "operation": "Set",
+        "value": 1
+      },
+      {
+        "stat": "rockTires",
         "operation": "Set",
         "value": 1
       }
@@ -272,6 +290,7 @@
       "upgrade.scout.13.diffLock"
     ],
     "requiredMission": "Q12",
+    "moduleSlot": "suspension",
     "effects": [
       {
         "stat": "suspensionTravelM",
@@ -296,6 +315,7 @@
       "upgrade.scout.14.suspension2"
     ],
     "requiredMission": "Q13",
+    "moduleSlot": "winch",
     "effects": [
       {
         "stat": "winchReachM",
@@ -320,6 +340,7 @@
       "upgrade.scout.15.fieldWinch2"
     ],
     "requiredMission": "Q14",
+    "moduleSlot": "tank",
     "effects": [
       {
         "stat": "fuelCapacityLiters",
@@ -339,6 +360,7 @@
       "upgrade.scout.16.tank2"
     ],
     "requiredMission": "Q15",
+    "moduleSlot": "cargoRack",
     "effects": [
       {
         "stat": "cargoSlots",
@@ -363,6 +385,7 @@
       "upgrade.scout.17.expeditionRack"
     ],
     "requiredMission": "Q16",
+    "moduleSlot": "none",
     "effects": [
       {
         "stat": "snowTires",
@@ -382,6 +405,7 @@
       "upgrade.scout.18.coldKit"
     ],
     "requiredMission": "Q17",
+    "moduleSlot": "sensor",
     "effects": [
       {
         "stat": "signalRadiusM",
@@ -401,7 +425,13 @@
       "upgrade.scout.19.radar2"
     ],
     "requiredMission": "Q19",
+    "moduleSlot": "engineTune",
     "effects": [
+      {
+        "stat": "peakTorqueNm",
+        "operation": "Multiply",
+        "value": 1.1
+      },
       {
         "stat": "poweredFuelDrainFactor",
         "operation": "Multiply",
@@ -410,6 +440,6 @@
     ],
     "nameKey": "upgrade.expeditionCalibration.name",
     "descriptionKey": "upgrade.expeditionCalibration.description",
-    "result": "Powered fuel drain x0.90; upgraded-suspension damping profile"
+    "result": "Keeps Engine Tune I's torque curve \u00d71.10 and cuts powered fuel drain to \u00d70.90; upgraded-suspension damping profile"
   }
 ]

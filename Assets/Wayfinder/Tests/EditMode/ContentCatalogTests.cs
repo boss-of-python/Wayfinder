@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using Wayfinder.Progression;
 
 namespace Wayfinder.Tests
 {
@@ -96,6 +97,47 @@ namespace Wayfinder.Tests
             }
             Assert.AreEqual(32200, total);
         }
+
+        /// <summary>
+        /// §10.2/D-041: upgrades.json must mirror the canonical tier table slot for slot — including
+        /// the effects, which the table is authoritative for. A tier whose content slot disagreed
+        /// with the code would silently change which modules compete for a slot.
+        /// </summary>
+        [Test]
+        public void UpgradeTable_MatchesCanonicalSlotsAndEffects_D041()
+        {
+            var upgrades = Load("upgrades.json");
+            var tiers = ResearchService.Global.Tiers;
+            Assert.AreEqual(tiers.Count, upgrades.Count);
+            int utility = 0;
+            for (int i = 0; i < tiers.Count; i++)
+            {
+                var u = upgrades[i];
+                var id = u.Value<string>("id");
+                Assert.AreEqual(tiers[i].Id.Value, id);
+                Assert.AreEqual(tiers[i].Tier, u.Value<int>("tier"), id);
+
+                Assert.IsTrue(ResearchService.TryParseSlot(u.Value<string>("moduleSlot"), out var slot),
+                    $"{id}: moduleSlot '{u.Value<string>("moduleSlot")}' is not a §10.2 slot");
+                Assert.AreEqual(tiers[i].Slot, slot, $"{id}: slot disagrees with the canonical table");
+                if (slot == ModuleSlot.Utility) utility++;
+
+                var effects = (JArray)u["effects"];
+                Assert.AreEqual(tiers[i].Effects.Count, effects.Count, $"{id}: effect count");
+                for (int e = 0; e < effects.Count; e++)
+                {
+                    var expected = tiers[i].Effects[e];
+                    Assert.AreEqual(ToLowerCamel(expected.stat.ToString()), effects[e].Value<string>("stat"),
+                        $"{id}: stat #{e}");
+                    Assert.AreEqual(expected.op.ToString(), effects[e].Value<string>("operation"),
+                        $"{id}: operation #{e}");
+                    Assert.AreEqual(expected.value, effects[e].Value<float>("value"), 1e-5f, $"{id}: value #{e}");
+                }
+            }
+            Assert.AreEqual(2, utility, "§10.2 provides two utility slots");
+        }
+
+        static string ToLowerCamel(string name) => char.ToLowerInvariant(name[0]) + name.Substring(1);
 
         [Test]
         public void LandmarkAndCacheIds_AreUnique_QA13()

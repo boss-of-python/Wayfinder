@@ -159,6 +159,27 @@ namespace Wayfinder.Campaign
             public int Tier, Cost;
             public ResearchState State;
             public bool CanPurchase => State == ResearchState.Available;
+
+            /// <summary>The §10.2 slot this tier occupies, and its content spelling for labels.</summary>
+            public ModuleSlot Slot;
+            public string SlotName = string.Empty;
+            /// <summary>True while this module is fitted, i.e. actually composing the resolved stats.</summary>
+            public bool IsFitted;
+            /// <summary>Garage-only loadout changes (§10.4 "vehicle change").</summary>
+            public bool CanFit, CanUnfit;
+            /// <summary>The module this one would displace, since a named slot holds one (§10.2).</summary>
+            public string ReplacesId = string.Empty;
+        }
+
+        /// <summary>
+        /// A §10.2 tire-set row. One set is mounted at a time; the specialized sets stay unlocked by
+        /// research even while another set is mounted (§11.2 tiers 8, 13, 18).
+        /// </summary>
+        public sealed class TireRow
+        {
+            public string TireSetId, Name, UnlockName;
+            public bool Unlocked, Mounted;
+            public bool CanMount => Unlocked && !Mounted;
         }
 
         public sealed class MissionRow
@@ -183,6 +204,9 @@ namespace Wayfinder.Campaign
 
         public int Wallet, Escrow;
         public string CapacityLine = string.Empty;
+        /// <summary>The mounted tire set, and every set with its unlock state (§10.2).</summary>
+        public string SelectedTireSet = string.Empty;
+        public readonly List<TireRow> TireSets = new List<TireRow>();
         public readonly List<ResearchRow> Research = new List<ResearchRow>();
         public readonly List<MissionRow> Missions = new List<MissionRow>();
         public readonly List<StackRow> Cargo = new List<StackRow>();
@@ -208,6 +232,13 @@ namespace Wayfinder.Campaign
                     Result = s.Content.UpgradeResult(tier.Id.Value),
                     RequiredMission = tier.RequiredMissionCode
                 };
+                row.Slot = tier.Slot;
+                row.SlotName = ResearchService.SlotName(tier.Slot);
+                row.IsFitted = s.Research.IsFitted(tier.Id.Value);
+                row.CanFit = s.AtGarage && s.Research.CanFit(tier.Id.Value);
+                row.CanUnfit = s.AtGarage && row.IsFitted;
+                row.ReplacesId = tier.Slot == ModuleSlot.None || row.IsFitted
+                    ? string.Empty : s.Research.ModuleInSlot(tier.Slot);
                 if (s.Research.IsResearched(tier.Id.Value)) row.State = ResearchState.Researched;
                 else if (!previousResearched) row.State = ResearchState.NeedsPreviousTier;
                 else if (!string.IsNullOrEmpty(tier.RequiredMissionCode) && !s.Missions.IsCompletedCode(tier.RequiredMissionCode))
@@ -217,6 +248,17 @@ namespace Wayfinder.Campaign
                 previousResearched = row.State == ResearchState.Researched;
                 m.Research.Add(row);
             }
+
+            m.SelectedTireSet = s.Research.SelectedTireSet.ToString();
+            foreach (var set in new[] { TireSet.AllTerrain, TireSet.Mud, TireSet.Rock, TireSet.Snow })
+                m.TireSets.Add(new TireRow
+                {
+                    TireSetId = set.ToString(),
+                    Name = TireSetLabel(set),
+                    UnlockName = UnlockTierName(s, set),
+                    Unlocked = s.Research.IsTireSetUnlocked(set),
+                    Mounted = s.Research.SelectedTireSet == set
+                });
 
             foreach (var code in s.Content.Slice.MissionCodes)
             {
@@ -237,6 +279,36 @@ namespace Wayfinder.Campaign
             AddSellInfo(s, m.Cargo, fromCargo: true);
             AddSellInfo(s, m.Storage, fromCargo: false);
             return m;
+        }
+
+        /// <summary>Display label for a §10.2 tire set, until localization string tables exist.</summary>
+        static string TireSetLabel(TireSet set) => set switch
+        {
+            TireSet.AllTerrain => "All-terrain",
+            TireSet.Mud => "Mud",
+            TireSet.Rock => "Rock",
+            TireSet.Snow => "Snow",
+            _ => set.ToString()
+        };
+
+        /// <summary>
+        /// The name of the §11.2 tier that unlocks a tire set, read from the effect table rather than
+        /// hardcoded, so the garage can say which research a locked set still needs.
+        /// </summary>
+        static string UnlockTierName(CampaignSession s, TireSet set)
+        {
+            VehicleStatsResolver.Stat? flag = set switch
+            {
+                TireSet.Mud => VehicleStatsResolver.Stat.MudTires,
+                TireSet.Rock => VehicleStatsResolver.Stat.RockTires,
+                TireSet.Snow => VehicleStatsResolver.Stat.SnowTires,
+                _ => null
+            };
+            if (flag == null) return string.Empty;
+            foreach (var tier in s.Research.Tiers)
+                foreach (var effect in tier.Effects)
+                    if (effect.stat == flag) return DisplayNames.Upgrade(tier.NameKey);
+            return string.Empty;
         }
 
         static void AddSellInfo(CampaignSession s, List<StackRow> rows, bool fromCargo)

@@ -1,0 +1,30 @@
+CAUGHT    K1   resolver composes every researched tier again, fitted or not  (tests 231/239) by ANamedSlotHoldsOneModule_TheNewerTierReplacesTheOlder, DroppingToASmallerTank_ClampsFuelToTheResolvedCapacity, SwappingToASmallerRackWhileOverCapacity_IsRefusedAndRolledBack_QA9
+CAUGHT    K2   buying a module no longer fits it  (tests 236/239) by DroppingToASmallerTank_ClampsFuelToTheResolvedCapacity, ResearchingAModule_FitsIt_AndItsStatComposes_D041, VerticalSlice_PlaythroughQ01toQ04_AffordsTiers1to6AndSecondCamp_LedgerBalances
+CAUGHT    K3   utility slot capacity drops to one  (tests 238/239) by TheTwoUtilitySlots_HoldBothUtilityModules
+CAUGHT    K4   fitting an already-fitted module is allowed  (tests 238/239) by UnequippingDropsTheEffect_RefittingRestoresIt
+CAUGHT    K5   a slot-less tire unlock can be 'fitted'  (tests 238/239) by ASlotlessTier_IsAResearchUnlock_AndOccupiesNoSlot
+CAUGHT    K6   fitting before researching is allowed  (tests 238/239) by UnknownAndUnresearchedModules_AreRefusedWithoutSideEffects
+CAUGHT    K7   the rock set is never unlocked (the gap this batch closes)  (tests 235/239) by AnUnlockSurvivesUnequippingTheModuleThatCarriedIt, TheGaragePanel_ShowsSlotsFitStateAndTireSets, Tier13UnlocksTheRockSet_WhichNoEarlierTierSets
+CAUGHT    K8   unlocks follow the fitted loadout instead of research  (tests 230/239) by ASlotlessTier_IsAResearchUnlock_AndOccupiesNoSlot, AnUnlockSurvivesUnequippingTheModuleThatCarriedIt, LoadoutChangesAnnounceThemselves
+CAUGHT    K9   an unresearched tire set can be mounted  (tests 238/239) by TireSets_AreLockedUntilTheTierThatUnlocksThem
+CAUGHT    K10  tier 13 no longer carries the rock-tire unlock  (tests 234/239) by AnUnlockSurvivesUnequippingTheModuleThatCarriedIt, TheGaragePanel_ShowsSlotsFitStateAndTireSets, Tier13UnlocksTheRockSet_WhichNoEarlierTierSets
+CAUGHT    K11  tier 20 drops Engine Tune I's torque curve (§11.2:739)  (tests 237/239) by Tier20CarriesTheEngineTuneTorque_WithoutStackingItsDrain, UpgradeTable_MatchesCanonicalSlotsAndEffects_D041
+CAUGHT    K12  a pre-slot save fits everything researched instead of reconciling  (tests 237/239) by TheFittedLoadoutAndMountedSet_SurviveSaveAndReload, UnequippingDropsTheEffect_RefittingRestoresIt
+CAUGHT    K13  a save's mounted tire set is ignored on load  (tests 237/239) by TheFittedLoadoutAndMountedSet_SurviveSaveAndReload, TireSetsAreMutuallyExclusive_OneMountedAtATime
+CAUGHT    K14  the engine slot is spelled differently from EquipmentSlots  (tests 237/239) by SlotNames_AreTheSharedEquipmentVocabulary, UpgradeTable_MatchesCanonicalSlotsAndEffects_D041
+CAUGHT    K15  loadout changes are allowed in the open field  (tests 238/239) by LoadoutChangesAreGarageOnly
+CAUGHT    K16  the QA case 9 over-capacity guard is dropped  (tests 238/239) by SwappingToASmallerRackWhileOverCapacity_IsRefusedAndRolledBack_QA9
+CAUGHT    K17  fuel is not clamped when the tank shrinks (§5.4)  (tests 238/239) by DroppingToASmallerTank_ClampsFuelToTheResolvedCapacity
+CAUGHT    K18  the loadout swap never re-configures the containers  (tests 237/239) by DroppingToASmallerTank_ClampsFuelToTheResolvedCapacity, SwappingToASmallerRackWhileOverCapacity_IsRefusedAndRolledBack_QA9
+CAUGHT    K19  the fit/remove notice is dropped (§13.2)  (tests 238/239) by LoadoutChangesAnnounceThemselves
+CAUGHT    K20  mounting tires is allowed in the open field  (tests 238/239) by LoadoutChangesAreGarageOnly
+CAUGHT    K21  the mounted-tire notice is dropped  (tests 238/239) by LoadoutChangesAnnounceThemselves
+CAUGHT    K22  the garage resolves all-terrain regardless of the mounted set  (tests 238/239) by TheGarageShowsExactlyWhatTheFittedLoadoutDoes
+CAUGHT    K23  the resolver's tire-unlock flags revert to hardcoded false  (tests 238/239) by AnUnlockSurvivesUnequippingTheModuleThatCarriedIt
+CAUGHT    K24  the save records everything researched instead of the fitted loadout  (tests 237/239) by TheFittedLoadoutAndMountedSet_SurviveSaveAndReload, UnequippingDropsTheEffect_RefittingRestoresIt
+CAUGHT    K25  the save always records the all-terrain set  (tests 237/239) by TheFittedLoadoutAndMountedSet_SurviveSaveAndReload, TireSetsAreMutuallyExclusive_OneMountedAtATime
+CAUGHT    K26  the saved loadout is ignored on restore  (tests 232/239) by APreSlotSave_ReconcilesToTheHighestTierPerSlot_D041, SwappingToASmallerRackWhileOverCapacity_IsRefusedAndRolledBack_QA9, TheFittedLoadoutAndMountedSet_SurviveSaveAndReload
+CAUGHT    K27  the saved tire set is ignored on restore  (tests 237/239) by TheFittedLoadoutAndMountedSet_SurviveSaveAndReload, TireSetsAreMutuallyExclusive_OneMountedAtATime
+
+27/27 mutants caught; survivors: none
+tree clean after run

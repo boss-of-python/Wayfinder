@@ -64,6 +64,16 @@ UPGRADE_COSTS = [200, 300, 450, 550, 700, 850, 1000, 1150, 1300, 1450,
 UPGRADE_GATES = ["Q01", "Q02", "Q02", "Q03", "Q04", "Q04", "Q05", "Q06", "Q07", "Q08",
                  "Q09", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15", "Q16", "Q17", "Q19"]
 
+# §10.2 equipment slots: named slots hold one module each, utility holds two, and "none" is a
+# research unlock (a tire set) rather than a module that competes for a slot.
+UPGRADE_SLOTS = ["tires", "utility", "winch", "cargoRack", "suspension", "tank", "utility", "none",
+                 "sensor", "engineTune", "cargoRack", "intake", "differential", "suspension", "winch",
+                 "tank", "cargoRack", "none", "sensor", "engineTune"]
+
+# Spelled exactly as Wayfinder.Simulation.EquipmentSlots spells them (utility is one kind, two slots).
+MODULE_SLOT_NAMES = {"tires", "suspension", "engineTune", "tank", "intake", "differential", "cargoRack",
+                     "sensor", "winch", "utility", "none"}
+
 SURFACE_TABLE = {  # §4.4
     "intact_asphalt": (1.00, 0.75, 0.015),
     "broken_asphalt": (0.90, 0.75, 0.025),
@@ -162,8 +172,30 @@ def check_upgrades():
             err(f"upgrade {u['id']}: story gate '{u['requiredMission']}' does not exist")
         if u["requiredMission"] != UPGRADE_GATES[i - 1]:
             err(f"upgrade {u['id']}: gate {u['requiredMission']} != table value {UPGRADE_GATES[i-1]}")
+        # §10.2: every tier belongs to exactly one slot, spelled the way the code spells it.
+        if u.get("moduleSlot") != UPGRADE_SLOTS[i - 1]:
+            err(f"upgrade {u['id']}: moduleSlot {u.get('moduleSlot')!r} != table value "
+                f"{UPGRADE_SLOTS[i-1]!r}")
         if i > 1 and u["prerequisites"] != [upgrades[i - 2]["id"]]:
             err(f"upgrade {u['id']}: prerequisite must be previous tier (sequential tree)")
+
+    # Slot vocabulary, the two utility slots, and one unlock per specialized tire set — without all
+    # three a tire set is unreachable in every save (the rock set was, before this batch).
+    counts = {}
+    flags = set()
+    for u in upgrades:
+        slot = u.get("moduleSlot")
+        if slot not in MODULE_SLOT_NAMES:
+            err(f"upgrade {u['id']}: moduleSlot {slot!r} is not a §10.2 slot")
+        counts[slot] = counts.get(slot, 0) + 1
+        for e in u["effects"]:
+            flags.add(e["stat"])
+    if counts.get("utility", 0) != 2:
+        err(f"§10.2 provides two utility slots but {counts.get('utility', 0)} tiers use one")
+    for flag in ("mudTires", "rockTires", "snowTires"):
+        if flag not in flags:
+            err(f"no tier sets '{flag}', so that tire set can never be mounted (§10.2)")
+
     if total != 32200:
         err(f"upgrade total cost {total} != 32200 (§11.2)")
 

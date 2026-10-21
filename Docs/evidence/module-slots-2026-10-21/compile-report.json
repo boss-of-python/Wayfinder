@@ -1,0 +1,137 @@
+[
+  {
+    "assembly": "Wayfinder.Core",
+    "status": "OK",
+    "compiled": [
+      "Assets/Wayfinder/Scripts/Core/BitGrid.cs",
+      "Assets/Wayfinder/Scripts/Core/GameCommands.cs",
+      "Assets/Wayfinder/Scripts/Core/GameEvents.cs",
+      "Assets/Wayfinder/Scripts/Core/GameState.cs",
+      "Assets/Wayfinder/Scripts/Core/Ids.cs",
+      "Assets/Wayfinder/Scripts/Core/MobileLifecycleGate.cs",
+      "Assets/Wayfinder/Scripts/Core/ResultTypes.cs",
+      "Assets/Wayfinder/Scripts/Core/StableHash.cs",
+      "Assets/Wayfinder/Scripts/Core/StableRandom.cs",
+      "Assets/Wayfinder/Scripts/Core/SurfaceType.cs"
+    ],
+    "excluded_unity_dependent": [],
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "assembly": "Wayfinder.Simulation",
+    "status": "OK",
+    "compiled": [
+      "Assets/Wayfinder/Scripts/Simulation/FuelModel.cs",
+      "Assets/Wayfinder/Scripts/Simulation/HazardModels.cs",
+      "Assets/Wayfinder/Scripts/Simulation/Powertrain.cs",
+      "Assets/Wayfinder/Scripts/Simulation/RecoveryRules.cs",
+      "Assets/Wayfinder/Scripts/Simulation/SurfaceTable.cs",
+      "Assets/Wayfinder/Scripts/Simulation/VehicleSpec.cs",
+      "Assets/Wayfinder/Scripts/Simulation/VehicleStatsResolver.cs"
+    ],
+    "excluded_unity_dependent": [
+      "Assets/Wayfinder/Scripts/Simulation/ChaseCameraBehaviour.cs",
+      "Assets/Wayfinder/Scripts/Simulation/SurfaceLabel.cs",
+      "Assets/Wayfinder/Scripts/Simulation/VehicleController.cs",
+      "Assets/Wayfinder/Scripts/Simulation/WaterVolume.cs"
+    ],
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "assembly": "Wayfinder.World",
+    "status": "OK",
+    "compiled": [
+      "Assets/Wayfinder/Scripts/World/ChunkStreamPlanner.cs",
+      "Assets/Wayfinder/Scripts/World/RouteGraph.cs",
+      "Assets/Wayfinder/Scripts/World/ScatterPlacer.cs",
+      "Assets/Wayfinder/Scripts/World/TerrainLineOfSight.cs",
+      "Assets/Wayfinder/Scripts/World/WorldDefinition.cs"
+    ],
+    "excluded_unity_dependent": [],
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "assembly": "Wayfinder.Progression",
+    "status": "OK",
+    "compiled": [
+      "Assets/Wayfinder/Scripts/Progression/DiscoveryService.cs",
+      "Assets/Wayfinder/Scripts/Progression/EconomyService.cs",
+      "Assets/Wayfinder/Scripts/Progression/GarageService.cs",
+      "Assets/Wayfinder/Scripts/Progression/InventoryService.cs",
+      "Assets/Wayfinder/Scripts/Progression/MapMarkerService.cs",
+      "Assets/Wayfinder/Scripts/Progression/MissionService.cs",
+      "Assets/Wayfinder/Scripts/Progression/ResearchService.cs"
+    ],
+    "excluded_unity_dependent": [],
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "assembly": "Wayfinder.Persistence",
+    "status": "OK",
+    "compiled": [
+      "Assets/Wayfinder/Scripts/Persistence/SaveDtos.cs",
+      "Assets/Wayfinder/Scripts/Persistence/SaveService.cs"
+    ],
+    "excluded_unity_dependent": [],
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "assembly": "Wayfinder.Campaign",
+    "status": "OK",
+    "compiled": [
+      "Assets/Wayfinder/Scripts/Campaign/AutosavePolicy.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignContent.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignSession.Extraction.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignSession.Field.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignSession.Garage.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignSession.Map.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignSession.Supplies.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignSession.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignSnapshot.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignTypes.cs",
+      "Assets/Wayfinder/Scripts/Campaign/CampaignViewModels.cs",
+      "Assets/Wayfinder/Scripts/Campaign/FieldTrackers.cs",
+      "Assets/Wayfinder/Scripts/Campaign/Map/ExplorationMap.cs",
+      "Assets/Wayfinder/Scripts/Campaign/Map/MapMarkers.cs",
+      "Assets/Wayfinder/Scripts/Campaign/Map/MapRaster.cs",
+      "Assets/Wayfinder/Scripts/Campaign/Map/MapTerrain.cs",
+      "Assets/Wayfinder/Scripts/Campaign/Map/MapViewport.cs",
+      "Assets/Wayfinder/Scripts/Campaign/SliceFieldController.cs"
+    ],
+    "excluded_unity_dependent": [],
+    "errors": [],
+    "warnings": []
+  },
+  {
+    "assembly": "Wayfinder.Tests.EditMode",
+    "status": "OK",
+    "compiled": [
+      "Assets/Wayfinder/Tests/EditMode/BugReportRegressionTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/CampaignCampStorageTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/CampaignFieldTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/CampaignHubTravelTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/CampaignModuleSlotTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/CampaignSessionTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/CampaignSuppliesTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/CampaignTestKit.cs",
+      "Assets/Wayfinder/Tests/EditMode/CampaignVehicleStatsTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/ContentCatalogTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/CoreDomainTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/ExplorationMapTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/MapDomainTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/PersistenceTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/ProgressionRegressionTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/ProgressionTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/SimulationTests.cs",
+      "Assets/Wayfinder/Tests/EditMode/WorldStreamingTests.cs"
+    ],
+    "excluded_unity_dependent": [],
+    "errors": [],
+    "warnings": []
+  }
+]

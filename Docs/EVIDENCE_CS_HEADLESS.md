@@ -1,5 +1,15 @@
 # Wayfinder — Executed Evidence: headless C# compile + EditMode tests (2026-10-14)
 
+> **Update 2026-10-21 (Batch K — §10.2 equipment slots + swappable tire sets, KI-028 closed):**
+> 7 assemblies / 0 warnings, **239/239** EditMode tests (216 → 239), .NET Standard 2.1 profile OK,
+> 30 Unity-dependent files parse, `validate_content.py` + `formula_checks.py` clean. New fixture
+> `CampaignModuleSlotTests` (22) plus `UpgradeTable_MatchesCanonicalSlotsAndEffects_D041`.
+> **27/27** mutation checks caught. Two content defects found and fixed while wiring the
+> slots: nothing ever set `Stat.RockTires` (the Rock tire set was unreachable in every save), and
+> §11.2 tier 20 dropped Engine Tune I's ×1.10 torque curve when it took the engine slot. Loadout
+> persistence is additive (`VehicleDto.equippedTireSet`) so the schema stayed at 2, with pre-slot
+> saves reconciled to the highest tier per slot (D-041).
+>
 > **Update 2026-10-21 (Batch J — hub travel + per-camp storage, KI-028):** 7 assemblies / 0 warnings,
 > **216/216** EditMode tests (188 → 216), .NET Standard 2.1 profile OK, 30 Unity-dependent files parse,
 > `validate_content.py` + `formula_checks.py` clean. New fixtures `CampaignHubTravelTests` (15) and

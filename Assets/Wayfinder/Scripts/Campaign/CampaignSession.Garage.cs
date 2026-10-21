@@ -172,6 +172,63 @@ namespace Wayfinder.Campaign
             });
         }
 
+        // ================================================================== equipment slots (§10.2)
+
+        /// <summary>
+        /// Fits a researched module into its §10.2 slot — "vehicle change" is a garage service
+        /// (§10.4). A named slot holds one module, so fitting replaces its occupant; Utility holds
+        /// two. Critical: the new loadout is acknowledged only with a verified save, and a swap that
+        /// would leave the loaded cargo over capacity is refused and rolled back (QA case 9).
+        /// </summary>
+        public CommandResult EquipModule(string upgradeId) => ChangeLoadout(upgradeId, fit: true);
+
+        /// <summary>
+        /// Removes a fitted module. It stays researched and can be fitted again at any garage, so
+        /// unequipping never destroys progression (§17.5). Same garage and capacity rules as fitting.
+        /// </summary>
+        public CommandResult UnequipModule(string upgradeId) => ChangeLoadout(upgradeId, fit: false);
+
+        CommandResult ChangeLoadout(string upgradeId, bool fit)
+        {
+            if (!AtGarage)
+                return CommandResult.Fail(FailureReason.WrongState,
+                    "vehicle changes are only available at a garage (§10.4)");
+            if (!IsKnownUpgrade(upgradeId))
+                return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown upgrade '{upgradeId}'");
+            return RunCritical(() =>
+            {
+                var result = fit ? Research.Fit(new ContentId(upgradeId)) : Research.Unfit(new ContentId(upgradeId));
+                if (!result.Success) return result;
+                ConfigureContainers();
+                if (Inventory.IsOverCapacity(Cargo))
+                    return CommandResult.Fail(FailureReason.OverCapacity,
+                        "the loaded cargo no longer fits that rack; unload first or keep the larger one (QA case 9)");
+                // A smaller tank must never leave the vehicle over full (§5.4). Garages refuel for
+                // free (§12.1), so clamping down costs the player nothing.
+                FuelLiters = Math.Min(FuelLiters, FuelCapacityLiters);
+                Notice(fit ? CampaignNoticeKind.ModuleFitted : CampaignNoticeKind.ModuleRemoved,
+                    (fit ? "Fitted " : "Removed ") + upgradeId, 0, upgradeId);
+                return CommandResult.Ok();
+            });
+        }
+
+        /// <summary>
+        /// Mounts a tire set (§10.2: one tire set, mutually exclusive — "meaningful terrain
+        /// preparation"). Requires the research that unlocks it (§11.2 tiers 8, 13, 18) and a garage.
+        /// </summary>
+        public CommandResult SelectTireSet(TireSet tireSet)
+        {
+            if (!AtGarage)
+                return CommandResult.Fail(FailureReason.WrongState, "tire sets are mounted at a garage (§10.4)");
+            return RunCritical(() =>
+            {
+                var result = Research.SelectTireSet(tireSet);
+                if (!result.Success) return result;
+                Notice(CampaignNoticeKind.TireSetMounted, $"Mounted {tireSet} tires", 0, tireSet.ToString());
+                return CommandResult.Ok();
+            });
+        }
+
         // ================================================================== hub travel (§10.4)
 
         /// <summary>

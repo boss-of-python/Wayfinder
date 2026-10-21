@@ -1,10 +1,66 @@
 # Wayfinder — Implementation Status
 
-Last updated: 2026-10-21. Status values: **Not started / In progress / Implemented / Verified / Blocked**.
+Last updated: 2026-10-21 (Batch K). Status values: **Not started / In progress / Implemented / Verified / Blocked**.
 "Implemented" for C# means *real source exists but is uncompiled/unverified in this environment* (D-003, KI-001).
 "Verified" requires executed evidence — see `Docs/EVIDENCE_M0.md`, `Docs/EVIDENCE_CS_HEADLESS.md` and `Docs/REQUIREMENT_MAP.md`.
 **Verified (headless)** = compiled by a real C# 9 compiler at warning level 4 with 0 warnings, passed the .NET Standard 2.1
 API-profile check, and executed under NUnit outside Unity (D-014). It is not a Unity build result (KI-016).
+
+## 2026-10-21 — Batch K: §10.2 equipment slots and swappable tire sets (KI-028 closed)
+
+The last open half of KI-028 is implemented, executed and mutation-checked headlessly. §10.2 gives the
+Scout one module per named slot — tires, suspension, engine tune, tank, intake, differential, cargo
+rack, sensor, winch — plus **two utility slots**, with tire sets mutually exclusive (D-041).
+
+**What changed.** `ModuleSlot` is now part of the canonical 20-tier table, and `upgrades.json` mirrors
+it as `moduleSlot`; both spell slots the way `Wayfinder.Simulation.EquipmentSlots` already did, so the
+enum, the content, `validate_content.py` and `ContentCatalogTests` cannot drift on names.
+`ResearchService.ApplyTo` composes **only what is fitted** — before, owning every tier stacked three
+cargo racks and two suspension packages into one vehicle. Researching a module fits it (the tree is
+strictly progressive, so the newest module per slot is the default, and all 216 pre-existing tests keep
+their meaning); `Fit`/`Unfit`/`CanFit` let the player choose an older module or none, which is the
+"meaningful terrain preparation" §10.2 asks for. Slot-less tiers (8 Mud Tires, 18 Cold-Weather Kit) are
+unlocks, not equipment: researched is enough, they always compose, and they occupy no slot.
+
+**Two content defects found while wiring this are fixed.** Nothing in content or code ever set
+`Stat.RockTires`, so the Rock tire set — priced in §10.2 at +20% dry rock grip — was unreachable in
+every save; §11.2 tier 13 now carries it. And tier 20 (Expedition Calibration) takes the engine slot
+from tier 10 but only listed the drain change, so the capstone silently dropped Engine Tune I's ×1.10
+torque curve; §11.2:739 asks for explicit final stat composition, so tier 20 now carries the torque
+curve forward and the drain is its own ×0.90 rather than ×1.04 ×0.90.
+
+**Tire sets.** `SelectTireSet` mounts one set at a time, gated on the research that unlocks it
+(§11.2 tiers 8/13/18). Unlocks are derived from *research*, not from the fitted loadout, so removing
+the differential lock never un-unlocks Rock. `CampaignSession.ResolveStats` — the single resolution the
+garage and driving share (§11.2:741) — passed `TireSet.AllTerrain, …, false, false, false` before and
+now passes the mounted set plus research-derived unlock flags, and `VerticalSliceDriver` assigns
+`vehicle.tireSet`, which nothing did before, so the physics rig's own `GripFor` finally sees the
+player's choice (narrows KI-025).
+
+**Commands, persistence, migration.** `EquipModule`/`UnequipModule`/`SelectTireSet` are garage-only
+(§10.4 "vehicle change"), run inside `RunCritical`, re-configure the containers, clamp fuel to a
+shrinking tank (§5.4), and then enforce **QA case 9**: if the loaded cargo no longer fits, the command
+returns `OverCapacity` and the verified snapshot rollback restores the previous loadout — the check
+runs after the swap, so it tests the real composed capacities rather than a prediction. Persistence is
+additive: `VehicleDto.equippedTireSet` defaults to `AllTerrain`, so **no schema bump** was needed
+(D-021 precedent), while `equippedModuleIds` now records the fitted loadout and `unlockedTireSets` is
+written from research. A save written before slots existed lists every researched module as equipped;
+`Restore` reconciles that to the highest tier per slot (first two for Utility), which reproduces the
+old rank-based composition exactly, so no existing player's vehicle changes and no research is lost
+(§17.5). The garage panel gained slot/fitted/can-fit state, the module a fit would displace, and one
+row per tire set with the tier that unlocks a locked one.
+
+**Evidence.** Suite 216 → **239/239** passing, 0 warnings; new `CampaignModuleSlotTests` (22) plus
+`UpgradeTable_MatchesCanonicalSlotsAndEffects_D041`; **27/27** mutation checks caught
+(`Docs/evidence/module-slots-2026-10-21/`); `validate_content.py` (now pinning the slot table, the two
+utility slots and all three tire-set unlocks) and `formula_checks.py` clean; 30 Unity-dependent files
+still parse. Not proven here: any Unity-side behaviour — the driver changes are syntax-checked only
+(KI-026), and the M2 gate still needs the 30-minute on-device playtest.
+
+**Remaining dependency-ready work without Unity:** §10.4 free instant hub-to-hub *logistics* transfer
+(cargo between hub stores — travel itself is done); KI-025 per-wheel grip/suspension geometry seam;
+KI-037 `WorldStreamer` host; KI-038 baker `IScatterSurface`; KI-027 slice terrain bake; KI-029
+`IMapTerrainSource`; KI-030 route graph.
 
 ## 2026-10-21 — Batch J: safe-hub travel + per-camp storage (KI-028 closed at domain level)
 

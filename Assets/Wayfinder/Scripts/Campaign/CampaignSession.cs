@@ -331,13 +331,26 @@ namespace Wayfinder.Campaign
             Research.ApplyTo(resolver);
         }
 
-        /// <summary>The single authoritative stat resolution shared by garage display and driving (§11.2).</summary>
+        /// <summary>The tire set mounted on the vehicle (§10.2: one set, mutually exclusive).</summary>
+        public TireSet SelectedTireSet => Research.SelectedTireSet;
+
+        /// <summary>The modules fitted into their §10.2 slots, in tier order.</summary>
+        public IReadOnlyList<string> FittedModules => Research.FittedIds;
+
+        /// <summary>
+        /// The single authoritative stat resolution shared by garage display and driving (§11.2), so
+        /// the garage shows the numbers the mounted tire set and the fitted loadout actually produce.
+        /// The unlock flags come from research, not from which module is fitted: §11.2 tiers 8, 13 and
+        /// 18 unlock the mud, rock and snow sets permanently (DEF-004).
+        /// </summary>
         public EffectiveVehicleStats ResolveStats()
         {
             var resolver = new VehicleStatsResolver();
             ConfigureResolver(resolver);
-            return resolver.Resolve(Vehicle, FuelLiters, Inventory.TotalMassKg(Cargo), TireSet.AllTerrain, SurfaceType.PackedDirt,
-                false, Damage.EngineCondition, Damage.SuspensionCondition, Damage.TiresCondition, false, false, false);
+            return resolver.Resolve(Vehicle, FuelLiters, Inventory.TotalMassKg(Cargo), Research.SelectedTireSet,
+                SurfaceType.PackedDirt, false, Damage.EngineCondition, Damage.SuspensionCondition, Damage.TiresCondition,
+                Research.IsTireSetUnlocked(TireSet.Mud), Research.IsTireSetUnlocked(TireSet.Snow),
+                Research.IsTireSetUnlocked(TireSet.Rock));
         }
 
         internal TransactionId NextTransactionId()

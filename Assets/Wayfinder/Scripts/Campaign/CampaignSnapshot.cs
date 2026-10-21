@@ -4,6 +4,7 @@ using System.Globalization;
 using Wayfinder.Core;
 using Wayfinder.Persistence;
 using Wayfinder.Progression;
+using Wayfinder.Simulation;
 
 namespace Wayfinder.Campaign
 {
@@ -64,8 +65,12 @@ namespace Wayfinder.Campaign
                         body = s.Damage.BodyCondition
                     },
                     // Researched modules are installed automatically in this build (D-023).
-                    equippedModuleIds = ResearchedInTierOrder(s),
-                    unlockedTireSets = new List<string> { "AllTerrain" }
+                    // §10.2: the FITTED loadout, not everything researched (D-041). A save from
+                    // before slots existed lists every researched module here and is reconciled on
+                    // load to the highest tier per slot.
+                    equippedModuleIds = new List<string>(s.Research.FittedIds),
+                    unlockedTireSets = UnlockedTireSetNames(s),
+                    equippedTireSet = s.Research.SelectedTireSet.ToString()
                 }
             };
 
@@ -166,11 +171,9 @@ namespace Wayfinder.Campaign
             s.Economy.Restore(p.wallet?.salvage ?? 0, p.wallet?.escrowedSalvage ?? 0, HubEscrow(p.wallet));
 
             // Research first: it decides cargo slots/payload and tank size.
-            var researched = new List<string>();
-            foreach (var id in p.researchedUpgradeIds ?? new List<string>())
-                foreach (var tier in s.Research.Tiers)
-                    if (tier.Id.Value == id) researched.Add(id);
-            s.Research.Restore(researched);
+            var researched = KnownTiers(s, p.researchedUpgradeIds);
+            var fitted = KnownTiers(s, FittedIdsOf(p, s.ActiveVehicleId));
+            s.Research.Restore(researched, fitted, SelectedTireSetOf(p, s.ActiveVehicleId));
 
             s.Garage.Restore(p.unlockedGarageIds, p.activatedCampIds, p.infrastructureFlags);
 
@@ -312,6 +315,37 @@ namespace Wayfinder.Campaign
         {
             var list = new List<string>(values ?? Array.Empty<string>());
             list.Sort(StringComparer.Ordinal);
+            return list;
+        }
+
+        /// <summary>Keeps only ids the tier table knows, so an older/newer content set cannot crash a load.</summary>
+        static List<string> KnownTiers(CampaignSession s, List<string> ids)
+        {
+            var known = new List<string>();
+            foreach (var id in ids ?? new List<string>())
+                foreach (var tier in s.Research.Tiers)
+                    if (tier.Id.Value == id && !known.Contains(id)) known.Add(id);
+            return known;
+        }
+
+        static List<string> FittedIdsOf(SavePayload p, string vehicleId)
+        {
+            foreach (var v in p.vehicles ?? new List<VehicleDto>())
+                if (v != null && v.id == vehicleId) return v.equippedModuleIds ?? new List<string>();
+            return new List<string>();
+        }
+
+        static TireSet SelectedTireSetOf(SavePayload p, string vehicleId)
+        {
+            foreach (var v in p.vehicles ?? new List<VehicleDto>())
+                if (v != null && v.id == vehicleId && Enum.TryParse(v.equippedTireSet, out TireSet set)) return set;
+            return TireSet.AllTerrain;
+        }
+
+        static List<string> UnlockedTireSetNames(CampaignSession s)
+        {
+            var list = new List<string>();
+            foreach (var set in s.Research.UnlockedTireSets()) list.Add(set.ToString());
             return list;
         }
 

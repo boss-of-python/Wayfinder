@@ -1,0 +1,84 @@
+[headless-cs] Wayfinder.Core: OK — 10 file(s) compiled, 0 Unity-dependent file(s) excluded, 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Simulation: OK — 7 file(s) compiled, 4 Unity-dependent file(s) excluded, 0 error(s), 0 warning(s)
+[headless-cs]     excluded (UnityEngine): Assets/Wayfinder/Scripts/Simulation/ChaseCameraBehaviour.cs
+[headless-cs]     excluded (UnityEngine): Assets/Wayfinder/Scripts/Simulation/SurfaceLabel.cs
+[headless-cs]     excluded (UnityEngine): Assets/Wayfinder/Scripts/Simulation/VehicleController.cs
+[headless-cs]     excluded (UnityEngine): Assets/Wayfinder/Scripts/Simulation/WaterVolume.cs
+[headless-cs] Wayfinder.World: OK — 5 file(s) compiled, 0 Unity-dependent file(s) excluded, 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Progression: OK — 7 file(s) compiled, 0 Unity-dependent file(s) excluded, 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Persistence: OK — 2 file(s) compiled, 0 Unity-dependent file(s) excluded, 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Campaign: OK — 18 file(s) compiled, 0 Unity-dependent file(s) excluded, 0 error(s), 0 warning(s)
+[headless-cs] Wayfinder.Tests.EditMode: OK — 18 file(s) compiled, 0 Unity-dependent file(s) excluded, 0 error(s), 0 warning(s)
+[headless-cs] compile report: Logs/headless/compile-report.json
+[headless-cs] run EditMode suites with NUnitLite 3.13.3: /home/user/.cache/wayfinder-headless-cs/out/Wayfinder.Tests.EditMode.dll --result=/home/user/Wayfinder/Logs/headless/EditMode.headless.xml --labels=Off --workers=1
+NUnitLite 3.13.3 (.NET Standard 2.0)
+Copyright (c) 2022 Charlie Poole, Rob Prouse
+
+Runtime Environment
+   OS Version: Linux 6.1.158+ #1 SMP PREEMPT_DYNAMIC Mon May 11 18:48:24 UTC 2026
+  CLR Version: 3.1.23
+
+Test Files
+    /home/user/.cache/wayfinder-headless-cs/out/Wayfinder.Tests.EditMode.dll
+
+Test Discovery
+  Start time: 2026-10-21 06:04:57Z
+    End time: 2026-10-21 06:04:57Z
+    Duration: 0.045 seconds
+
+fog share per stage: 1.000, 0.943, 0.587, 0.509, 0.346, 0.346
+
+Run Settings
+    Number of Test Workers: 1
+    Work Directory: /home/user/Wayfinder
+    Internal Trace: Off
+
+Test Run Summary
+  Overall result: Passed
+  Test Count: 239, Passed: 239, Failed: 0, Warnings: 0, Inconclusive: 0, Skipped: 0
+  Start time: 2026-10-21 06:04:57Z
+    End time: 2026-10-21 06:05:22Z
+    Duration: 24.675 seconds
+
+Results (nunit3) saved as /home/user/Wayfinder/Logs/headless/EditMode.headless.xml
+[headless-cs] NUnit3 result XML: Logs/headless/EditMode.headless.xml
+[headless-cs] Wayfinder.Core vs .NET Standard 2.1 reference only: OK (10 file(s))
+[headless-cs] Wayfinder.Simulation vs .NET Standard 2.1 reference only: OK (7 file(s))
+[headless-cs] Wayfinder.World vs .NET Standard 2.1 reference only: OK (5 file(s))
+[headless-cs] Wayfinder.Progression vs .NET Standard 2.1 reference only: OK (7 file(s))
+[headless-cs] Wayfinder.Persistence vs .NET Standard 2.1 reference only: OK (2 file(s))
+[headless-cs] Wayfinder.Campaign vs .NET Standard 2.1 reference only: OK (18 file(s))
+[headless-cs] syntax-check (Roslyn 3.9 parser, C# 9) of 30 Unity-dependent file(s) — not type-checked
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/BuildCommands.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/ContentImporter.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/EditorFailureLog.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/ProjectSetup.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/SceneBuilder.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Editor/WorldBaker.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Platform/BootstrapHost.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Platform/CampaignHost.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Platform/InputRouter.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Platform/LifecycleHandler.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Platform/PlatformServices.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/MapGlyphs.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/MapOverlayView.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/MapTextureBinding.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/MinimapView.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/PresentationModels.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/PrototypeSafeArea.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/PrototypeUi.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/ProvingGroundDriver.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/TitleFlowHost.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/TouchHoldButton.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Presentation/VerticalSliceDriver.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Simulation/ChaseCameraBehaviour.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Simulation/SurfaceLabel.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Simulation/VehicleController.cs
+[headless-cs]     Assets/Wayfinder/Scripts/Simulation/WaterVolume.cs
+[headless-cs]     Assets/Wayfinder/Tests/Editor/ProjectSetupTests.cs
+[headless-cs]     Assets/Wayfinder/Tests/PlayMode/CampaignPlayModeTests.cs
+[headless-cs]     Assets/Wayfinder/Tests/PlayMode/MapPlayModeTests.cs
+[headless-cs]     Assets/Wayfinder/Tests/PlayMode/VehiclePlayModeTests.cs
+syntax-check: 30 file(s), 0 syntax error(s)
+[headless-cs] SUMMARY compile=OK tests=OK netstandard2.1-profile=OK syntax=OK
+headless_cs.py all exit=0
