@@ -82,6 +82,16 @@ namespace Wayfinder.Tests
         public void Required3DStreamingAssetsArePresentAndVerified()
         {
             Assert.DoesNotThrow(() => ProjectSetup.VerifyStreamingAssets());
+            var content = Wayfinder.Campaign.CampaignContent.FromDirectory(ProjectSetup.CanonicalContentDir);
+            StreamingMeshLoader.ClearCache();
+            foreach (var def in content.StreamingAssets.Values)
+            {
+                var resource = Resources.Load<TextAsset>(Wayfinder.World.StreamingAssetCatalog.ResourceStemFor(def));
+                Assert.IsNotNull(resource, def.Id + " missing from Resources/StreamingModels — run Setup Project");
+                var mesh = StreamingMeshLoader.LoadMesh(def.Id, content);
+                Assert.IsNotNull(mesh);
+                Assert.AreEqual(def.Id, mesh.name);
+            }
         }
 
         [Test]

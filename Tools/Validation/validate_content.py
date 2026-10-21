@@ -132,7 +132,7 @@ def check_counts():
     count("recipes", len(recipes), 4)
     count("surfaces", len(surfaces), 11)
     count("biomes", len(biomes), 5)
-    count("streaming_assets", len(streaming_assets), 20)
+    count("streaming_assets", len(streaming_assets), 30)
 
     for biome in ("forest", "canyon", "city", "wetlands", "highlands"):
         count(f"landmarks.{biome}", len([l for l in landmarks if l["biome"] == biome]), 20)
@@ -549,6 +549,16 @@ REQUIRED_STREAMING_ASSET_IDS = [
     "env.prop.trail_cairn_marker",
     "env.tree.wetland_cypress",
     "env.rock.canyon_hoodoo",
+    "veh.mule.m2.wheel",
+    "veh.lynx.l3.wheel",
+    "veh.atlas.a4.wheel",
+    "env.hub.outpost_garage",
+    "env.landmark.highland_observatory",
+    "env.landmark.wetland_pump_station",
+    "env.prop.solar_beacon_pod",
+    "env.prop.cargo_pallet_stack",
+    "env.tree.highland_larch",
+    "env.rock.basalt_column_cluster",
 ]
 
 

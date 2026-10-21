@@ -20,10 +20,10 @@ namespace Wayfinder.Tests
         public void TearDown() => DeleteRoot(_tempRoot);
 
         [Test]
-        public void CanonicalCatalogHasExactlyTwentyRequired3DStreamingAssets()
+        public void CanonicalCatalogHasExactlyThirtyRequired3DStreamingAssets()
         {
             Assert.IsTrue(CampaignContent.RequiredFiles.Contains("streaming_assets.json"));
-            Assert.AreEqual(20, StreamingAssetCatalog.RequiredAssetCount);
+            Assert.AreEqual(30, StreamingAssetCatalog.RequiredAssetCount);
             Assert.AreEqual(StreamingAssetCatalog.RequiredAssetCount, Content.StreamingAssets.Count);
             foreach (string requiredId in StreamingAssetCatalog.RequiredAssetIds)
             {
@@ -35,13 +35,15 @@ namespace Wayfinder.Tests
                 Assert.Greater(def.VertexCount, 0);
                 Assert.Greater(def.TriangleCount, 0);
                 Assert.LessOrEqual(def.TriangleCount, def.MaxTrianglesLod0);
+                StringAssert.StartsWith("StreamingModels/", StreamingAssetCatalog.ResourceStemFor(def));
             }
         }
 
         [Test]
-        public void AllTwentyStreamingAssetsExistOnDiskAndMatchSha256AndGeometry()
+        public void AllThirtyStreamingAssetsExistOnDiskAndProduceValidFlattenedMeshBuffers()
         {
-            StreamingAssetCatalog.VerifyAllOnDisk(Content.StreamingAssets, StreamingAssetsDir);
+            var loaded = StreamingAssetCatalog.LoadAllAndVerifyFromDisk(Content.StreamingAssets, StreamingAssetsDir);
+            Assert.AreEqual(StreamingAssetCatalog.RequiredAssetCount, loaded.Count);
 
             foreach (var def in Content.StreamingAssets.Values)
             {
@@ -61,6 +63,29 @@ namespace Wayfinder.Tests
                 Assert.AreEqual(def.UvCount, mesh.Uvs.Count);
                 Assert.AreEqual(def.NormalCount, mesh.Normals.Count);
                 Assert.AreEqual(def.TriangleCount, mesh.Triangles.Count);
+
+                // Verify flattened GPU/collider buffers (both CW Unity winding and CCW OBJ winding)
+                FlattenedMeshBuffers flatCw = mesh.ToFlattenedBuffers(clockwiseWinding: true);
+                FlattenedMeshBuffers flatCcw = mesh.ToFlattenedBuffers(clockwiseWinding: false);
+                Assert.AreEqual(def.Id, flatCw.ObjectName);
+                Assert.AreEqual(def.TriangleCount * 3, flatCw.Triangles.Length);
+                Assert.AreEqual(flatCw.Positions.Length, flatCw.Uvs.Length);
+                Assert.AreEqual(flatCw.Positions.Length, flatCw.Normals.Length);
+                Assert.Greater(flatCw.Positions.Length, 0);
+
+                for (int t = 0; t < def.TriangleCount; t++)
+                {
+                    int b = t * 3;
+                    Assert.AreEqual(flatCcw.Triangles[b], flatCw.Triangles[b]);
+                    Assert.AreEqual(flatCcw.Triangles[b + 1], flatCw.Triangles[b + 2]);
+                    Assert.AreEqual(flatCcw.Triangles[b + 2], flatCw.Triangles[b + 1]);
+                    for (int k = 0; k < 3; k++)
+                    {
+                        int vIdx = flatCw.Triangles[b + k];
+                        Assert.GreaterOrEqual(vIdx, 0);
+                        Assert.Less(vIdx, flatCw.Positions.Length);
+                    }
+                }
             }
         }
 

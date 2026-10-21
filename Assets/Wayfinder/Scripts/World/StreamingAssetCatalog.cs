@@ -63,6 +63,21 @@ namespace Wayfinder.World
         }
     }
 
+    /// <summary>
+    /// Indexed vertex/UV/normal/triangle buffers flattened from <see cref="ObjMeshData"/> so any
+    /// runtime renderer, physics collider, or Unity <c>Mesh</c> builder can consume the 3D asset directly.
+    /// </summary>
+    public sealed class FlattenedMeshBuffers
+    {
+        public string ObjectName = string.Empty;
+        public (float x, float y, float z)[] Positions = Array.Empty<(float x, float y, float z)>();
+        public (float u, float v)[] Uvs = Array.Empty<(float u, float v)>();
+        public (float x, float y, float z)[] Normals = Array.Empty<(float x, float y, float z)>();
+        public int[] Triangles = Array.Empty<int>();
+        public (float x, float y, float z) BoundsMin;
+        public (float x, float y, float z) BoundsMax;
+    }
+
     /// <summary>Engine-free parsed Wavefront OBJ 3D mesh data.</summary>
     public sealed class ObjMeshData
     {
@@ -74,16 +89,77 @@ namespace Wayfinder.World
         public (float x, float y, float z) BoundsMin;
         public (float x, float y, float z) BoundsMax;
         public string Sha256Hex = string.Empty;
+
+        /// <summary>
+        /// Converts the Wavefront OBJ face-index triplets into parallel vertex/UV/normal arrays and a
+        /// flat triangle index buffer. When <paramref name="clockwiseWinding"/> is true (default for Unity's
+        /// left-handed coordinate system), each triangle's second and third indices are swapped from
+        /// right-handed CCW to left-handed CW so outward normals face the camera.
+        /// </summary>
+        public FlattenedMeshBuffers ToFlattenedBuffers(bool clockwiseWinding = true)
+        {
+            var posList = new List<(float x, float y, float z)>(Triangles.Count * 3);
+            var uvList = new List<(float u, float v)>(Triangles.Count * 3);
+            var normList = new List<(float x, float y, float z)>(Triangles.Count * 3);
+            var triIndices = new int[Triangles.Count * 3];
+            var lookup = new Dictionary<(int v, int vt, int vn), int>(Triangles.Count * 3);
+
+            int AddCorner(ObjFaceVertex c)
+            {
+                var key = (c.VertexIndex, c.UvIndex, c.NormalIndex);
+                if (!lookup.TryGetValue(key, out int idx))
+                {
+                    idx = posList.Count;
+                    posList.Add(Vertices[c.VertexIndex]);
+                    uvList.Add(Uvs[c.UvIndex]);
+                    normList.Add(Normals[c.NormalIndex]);
+                    lookup[key] = idx;
+                }
+                return idx;
+            }
+
+            for (int i = 0; i < Triangles.Count; i++)
+            {
+                var tri = Triangles[i];
+                int i0 = AddCorner(tri.A);
+                int i1 = AddCorner(tri.B);
+                int i2 = AddCorner(tri.C);
+                int baseIdx = i * 3;
+                triIndices[baseIdx] = i0;
+                if (clockwiseWinding)
+                {
+                    triIndices[baseIdx + 1] = i2;
+                    triIndices[baseIdx + 2] = i1;
+                }
+                else
+                {
+                    triIndices[baseIdx + 1] = i1;
+                    triIndices[baseIdx + 2] = i2;
+                }
+            }
+
+            return new FlattenedMeshBuffers
+            {
+                ObjectName = ObjectName,
+                Positions = posList.ToArray(),
+                Uvs = uvList.ToArray(),
+                Normals = normList.ToArray(),
+                Triangles = triIndices,
+                BoundsMin = BoundsMin,
+                BoundsMax = BoundsMax
+            };
+        }
     }
 
     /// <summary>
-    /// Pure C# parser and build/runtime verifier for the 20 required 3D streaming assets (§14.2, §14.3).
+    /// Pure C# parser and build/runtime verifier for the 30 required 3D streaming assets (§14.2, §14.3).
     /// No UnityEngine dependency — executes in headless tests, CI validation, and Unity editor setup.
     /// </summary>
     public static class StreamingAssetCatalog
     {
-        public const int RequiredAssetCount = 20;
+        public const int RequiredAssetCount = 30;
         public const string DefaultStreamingAssetsRoot = "Assets/StreamingAssets";
+        public const string ResourcesSubfolder = "StreamingModels";
 
         public static readonly string[] RequiredAssetIds =
         {
@@ -106,7 +182,17 @@ namespace Wayfinder.World
             "env.prop.winch_anchor_bollard",
             "env.prop.trail_cairn_marker",
             "env.tree.wetland_cypress",
-            "env.rock.canyon_hoodoo"
+            "env.rock.canyon_hoodoo",
+            "veh.mule.m2.wheel",
+            "veh.lynx.l3.wheel",
+            "veh.atlas.a4.wheel",
+            "env.hub.outpost_garage",
+            "env.landmark.highland_observatory",
+            "env.landmark.wetland_pump_station",
+            "env.prop.solar_beacon_pod",
+            "env.prop.cargo_pallet_stack",
+            "env.tree.highland_larch",
+            "env.rock.basalt_column_cluster"
         };
 
         public static readonly string[] AllowedCategories =
@@ -301,11 +387,52 @@ namespace Wayfinder.World
         }
 
         /// <summary>
-        /// Verifies that all 10 required 3D streaming assets are present in the catalog and that every
-        /// backing <c>.obj</c> file exists under <paramref name="streamingAssetsRoot"/> and passes
-        /// full geometric + SHA-256 verification.
+        /// Returns the deterministic <c>Resources.Load</c> path for <paramref name="def"/>
+        /// (e.g. <c>"StreamingModels/scout_s1_chassis"</c>), used on mobile builds where
+        /// <c>Application.streamingAssetsPath</c> is packed inside an APK/IPA.
         /// </summary>
-        public static void VerifyAllOnDisk(IReadOnlyDictionary<string, StreamingAssetDefinition> assets,
+        public static string ResourceStemFor(StreamingAssetDefinition def)
+        {
+            if (def == null) throw new ArgumentNullException(nameof(def));
+            string fileName = Path.GetFileNameWithoutExtension(def.RelativePath ?? string.Empty);
+            if (string.IsNullOrEmpty(fileName))
+                throw new InvalidDataException($"{def.Id}: cannot derive resource stem from '{def.RelativePath}'");
+            return ResourcesSubfolder + "/" + fileName;
+        }
+
+        /// <summary>
+        /// Loads, parses, and verifies one required 3D streaming asset by ID from <paramref name="streamingAssetsRoot"/>.
+        /// </summary>
+        public static ObjMeshData LoadAndVerifyFromDisk(string assetId,
+            IReadOnlyDictionary<string, StreamingAssetDefinition> assets,
+            string streamingAssetsRoot = DefaultStreamingAssetsRoot)
+        {
+            if (string.IsNullOrEmpty(assetId))
+                throw new ArgumentException("assetId is required", nameof(assetId));
+            if (assets == null)
+                throw new ArgumentNullException(nameof(assets));
+            if (string.IsNullOrEmpty(streamingAssetsRoot))
+                throw new ArgumentException("streamingAssetsRoot is required", nameof(streamingAssetsRoot));
+
+            if (!assets.TryGetValue(assetId, out var def) || def == null)
+                throw new KeyNotFoundException($"3D streaming asset '{assetId}' is not registered in the catalog");
+
+            string fullPath = Path.Combine(streamingAssetsRoot,
+                def.RelativePath.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(fullPath))
+                throw new FileNotFoundException(
+                    $"required 3D streaming asset file missing on disk: {fullPath} ({assetId})", fullPath);
+
+            string objText = File.ReadAllText(fullPath, Encoding.UTF8);
+            return VerifyAssetContent(def, objText);
+        }
+
+        /// <summary>
+        /// Loads, parses, and verifies all 30 required 3D streaming assets from <paramref name="streamingAssetsRoot"/>,
+        /// returning a dictionary keyed by asset ID so editor and runtime tools can consume any mesh immediately.
+        /// </summary>
+        public static IReadOnlyDictionary<string, ObjMeshData> LoadAllAndVerifyFromDisk(
+            IReadOnlyDictionary<string, StreamingAssetDefinition> assets,
             string streamingAssetsRoot = DefaultStreamingAssetsRoot)
         {
             if (assets == null) throw new ArgumentNullException(nameof(assets));
@@ -316,20 +443,25 @@ namespace Wayfinder.World
                 throw new InvalidDataException(
                     $"expected exactly {RequiredAssetCount} required 3D streaming assets, found {assets.Count}");
 
+            var loaded = new Dictionary<string, ObjMeshData>(StringComparer.Ordinal);
             foreach (string requiredId in RequiredAssetIds)
             {
                 if (!assets.TryGetValue(requiredId, out var def) || def == null)
                     throw new InvalidDataException($"missing required 3D streaming asset '{requiredId}'");
-
-                string fullPath = Path.Combine(streamingAssetsRoot,
-                    def.RelativePath.Replace('/', Path.DirectorySeparatorChar));
-                if (!File.Exists(fullPath))
-                    throw new FileNotFoundException(
-                        $"required 3D streaming asset file missing on disk: {fullPath} ({requiredId})", fullPath);
-
-                string objText = File.ReadAllText(fullPath, Encoding.UTF8);
-                VerifyAssetContent(def, objText);
+                loaded[requiredId] = LoadAndVerifyFromDisk(requiredId, assets, streamingAssetsRoot);
             }
+            return loaded;
+        }
+
+        /// <summary>
+        /// Verifies that all 30 required 3D streaming assets are present in the catalog and that every
+        /// backing <c>.obj</c> file exists under <paramref name="streamingAssetsRoot"/> and passes
+        /// full geometric + SHA-256 verification.
+        /// </summary>
+        public static void VerifyAllOnDisk(IReadOnlyDictionary<string, StreamingAssetDefinition> assets,
+            string streamingAssetsRoot = DefaultStreamingAssetsRoot)
+        {
+            LoadAllAndVerifyFromDisk(assets, streamingAssetsRoot);
         }
 
         static float ParseFloat(string token, string label, int line)
