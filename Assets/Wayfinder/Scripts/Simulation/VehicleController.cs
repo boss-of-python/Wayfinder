@@ -59,6 +59,10 @@ namespace Wayfinder.Simulation
         readonly float[] _slip = new float[4];
         readonly float[] _wheelTorque = new float[4];
         readonly SurfaceType[] _surfaces = new SurfaceType[4];
+        readonly Vector3[] _baseWheelCenters = new Vector3[4];
+        readonly bool[] _centerCaptured = new bool[4];
+        WheelRigSettings _rigSettings;
+        bool _rigApplied;
 
         /// <summary>
         /// Wet-surface flag for grip composition (§4.4). Until the weather system drives this it is
@@ -199,6 +203,7 @@ namespace Wayfinder.Simulation
 
             SampleGrounded();
             var stats = ResolveStats();
+            ApplyEffectiveStats(stats);
 
             bool reverseIndicated;
             float totalDriveTorque = _powertrain.Step(
