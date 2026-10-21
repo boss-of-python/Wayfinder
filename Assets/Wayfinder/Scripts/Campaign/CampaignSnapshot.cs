@@ -47,32 +47,16 @@ namespace Wayfinder.Campaign
                 completedContractIds = new List<string>(s.Contracts.CompletedIds),
                 protectedLedgerItemIds = new List<string>(s.Inventory.ProtectedLedgerItems),
                 relicIds = Sorted(s.Discovery.RelicIds),
-                ownedVehicleIds = new List<string> { s.ActiveVehicleId },
+                ownedVehicleIds = Sorted(s.OwnedVehicles),
+                equippedCosmeticIds = Sorted(s.EquippedCosmetics),
+                deliveredSiteIds = Sorted(s.DeliveredSites),
+                visitedVolumeIds = Sorted(s.VisitedVolumes),
+                repeatableCompletionCount = s.RepeatableCompletionCount,
+                campaignCompleted = s.CampaignCompleted,
                 nextTransactionSequence = s.NextSequence
             };
 
-            p.vehicles = new List<VehicleDto>
-            {
-                new VehicleDto
-                {
-                    id = s.ActiveVehicleId,
-                    fuelLiters = s.FuelLiters,
-                    condition = new ConditionDto
-                    {
-                        engine = s.Damage.EngineCondition,
-                        suspension = s.Damage.SuspensionCondition,
-                        tires = s.Damage.TiresCondition,
-                        body = s.Damage.BodyCondition
-                    },
-                    // Researched modules are installed automatically in this build (D-023).
-                    // §10.2: the FITTED loadout, not everything researched (D-041). A save from
-                    // before slots existed lists every researched module here and is reconciled on
-                    // load to the highest tier per slot.
-                    equippedModuleIds = new List<string>(s.Research.FittedIds),
-                    unlockedTireSets = UnlockedTireSetNames(s),
-                    equippedTireSet = s.Research.SelectedTireSet.ToString()
-                }
-            };
+            p.vehicles = s.CaptureFleetDtos();
 
             foreach (var code in s.Missions.CompletedCodes)
                 p.completedMissionIds.Add(MissionPrefix + code);
@@ -171,11 +155,17 @@ namespace Wayfinder.Campaign
             s.Economy.Restore(p.wallet?.salvage ?? 0, p.wallet?.escrowedSalvage ?? 0, HubEscrow(p.wallet));
 
             // Research first: it decides cargo slots/payload and tank size.
+            string targetVehicleId = !string.IsNullOrEmpty(p.activeVehicleId) && s.Content.Vehicles.ContainsKey(p.activeVehicleId)
+                ? p.activeVehicleId
+                : CampaignSession.ScoutVehicleId;
+            s.ActiveVehicleId = targetVehicleId;
+            s.Vehicle = s.Content.VehicleSpecById(targetVehicleId);
             var researched = KnownTiers(s, p.researchedUpgradeIds);
             var fitted = KnownTiers(s, FittedIdsOf(p, s.ActiveVehicleId));
             s.Research.Restore(researched, fitted, SelectedTireSetOf(p, s.ActiveVehicleId));
 
             s.Garage.Restore(p.unlockedGarageIds, p.activatedCampIds, p.infrastructureFlags);
+            s.RestoreCompletionState(p);
 
             var completed = new List<string>();
             foreach (var id in p.completedMissionIds ?? new List<string>())
@@ -187,6 +177,7 @@ namespace Wayfinder.Campaign
                 active.Add((StripMissionPrefix(m.id), state, (m.objectiveCounters ?? new List<int>()).ToArray()));
             }
             s.Missions.Restore(completed, active);
+            s.CampaignCompleted = p.campaignCompleted || s.Missions.IsCompletedCode(CampaignSession.FinaleMissionCode);
 
             var world = p.world ?? new WorldStateDto();
             var relics = new SortedSet<string>(StringComparer.Ordinal);

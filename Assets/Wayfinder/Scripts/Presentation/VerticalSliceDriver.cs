@@ -206,14 +206,11 @@ namespace Wayfinder.Presentation
             vehicle.ZeroInputsAndHold();
         }
 
-        /// <summary>Session → vehicle after load/extraction. Only tank size and cargo mass are wired so far (KI-025).</summary>
+        /// <summary>Session → vehicle after load/extraction/chassis swap (closes KI-025, KI-038, KI-040).</summary>
         void ApplySessionToVehicle()
         {
-            // Researched modules reach the physics rig through its own resolver (KI-025, D-030); the
-            // tank clamp follows the resolved capacity, so the spec is no longer widened at runtime.
+            vehicle.SwitchVehicleSpec(_session.Vehicle);
             _session.ConfigureResolver(vehicle.StatsResolver);
-            // The mounted tire set drives the surface grip lookup (§10.2), and the resolver composes
-            // only the modules fitted into their slots, so the garage shows what the rig will do.
             vehicle.tireSet = _session.SelectedTireSet;
             vehicle.SetFuel(_session.FuelLiters);
             vehicle.Damage.EngineCondition = _session.Damage.EngineCondition;
@@ -221,7 +218,21 @@ namespace Wayfinder.Presentation
             vehicle.Damage.TiresCondition = _session.Damage.TiresCondition;
             vehicle.Damage.BodyCondition = _session.Damage.BodyCondition;
             vehicle.SetCargoMass(_session.Inventory.TotalMassKg(CampaignSession.Cargo));
+            vehicle.ApplyEffectiveStats(_session.ResolveStats());
             if (_session.Damage.EngineCondition > 0) vehicle.RestartAfterWaterRecovery();
+            ApplySettingsToUi();
+        }
+
+        void ApplySettingsToUi()
+        {
+            if (_root == null || _session?.Settings == null) return;
+            var scaler = _root.GetComponentInParent<CanvasScaler>();
+            if (scaler != null) scaler.scaleFactor = _session.Settings.uiScale;
+            if (_interactButton != null)
+            {
+                var label = _interactButton.GetComponentInChildren<Text>();
+                if (label != null) label.text = _session.Settings.holdToInteract ? "HOLD\nINTERACT" : "TAP\nINTERACT";
+            }
         }
 
         // ------------------------------------------------------------------ UI: driving
@@ -245,6 +256,24 @@ namespace Wayfinder.Presentation
                 _armedSupply = _supplyMessage = string.Empty;
                 ShowSupplies();
             });
+
+            var winchButton = PrototypeUi.Button(_drivePanel, "Winch", new Vector2(.02f, .47f), new Vector2(.16f, .55f));
+            winchButton.onClick.AddListener(() =>
+            {
+                if (vehicle.Winch == null) return;
+                if (vehicle.Winch.State == WinchState.Attached || vehicle.Winch.State == WinchState.OverloadPaused)
+                {
+                    vehicle.DetachWinch();
+                }
+                else if (!vehicle.EngageWinchAim(out var aimReason) || !vehicle.AttachSelectedWinchAnchor(out aimReason))
+                {
+                    _toasts.Enqueue($"Winch unavailable: {aimReason}");
+                }
+            });
+            var reelButton = PrototypeUi.Button(_drivePanel, "Reel", new Vector2(.02f, .38f), new Vector2(.16f, .46f));
+            reelButton.navigation = new Navigation { mode = Navigation.Mode.None };
+            var reelHold = reelButton.gameObject.AddComponent<TouchHoldButton>();
+            reelHold.Changed += value => vehicle.SetWinchReelHeld(!_paused && value);
 
             _interactButton = PrototypeUi.Button(_drivePanel, "HOLD\nINTERACT", new Vector2(.42f, .14f), new Vector2(.58f, .26f));
             _interactButton.navigation = new Navigation { mode = Navigation.Mode.None };
@@ -610,8 +639,133 @@ namespace Wayfinder.Presentation
             PrototypeUi.Button(overlay, "Craft camp kit (80 + materials)", new Vector2(.52f, .10f), new Vector2(.74f, .18f))
                 .onClick.AddListener(() => Act(_session.Craft("recipe.camp_kit")));
             PrototypeUi.Button(overlay, "Depart", new Vector2(.76f, .10f), new Vector2(.98f, .18f)).onClick.AddListener(OnDepart);
-            PrototypeUi.Button(overlay, "Map (M)", new Vector2(.52f, .02f), new Vector2(.74f, .08f)).onClick.AddListener(OpenMap);
+            PrototypeUi.Button(overlay, "Map (M)", new Vector2(.52f, .02f), new Vector2(.66f, .08f)).onClick.AddListener(OpenMap);
+            PrototypeUi.Button(overlay, "Fleet & Jobs", new Vector2(.67f, .02f), new Vector2(.82f, .08f)).onClick.AddListener(ShowFleetAndContracts);
+            PrototypeUi.Button(overlay, "Settings & Time", new Vector2(.83f, .02f), new Vector2(.98f, .08f)).onClick.AddListener(ShowSettingsOverlay);
             PrototypeUi.Button(overlay, "Save & quit to title", new Vector2(.02f, .02f), new Vector2(.24f, .08f)).onClick.AddListener(GoToTitle);
+        }
+
+        void ShowFleetAndContracts()
+        {
+            var overlay = OpenOverlay("Fleet");
+            var m = GarageModel.Build(_session);
+            PrototypeUi.Label(overlay, $"{DisplayNames.Garage(_session.Expedition.LastGarageId)} — Fleet, All Missions & Contracts",
+                new Vector2(.02f, .92f), new Vector2(.98f, .99f), 22).alignment = TextAnchor.MiddleLeft;
+
+            float y = .88f;
+            PrototypeUi.Label(overlay, "Fleet (§10.1)", new Vector2(.02f, y - .04f), new Vector2(.48f, y), 18).alignment = TextAnchor.MiddleLeft;
+            y -= .045f;
+            foreach (var f in m.Fleet)
+            {
+                string id = f.VehicleId;
+                PrototypeUi.Label(overlay, $"{f.Name} · {f.CargoSlots} slots · {f.PayloadKg:0} kg · {f.FuelLiters:0} L",
+                    new Vector2(.02f, y - .045f), new Vector2(.34f, y), 14).alignment = TextAnchor.MiddleLeft;
+                string action = f.Active ? "Active" : f.Owned ? "Select" : $"Unlock ({f.Cost})";
+                var btn = PrototypeUi.Button(overlay, action, new Vector2(.35f, y - .045f), new Vector2(.48f, y - .005f));
+                btn.interactable = f.CanSelect || f.CanPurchase;
+                btn.onClick.AddListener(() =>
+                {
+                    var res = f.Owned ? _session.SelectVehicle(id) : _session.PurchaseVehicle(id);
+                    if (!res.Success) _toasts.Enqueue(res.Detail);
+                    ApplySessionToVehicle();
+                    ShowFleetAndContracts();
+                });
+                y -= .05f;
+            }
+
+            y -= .02f;
+            PrototypeUi.Label(overlay, "Contract Board (§9.3)", new Vector2(.02f, y - .04f), new Vector2(.48f, y), 18).alignment = TextAnchor.MiddleLeft;
+            y -= .045f;
+            foreach (var offer in _session.AvailableContracts())
+            {
+                string cid = offer.Id;
+                int payout = offer.RewardSalvage > 0 ? offer.RewardSalvage : offer.RewardMin;
+                PrototypeUi.Label(overlay, $"{offer.Id} ({offer.Pattern}) · +{payout} Salvage",
+                    new Vector2(.02f, y - .045f), new Vector2(.35f, y), 14).alignment = TextAnchor.MiddleLeft;
+                PrototypeUi.Button(overlay, "Accept", new Vector2(.36f, y - .045f), new Vector2(.48f, y - .005f))
+                    .onClick.AddListener(() =>
+                    {
+                        var r = _session.AcceptContract(cid);
+                        if (!r.Success) _toasts.Enqueue(r.Detail);
+                        ShowFleetAndContracts();
+                    });
+                y -= .05f;
+            }
+
+            float ry = .88f;
+            PrototypeUi.Label(overlay, "Campaign Spine Q01–Q20 (§9.2)", new Vector2(.52f, ry - .04f), new Vector2(.98f, ry), 18).alignment = TextAnchor.MiddleLeft;
+            ry -= .045f;
+            foreach (var mr in m.AllMissions)
+            {
+                if (mr.State == Wayfinder.Core.MissionState.Locked && ry < .32f) continue;
+                if (ry < .16f) break;
+                string code = mr.Code;
+                PrototypeUi.Label(overlay, $"{mr.Code} {mr.Name} [{mr.State}]",
+                    new Vector2(.52f, ry - .038f), new Vector2(.84f, ry), 13).alignment = TextAnchor.MiddleLeft;
+                if (mr.CanAccept)
+                {
+                    PrototypeUi.Button(overlay, "Accept", new Vector2(.85f, ry - .038f), new Vector2(.98f, ry - .003f))
+                        .onClick.AddListener(() => { _session.AcceptMission(code); ShowFleetAndContracts(); });
+                }
+                ry -= .04f;
+            }
+
+            if (_session.CampaignCompleted)
+            {
+                PrototypeUi.Label(overlay, "★ AN ATLAS FOR EVERYONE COMPLETE — Frontier Observatory broadcast active. Continue exploring freely!",
+                    new Vector2(.02f, .10f), new Vector2(.98f, .16f), 16).alignment = TextAnchor.MiddleCenter;
+            }
+
+            PrototypeUi.Button(overlay, "Back to Garage", new Vector2(.76f, .02f), new Vector2(.98f, .08f))
+                .onClick.AddListener(ShowGarage);
+        }
+
+        void ShowSettingsOverlay()
+        {
+            var overlay = OpenOverlay("Settings");
+            var s = _session.Settings;
+            PrototypeUi.Label(overlay, "Settings, Accessibility & Calm Time (§3.5, §12.2, §17.3)",
+                new Vector2(.02f, .90f), new Vector2(.98f, .98f), 22).alignment = TextAnchor.MiddleLeft;
+
+            PrototypeUi.Button(overlay, $"Interact Mode: {(s.holdToInteract ? "Hold" : "Single Tap")}",
+                new Vector2(.04f, .76f), new Vector2(.46f, .84f)).onClick.AddListener(() =>
+            {
+                _session.UpdateSettings(cfg => cfg.holdToInteract = !cfg.holdToInteract);
+                ApplySettingsToUi();
+                ShowSettingsOverlay();
+            });
+
+            PrototypeUi.Button(overlay, $"UI Scale: {s.uiScale:0.00}× (cycle 1.0–1.5×)",
+                new Vector2(.52f, .76f), new Vector2(.96f, .84f)).onClick.AddListener(() =>
+            {
+                _session.UpdateSettings(cfg => cfg.uiScale = cfg.uiScale >= 1.45f ? 1.0f : cfg.uiScale + 0.25f);
+                ApplySettingsToUi();
+                ShowSettingsOverlay();
+            });
+
+            PrototypeUi.Button(overlay, $"Left-Handed Controls: {(s.leftHandedLayout ? "On" : "Off")}",
+                new Vector2(.04f, .64f), new Vector2(.46f, .72f)).onClick.AddListener(() =>
+            {
+                _session.UpdateSettings(cfg => cfg.leftHandedLayout = !cfg.leftHandedLayout);
+                ShowSettingsOverlay();
+            });
+
+            PrototypeUi.Button(overlay, $"Quality Tier: {s.qualityTier}",
+                new Vector2(.52f, .64f), new Vector2(.96f, .72f)).onClick.AddListener(() =>
+            {
+                _session.UpdateSettings(cfg => cfg.qualityTier = cfg.qualityTier == "Low" ? "Balanced" : cfg.qualityTier == "Balanced" ? "High" : "Low");
+                ShowSettingsOverlay();
+            });
+
+            PrototypeUi.Label(overlay, $"Current Wetlands Tide: {_session.CurrentTideState}",
+                new Vector2(.04f, .50f), new Vector2(.96f, .58f), 18).alignment = TextAnchor.MiddleLeft;
+            PrototypeUi.Button(overlay, "Rest → Low Tide", new Vector2(.04f, .40f), new Vector2(.46f, .48f))
+                .onClick.AddListener(() => { _session.WaitForTide(Wayfinder.World.WetlandWaterState.LowWater); ShowSettingsOverlay(); });
+            PrototypeUi.Button(overlay, "Rest → High Tide", new Vector2(.52f, .40f), new Vector2(.96f, .48f))
+                .onClick.AddListener(() => { _session.WaitForTide(Wayfinder.World.WetlandWaterState.HighWater); ShowSettingsOverlay(); });
+
+            PrototypeUi.Button(overlay, "Back to Garage", new Vector2(.76f, .04f), new Vector2(.96f, .12f))
+                .onClick.AddListener(ShowGarage);
         }
 
         /// <summary>§10.4 sell-back (40 %, rounded down): first tap arms, second tap sells one unit (critical save).</summary>

@@ -2518,9 +2518,9 @@
     "kind": "relay",
     "biome": "city",
     "positionHint": {
-      "x": 4608.0,
-      "y": 76.37,
-      "z": 2304.0
+      "x": 4820.0,
+      "y": 107.11,
+      "z": 2680.0
     },
     "radiusMeters": 15.0,
     "missionCodes": [
@@ -5144,9 +5144,9 @@
     "kind": "relay",
     "biome": "highlands",
     "positionHint": {
-      "x": 1792.0,
-      "y": 367.6,
-      "z": 5120.0
+      "x": 2020.0,
+      "y": 378.83,
+      "z": 5240.0
     },
     "radiusMeters": 15.0,
     "missionCodes": [

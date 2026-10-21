@@ -348,6 +348,67 @@ namespace Wayfinder.Persistence
             string dir = SlotDir(slot);
             if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
         }
+
+        // ------------------------------------------------------------------ independent settings file (§17.3, KI-045)
+
+        public const string SettingsFileName = "settings.json";
+        public const string SettingsBackupName = "settings.bak";
+
+        public SettingsFile LoadSettings()
+        {
+            foreach (string name in new[] { SettingsFileName, SettingsBackupName })
+            {
+                string path = Path.Combine(_rootDirectory, name);
+                if (!File.Exists(path)) continue;
+                try
+                {
+                    var parsed = JsonConvert.DeserializeObject<SettingsFile>(File.ReadAllText(path), SaveJson.ReadSettings);
+                    if (parsed != null) return NormalizeSettings(parsed);
+                }
+                catch
+                {
+                    // Fall through to backup or defaults.
+                }
+            }
+            return NormalizeSettings(new SettingsFile());
+        }
+
+        public bool SaveSettings(SettingsFile settings)
+        {
+            if (settings == null) throw new ArgumentNullException(nameof(settings));
+            var normalized = NormalizeSettings(settings);
+            Directory.CreateDirectory(_rootDirectory);
+            string primary = Path.Combine(_rootDirectory, SettingsFileName);
+            string backup = Path.Combine(_rootDirectory, SettingsBackupName);
+            string temp = Path.Combine(_rootDirectory, "settings.tmp");
+            string json = JsonConvert.SerializeObject(normalized, SaveJson.WriteSettings);
+
+            using (var stream = new FileStream(temp, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var writer = new StreamWriter(stream, Encoding.UTF8))
+            {
+                writer.Write(json);
+                writer.Flush();
+                stream.Flush(flushToDisk: true);
+            }
+            if (File.Exists(primary))
+            {
+                TryDelete(backup);
+                File.Move(primary, backup);
+            }
+            File.Move(temp, primary);
+            return true;
+        }
+
+        public static SettingsFile NormalizeSettings(SettingsFile s)
+        {
+            s.uiScale = Math.Max(1.0f, Math.Min(1.5f, s.uiScale));
+            s.subtitleSize = Math.Max(0.8f, Math.Min(1.6f, s.subtitleSize));
+            s.musicVolume = Math.Max(0f, Math.Min(1f, s.musicVolume));
+            s.sfxVolume = Math.Max(0f, Math.Min(1f, s.sfxVolume));
+            if (string.IsNullOrEmpty(s.language)) s.language = "en";
+            if (string.IsNullOrEmpty(s.qualityTier)) s.qualityTier = "Balanced";
+            return s;
+        }
     }
 
     /// <summary>

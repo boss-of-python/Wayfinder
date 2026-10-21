@@ -157,13 +157,17 @@ ASSEMBLIES = [
     ("Wayfinder.Campaign", "Scripts/Campaign",
      ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World", "Wayfinder.Progression", "Wayfinder.Persistence"],
      ["Newtonsoft.Json"]),
-    ("Wayfinder.Tests.EditMode", "Tests/EditMode",
+    ("Wayfinder.Presentation", "Scripts/Presentation",
      ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World", "Wayfinder.Progression", "Wayfinder.Persistence",
       "Wayfinder.Campaign"],
+     ["Newtonsoft.Json"]),
+    ("Wayfinder.Tests.EditMode", "Tests/EditMode",
+     ["Wayfinder.Core", "Wayfinder.Simulation", "Wayfinder.World", "Wayfinder.Progression", "Wayfinder.Persistence",
+      "Wayfinder.Campaign", "Wayfinder.Presentation"],
      ["Newtonsoft.Json", "nunit.framework"]),
 ]
 # Assemblies whose every file needs UnityEngine/UnityEditor — syntax-checked only.
-UNITY_ONLY_DIRS = ["Scripts/Platform", "Scripts/Presentation", "Scripts/Editor", "Tests/PlayMode", "Tests/Editor"]
+UNITY_ONLY_DIRS = ["Scripts/Platform", "Scripts/Editor", "Tests/PlayMode", "Tests/Editor"]
 
 NUNITLITE_HOST_CS = r'''
 using System;

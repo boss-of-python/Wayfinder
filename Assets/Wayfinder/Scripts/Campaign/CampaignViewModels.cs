@@ -236,25 +236,80 @@ namespace Wayfinder.Campaign
             public readonly List<StackRow> Stacks = new List<StackRow>();
         }
 
+        public sealed class VehicleRow
+        {
+            public string VehicleId, Name, Role, RequiredMission;
+            public int Cost, CargoSlots;
+            public float PayloadKg, FuelLiters;
+            public bool Owned, Active, CanPurchase, CanSelect;
+        }
+
         public int Wallet, Escrow;
         public string CapacityLine = string.Empty;
+        public string ActiveVehicleId = string.Empty;
+        public bool CampaignCompleted;
         /// <summary>The hub the player is standing at, and every hub property may move between (§10.4).</summary>
         public string CurrentHubId = string.Empty;
         public readonly List<LogisticsRow> Logistics = new List<LogisticsRow>();
         /// <summary>The mounted tire set, and every set with its unlock state (§10.2).</summary>
         public string SelectedTireSet = string.Empty;
         public readonly List<TireRow> TireSets = new List<TireRow>();
+        public readonly List<VehicleRow> Fleet = new List<VehicleRow>();
         public readonly List<ResearchRow> Research = new List<ResearchRow>();
         public readonly List<MissionRow> Missions = new List<MissionRow>();
+        public readonly List<MissionRow> AllMissions = new List<MissionRow>();
         public readonly List<StackRow> Cargo = new List<StackRow>();
         public readonly List<StackRow> Storage = new List<StackRow>();
 
         public static GarageModel Build(CampaignSession s, int maxResearchRows = 20)
         {
-            var m = new GarageModel { Wallet = s.Economy.BankedSalvage, Escrow = s.Economy.EscrowedSalvage };
+            var m = new GarageModel
+            {
+                Wallet = s.Economy.BankedSalvage,
+                Escrow = s.Economy.EscrowedSalvage,
+                ActiveVehicleId = s.ActiveVehicleId,
+                CampaignCompleted = s.CampaignCompleted
+            };
             var stats = s.ResolveStats();
-            m.CapacityLine = string.Format(CultureInfo.InvariantCulture, "Scout S1 · {0} slots · {1:0} kg payload · {2:0} L tank",
-                stats.CargoSlots, stats.PayloadKg, stats.FuelCapacityLiters);
+            string chassisLabel = s.ActiveVehicleId switch
+            {
+                "vehicle.mule.m2" => "Mule M2",
+                "vehicle.lynx.l3" => "Lynx L3",
+                "vehicle.atlas.a4" => "Atlas A4",
+                _ => "Scout S1"
+            };
+            m.CapacityLine = string.Format(CultureInfo.InvariantCulture, "{0} · {1} slots · {2:0} kg payload · {3:0} L tank",
+                chassisLabel, stats.CargoSlots, stats.PayloadKg, stats.FuelCapacityLiters);
+
+            foreach (var kv in s.Content.Vehicles)
+            {
+                var v = kv.Value;
+                bool owned = false;
+                foreach (var oid in s.OwnedVehicles) if (oid == v.Id) { owned = true; break; }
+                bool active = v.Id == s.ActiveVehicleId;
+                bool prereqOk = string.IsNullOrEmpty(v.RequiredMissionCode) || s.Missions.IsCompletedCode(v.RequiredMissionCode);
+                m.Fleet.Add(new VehicleRow
+                {
+                    VehicleId = v.Id,
+                    Name = v.Id switch
+                    {
+                        "vehicle.mule.m2" => "Mule M2",
+                        "vehicle.lynx.l3" => "Lynx L3",
+                        "vehicle.atlas.a4" => "Atlas A4",
+                        _ => "Scout S1"
+                    },
+                    Role = v.Role,
+                    RequiredMission = v.RequiredMissionCode,
+                    Cost = v.UnlockSalvageCost,
+                    CargoSlots = v.Spec.CargoSlots,
+                    PayloadKg = v.Spec.PayloadKg,
+                    FuelLiters = v.Spec.FuelCapacityLiters,
+                    Owned = owned,
+                    Active = active,
+                    CanPurchase = s.AtGarage && !owned && prereqOk && s.Economy.BankedSalvage >= v.UnlockSalvageCost,
+                    CanSelect = s.AtGarage && owned && !active
+                });
+            }
 
             bool previousResearched = true;
             foreach (var tier in s.Research.Tiers)
@@ -322,22 +377,29 @@ namespace Wayfinder.Campaign
             foreach (var code in s.Content.Slice.MissionCodes)
             {
                 if (!s.Missions.Definitions.TryGetValue(code, out var def)) continue;
-                var row = new MissionRow { Code = code, Name = s.Content.MissionName(code), State = s.Missions.StateOf(code) };
-                var counters = s.Missions.ObjectiveCounters(code);
-                for (int i = 0; i < def.Objectives.Count; i++)
-                {
-                    var o = def.Objectives[i];
-                    bool done = row.State == MissionState.Completed || (i < counters.Length && counters[i] >= o.Count);
-                    row.Objectives.Add((done ? "✓ " : "• ") + ObjectiveText.Describe(o, s.Content));
-                }
-                m.Missions.Add(row);
+                m.Missions.Add(BuildMissionRow(s, code, def));
             }
+            foreach (var def in s.Content.MissionDefinitions)
+                m.AllMissions.Add(BuildMissionRow(s, def.DisplayCode, def));
 
             AddStacks(s, CampaignSession.Cargo, m.Cargo);
             AddStacks(s, CampaignSession.GarageStorage, m.Storage);
             AddSellInfo(s, m.Cargo, fromCargo: true);
             AddSellInfo(s, m.Storage, fromCargo: false);
             return m;
+        }
+
+        static MissionRow BuildMissionRow(CampaignSession s, string code, MissionDefinition def)
+        {
+            var row = new MissionRow { Code = code, Name = s.Content.MissionName(code), State = s.Missions.StateOf(code) };
+            var counters = s.Missions.ObjectiveCounters(code);
+            for (int i = 0; i < def.Objectives.Count; i++)
+            {
+                var o = def.Objectives[i];
+                bool done = row.State == MissionState.Completed || (i < counters.Length && counters[i] >= o.Count);
+                row.Objectives.Add((done ? "✓ " : "• ") + ObjectiveText.Describe(o, s.Content));
+            }
+            return row;
         }
 
         /// <summary>Display label for a §10.2 tire set, until localization string tables exist.</summary>

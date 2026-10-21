@@ -54,6 +54,11 @@ namespace Wayfinder.Persistence
         public List<string> protectedLedgerItemIds = new List<string>();
         public List<string> relicIds = new List<string>();
         public List<string> ownedVehicleIds = new List<string> { "vehicle.scout.s1" };
+        public List<string> equippedCosmeticIds = new List<string>();
+        public List<string> deliveredSiteIds = new List<string>();
+        public List<string> visitedVolumeIds = new List<string>();
+        public int repeatableCompletionCount;
+        public bool campaignCompleted;
         /// <summary>
         /// Next append-only transaction sequence number (§2.3). Persisted so ids issued after a
         /// reload can never collide with ids already in appliedTransactionIds — a collision would

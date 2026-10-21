@@ -118,6 +118,7 @@ namespace Wayfinder.Campaign
                 Expedition.Pose = SpawnFor(garageId);
                 Expedition.LastSafePose = Expedition.Pose;
                 if (Missions.IsCompletedCode("Q01")) TutorialFlags.Remove(TutorialFlag);
+                CheckFinaleCompletion();
                 summary.WalletAfter = Economy.BankedSalvage;
                 Notice(CampaignNoticeKind.Banked, $"Banked {units + escrow} Salvage", units + escrow, garageId);
                 return CommandResult.Ok();

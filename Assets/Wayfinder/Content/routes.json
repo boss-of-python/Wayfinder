@@ -100,9 +100,9 @@
     {
       "id": "relay.city",
       "position": {
-        "x": 4608.0,
-        "y": 76.37,
-        "z": 2304.0
+        "x": 4820.0,
+        "y": 107.11,
+        "z": 2680.0
       }
     },
     {
@@ -164,9 +164,9 @@
     {
       "id": "relay.highlands",
       "position": {
-        "x": 1792.0,
-        "y": 367.6,
-        "z": 5120.0
+        "x": 2020.0,
+        "y": 378.83,
+        "z": 5240.0
       }
     },
     {
@@ -1429,9 +1429,9 @@
       "roadClass": "Primary",
       "capabilityBand": "Gentle",
       "requiredInfrastructureFlag": "",
-      "lengthMeters": 25.0,
-      "rawLengthMeters": 8.9,
-      "maxGradeDegrees": 1.22,
+      "lengthMeters": 439.1,
+      "rawLengthMeters": 439.1,
+      "maxGradeDegrees": 5.93,
       "lowWaterDepthMeters": 0.0,
       "highWaterDepthMeters": 0.0,
       "singleTankSafe": true,
@@ -1442,9 +1442,34 @@
           "z": 2300.0
         },
         {
-          "x": 4608.0,
-          "y": 76.37,
-          "z": 2304.0
+          "x": 4636.7,
+          "y": 78.76,
+          "z": 2363.3
+        },
+        {
+          "x": 4673.3,
+          "y": 86.37,
+          "z": 2426.7
+        },
+        {
+          "x": 4710.0,
+          "y": 90.68,
+          "z": 2490.0
+        },
+        {
+          "x": 4746.7,
+          "y": 97.24,
+          "z": 2553.3
+        },
+        {
+          "x": 4783.3,
+          "y": 102.41,
+          "z": 2616.7
+        },
+        {
+          "x": 4820.0,
+          "y": 107.11,
+          "z": 2680.0
         }
       ]
     },
@@ -2505,9 +2530,9 @@
       "roadClass": "Primary",
       "capabilityBand": "Gentle",
       "requiredInfrastructureFlag": "",
-      "lengthMeters": 25.0,
-      "rawLengthMeters": 21.5,
-      "maxGradeDegrees": 0.4,
+      "lengthMeters": 260.8,
+      "rawLengthMeters": 260.8,
+      "maxGradeDegrees": 3.71,
       "lowWaterDepthMeters": 0.1,
       "highWaterDepthMeters": 0.1,
       "singleTankSafe": true,
@@ -2518,9 +2543,24 @@
           "z": 5100.0
         },
         {
-          "x": 1792.0,
-          "y": 367.6,
-          "z": 5120.0
+          "x": 1855.0,
+          "y": 370.17,
+          "z": 5135.0
+        },
+        {
+          "x": 1910.0,
+          "y": 372.58,
+          "z": 5170.0
+        },
+        {
+          "x": 1965.0,
+          "y": 376.81,
+          "z": 5205.0
+        },
+        {
+          "x": 2020.0,
+          "y": 378.83,
+          "z": 5240.0
         }
       ]
     },

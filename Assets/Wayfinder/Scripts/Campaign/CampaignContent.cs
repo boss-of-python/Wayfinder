@@ -160,6 +160,9 @@ namespace Wayfinder.Campaign
         public string Pattern;
         public int RegionIndex;
         public int RewardSalvage;
+        public int RewardMin = 150;
+        public int RewardMax = 350;
+        public int TargetCount;
         public string RewardKey;
         public bool OneTime;
         public readonly List<string> Targets = new List<string>();
@@ -391,6 +394,12 @@ namespace Wayfinder.Campaign
                 };
                 if (c["targets"] is JArray targets)
                     foreach (var t in targets) def.Targets.Add((string)t);
+                def.TargetCount = def.Targets.Count > 0 ? def.Targets.Count : (c["targets"]?.Value<int?>() ?? 1);
+                if (c["rewardRange"] is JArray range && range.Count >= 2)
+                {
+                    def.RewardMin = range[0].Value<int>();
+                    def.RewardMax = range[1].Value<int>();
+                }
                 if (string.IsNullOrEmpty(def.RewardKey)) def.RewardKey = $"reward.contract.{def.Id}";
                 content._contracts[def.Id] = def;
             }

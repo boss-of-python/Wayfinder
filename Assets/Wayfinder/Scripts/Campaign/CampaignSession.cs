@@ -58,7 +58,7 @@ namespace Wayfinder.Campaign
         public TransactionService Transactions { get; }
         public SimulationTime Clock { get; } = new SimulationTime();
         public DamageModel Damage { get; } = new DamageModel();
-        public VehicleSpec Vehicle { get; }
+        public VehicleSpec Vehicle { get; internal set; }
         public ExpeditionState Expedition { get; } = new ExpeditionState();
 
         public float FuelLiters { get; internal set; }
@@ -71,7 +71,7 @@ namespace Wayfinder.Campaign
         public SaveResult LastSaveResult { get; private set; }
         public bool HasUnsavedChanges => _autosave.IsDirty;
         public bool LastSaveFailed => _autosave.LastAttemptFailed;
-        public string ActiveVehicleId => ScoutVehicleId;
+        public string ActiveVehicleId { get; internal set; } = ScoutVehicleId;
         public int PendingNoticeCount => _notices.Count;
         public bool InGarage => !Expedition.IsActive;
         /// <summary>
@@ -106,6 +106,8 @@ namespace Wayfinder.Campaign
                 Contracts = Contracts
             });
             Transactions.OnCommitted += OnTransactionCommitted;
+            Settings = _saves.LoadSettings();
+            SyncActiveVehicleToFleet();
             ConfigureContainers();
         }
 
@@ -370,9 +372,11 @@ namespace Wayfinder.Campaign
         internal Pose SpawnFor(string hubId)
         {
             if (hubId == Content.Slice.GarageId) return Content.Slice.GarageSpawn;
-            if (Content.Garages.ContainsKey(hubId)) return new Pose(Content.GaragePosition(hubId), 0f);
+            if (Content.Garages.ContainsKey(hubId ?? string.Empty)) return new Pose(Content.GaragePosition(hubId), 0f);
             var socket = Content.Slice.FindSite(Content.Slice.CampSockets, hubId);
             if (socket != null) return new Pose(socket.Position, 0f);
+            if (!string.IsNullOrEmpty(hubId) && Content.Camps.TryGetValue(hubId, out var camp))
+                return new Pose(camp.Position, 0f);
             return new Pose(Content.GaragePosition(hubId), 0f);
         }
 
@@ -429,6 +433,8 @@ namespace Wayfinder.Campaign
                     return Inventory.QuantityOf(Cargo, target) + Inventory.QuantityOf(GarageStorage, target);
                 case MissionConditionType.RevealMapPercent:
                     return (int)Discovery.MapCoveragePercent;
+                case MissionConditionType.VisitVolume:
+                    return (!string.IsNullOrEmpty(target) && (Garage.IsGarageUnlocked(target) || _visitedVolumes.Contains(target))) ? 1 : 0;
                 default:
                     return 0;
             }

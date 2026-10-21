@@ -441,6 +441,27 @@ def check_seams():
           f"spread {spread:.1f} m, range {min(samples):.1f}..{max(samples):.1f}")
 
 
+def check_world_apron_clearance():
+    import json
+    content_dir = os.path.join(ROOT, "Assets", "Wayfinder", "Content")
+    with open(os.path.join(content_dir, "garages.json"), encoding="utf-8") as fh:
+        garages = json.load(fh)
+    with open(os.path.join(content_dir, "sites.json"), encoding="utf-8") as fh:
+        sites = json.load(fh)
+    min_clearance = float("inf")
+    worst_pair = ""
+    for s in sites:
+        sx, sz = s["positionHint"]["x"], s["positionHint"]["z"]
+        for g in garages:
+            gx, gz = g["positionHint"]["x"], g["positionHint"]["z"]
+            d = math.hypot(sx - gx, sz - gz)
+            if d < min_clearance:
+                min_clearance = d
+                worst_pair = f"{s['id']} <-> {g['id']} ({d:.1f} m)"
+    check("world layout: every site clears all garage arrival aprons (≥ 40 m)",
+          min_clearance >= 40.0, worst_pair)
+
+
 def main():
     print("== Wayfinder formula checks ==")
     check_self_lint()
@@ -454,6 +475,7 @@ def main():
     check_world_math()
     check_hash()
     check_seams()
+    check_world_apron_clearance()
     if mirrors:
         print(f"\n{len(mirrors)} check(s) are documentation mirrors, not evidence "
               f"(they cannot fail on a C# change):")
