@@ -73,6 +73,13 @@ namespace Wayfinder.Campaign
         public string ActiveVehicleId => ScoutVehicleId;
         public int PendingNoticeCount => _notices.Count;
         public bool InGarage => !Expedition.IsActive;
+        /// <summary>
+        /// True when the session is parked at a <b>garage</b>, not at a camp. The garage-only services
+        /// (§10.4/§12.1) are missions, contracts, research, loadout, crafting, selling and vehicle
+        /// change; a camp offers save, deposit, fuel, repair supplies, time of day, map and hub travel
+        /// instead. Identical to <see cref="InGarage"/> until hub travel parks the session at a camp.
+        /// </summary>
+        public bool AtGarage => InGarage && Content.Garages.ContainsKey(Expedition.LastGarageId);
         public bool TutorialActive => TutorialFlags.Contains(TutorialFlag);
 
         internal readonly SortedSet<string> TutorialFlags = new SortedSet<string>(StringComparer.Ordinal);
@@ -308,10 +315,18 @@ namespace Wayfinder.Campaign
             return id;
         }
 
-        internal Pose SpawnFor(string garageId)
+        /// <summary>
+        /// Parked pose for a hub (§10.4): the slice garage's authored spawn, another garage's
+        /// position, or an activated camp's socket. Unknown ids fall back to the slice garage,
+        /// exactly as <see cref="CampaignContent.GaragePosition"/> already did.
+        /// </summary>
+        internal Pose SpawnFor(string hubId)
         {
-            if (garageId == Content.Slice.GarageId) return Content.Slice.GarageSpawn;
-            return new Pose(Content.GaragePosition(garageId), 0f);
+            if (hubId == Content.Slice.GarageId) return Content.Slice.GarageSpawn;
+            if (Content.Garages.ContainsKey(hubId)) return new Pose(Content.GaragePosition(hubId), 0f);
+            var socket = Content.Slice.FindSite(Content.Slice.CampSockets, hubId);
+            if (socket != null) return new Pose(socket.Position, 0f);
+            return new Pose(Content.GaragePosition(hubId), 0f);
         }
 
         string NearestUnlockedGarage(WorldPoint from)

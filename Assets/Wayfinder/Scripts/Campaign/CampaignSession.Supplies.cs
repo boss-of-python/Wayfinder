@@ -149,7 +149,7 @@ namespace Wayfinder.Campaign
         public CommandResult CheckSell(string itemId, int quantity, bool fromCargo, out int totalPrice)
         {
             totalPrice = 0;
-            if (!InGarage) return CommandResult.Fail(FailureReason.WrongState, "sell at a garage");
+            if (!AtGarage) return CommandResult.Fail(FailureReason.WrongState, "sell at a garage");
             if (quantity <= 0) return CommandResult.Fail(FailureReason.InvalidTarget, "quantity must be positive");
             if (string.IsNullOrEmpty(itemId) || !ItemCatalog.TryGet(itemId, out var def))
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown item '{itemId}'");

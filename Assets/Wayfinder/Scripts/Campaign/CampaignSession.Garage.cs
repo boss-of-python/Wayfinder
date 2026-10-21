@@ -17,7 +17,7 @@ namespace Wayfinder.Campaign
         {
             if (string.IsNullOrEmpty(code) || !Missions.Definitions.TryGetValue(code, out var def))
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown mission '{code}'");
-            if (!InGarage)
+            if (!AtGarage)
                 return CommandResult.Fail(FailureReason.WrongState, "missions are accepted at a garage");
             return RunCritical(() =>
             {
@@ -39,7 +39,7 @@ namespace Wayfinder.Campaign
 
         public CommandResult ResearchUpgrade(string upgradeId)
         {
-            if (!InGarage)
+            if (!AtGarage)
                 return CommandResult.Fail(FailureReason.WrongState, "research is only available at a garage (§12.2)");
             if (!IsKnownUpgrade(upgradeId))
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown upgrade '{upgradeId}'");
@@ -79,7 +79,7 @@ namespace Wayfinder.Campaign
         /// <summary>Accepts a contract at a garage board. Free; the reward is escrowed on completion.</summary>
         public CommandResult AcceptContract(string contractId)
         {
-            if (!InGarage)
+            if (!AtGarage)
                 return CommandResult.Fail(FailureReason.WrongState, "contracts are accepted at a garage board (§9.3)");
             if (string.IsNullOrEmpty(contractId) || !Content.Contracts.ContainsKey(contractId))
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown contract '{contractId}'");
@@ -127,7 +127,7 @@ namespace Wayfinder.Campaign
 
         CommandResult MoveItems(InventoryId from, InventoryId to, string itemId, int quantity)
         {
-            if (!InGarage) return CommandResult.Fail(FailureReason.WrongState, "cargo can only be reorganised at a garage");
+            if (!AtGarage) return CommandResult.Fail(FailureReason.WrongState, "cargo can only be reorganised at a garage");
             if (string.IsNullOrEmpty(itemId) || !ItemCatalog.TryGet(itemId, out var def))
                 return CommandResult.Fail(FailureReason.InvalidTarget, $"unknown item '{itemId}'");
             if (def.ProtectedLedger) return CommandResult.Fail(FailureReason.ItemNotUsableHere, "protected objects never move");
@@ -139,7 +139,7 @@ namespace Wayfinder.Campaign
         /// <summary>Crafts at the garage from garage storage into garage storage, paying the recipe fee.</summary>
         public CommandResult Craft(string recipeId)
         {
-            if (!InGarage) return CommandResult.Fail(FailureReason.WrongState, "crafting happens at a garage");
+            if (!AtGarage) return CommandResult.Fail(FailureReason.WrongState, "crafting happens at a garage");
             bool known = false;
             foreach (var r in CraftingService.Recipes)
                 if (r.Id.Value == recipeId) known = true;
@@ -168,6 +168,75 @@ namespace Wayfinder.Campaign
                 Expedition.ElapsedSimulationSeconds = 0d;
                 Expedition.Stats = new ExpeditionStats();
                 Notice(CampaignNoticeKind.Info, "Expedition started");
+                return CommandResult.Ok();
+            });
+        }
+
+        // ================================================================== hub travel (§10.4)
+
+        /// <summary>
+        /// The hub the vehicle is at, or null (§10.4). In garage mode that is the hub the session is
+        /// parked at; in the field it is an activated camp whose socket contains the current pose.
+        /// Hub travel is offered only from a hub, so this is the gate the UI needs.
+        /// </summary>
+        public string CurrentHubId => Expedition.IsActive ? CampAtPose(Expedition.Pose.Position) : Expedition.LastGarageId;
+
+        /// <summary>The nearest activated camp whose socket radius contains the position, else null.</summary>
+        string CampAtPose(WorldPoint position)
+        {
+            string best = null;
+            float bestDistance = float.MaxValue;
+            foreach (var socket in Content.Slice.CampSockets)
+            {
+                if (!Garage.IsCampActivated(socket.Id)) continue;
+                float distance = position.DistanceXZ(socket.Position);
+                if (distance <= socket.RadiusMeters && distance < bestDistance)
+                {
+                    best = socket.Id;
+                    bestDistance = distance;
+                }
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// Safe-hub travel (§10.4): a free, instant transfer to another activated hub, available only
+        /// while at an activated garage or camp and never out of a dangerous field situation — full
+        /// rescue fills that role. No currency fee and no loading-screen punishment. Loaded cargo
+        /// travels with the vehicle ("bank/deposit first" is the player's choice, not a gate).
+        /// Critical operation: the move is acknowledged only with a verified save (§12.4).
+        /// </summary>
+        /// <param name="destinationHubId">An activated garage or camp that offers hub travel.</param>
+        /// <param name="inWater">Field state from the caller, as for the supply actions.</param>
+        /// <param name="inDeepMud">Field state from the caller, as for the supply actions.</param>
+        public CommandResult TravelToHub(string destinationHubId, bool inWater, bool inDeepMud)
+        {
+            if (string.IsNullOrEmpty(destinationHubId))
+                return CommandResult.Fail(FailureReason.InvalidTarget, "no destination hub selected");
+            string origin = CurrentHubId;
+            if (string.IsNullOrEmpty(origin))
+                return CommandResult.Fail(FailureReason.WrongState,
+                    "hub travel is only available at an activated garage or camp");
+            if (inWater || inDeepMud)
+                return CommandResult.Fail(FailureReason.WrongState,
+                    "no fast travel out of a dangerous field situation; use full rescue");
+            if (string.Equals(origin, destinationHubId, StringComparison.Ordinal))
+                return CommandResult.Fail(FailureReason.WrongState, "already at that hub");
+            var gate = Garage.TryHubTravel(origin, destinationHubId);
+            if (!gate.Success) return gate;
+            if (!Content.OffersHubTravel(origin) || !Content.OffersHubTravel(destinationHubId))
+                return CommandResult.Fail(FailureReason.InvalidTarget, "that hub does not offer safe-hub travel (§10.4)");
+
+            bool onExpedition = Expedition.IsActive;
+            Pose destination = SpawnFor(destinationHubId);
+            return RunCritical(() =>
+            {
+                Expedition.Pose = destination;
+                Expedition.LastSafePose = destination;
+                // Parked at a hub, the hub is also the next departure point (§2.3 Plan). Mid-expedition
+                // the home garage stays the extraction target, so LastGarageId must not move (§12.4).
+                if (!onExpedition) Expedition.LastGarageId = destinationHubId;
+                Notice(CampaignNoticeKind.HubTravelled, $"Arrived at {destinationHubId}", 0, destinationHubId);
                 return CommandResult.Ok();
             });
         }
